@@ -1,0 +1,6 @@
+package EnergyConsumption
+import reader
+
+class EnergyLineHandler extends LineHandler{
+
+}
