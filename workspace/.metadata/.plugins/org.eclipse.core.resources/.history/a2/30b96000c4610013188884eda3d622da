@@ -1,0 +1,4 @@
+class Reader (xsource: String){
+  val source : String = xsouce
+  
+}

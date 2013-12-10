@@ -1,0 +1,10 @@
+package reader
+
+import org.apache.spark._
+import org.apache.spark.SparkContext._
+
+class Reader(xsource: String, xdest: String) {
+    val source: String = xsource
+    val dest: String = xdest
+
+}
