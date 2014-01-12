@@ -1,0 +1,91 @@
+package spark
+
+import collection.immutable.TreeMap
+
+object TestingWorkSheet {
+
+	class FeatureAggregateInfo(val index: Int, val xValue: Any, var yValue: Double, var frequency: Int) extends Serializable {
+        def addFrequency(acc: Int) : FeatureAggregateInfo = { this.frequency = this.frequency + acc; this }
+        def +(that : FeatureAggregateInfo) = {
+            this.frequency = this.frequency + that.frequency
+            this.yValue = this.yValue + that.yValue
+            this
+        }
+        override def toString() = "index:" + index +  " | xValue:" + xValue + " | yValue" + yValue + " | frequency:" + frequency;
+    }
+    
+    def parseDouble(s: String) = try { Some(s.toDouble) } catch { case _ => None }
+                                                  //> parseDouble: (s: String)Option[Double]
+    def processLine(line: Array[String], numberFeatures: Int): Array[FeatureAggregateInfo] = {
+        val length = numberFeatures
+        var i = -1;
+        parseDouble(line(length - 1)) match {
+            case Some(yValue) => {
+                line.map(f => {
+                    i = (i + 1) % length
+                    new FeatureAggregateInfo(i, f, yValue, 1)
+                })
+            }
+            case None => Array[FeatureAggregateInfo]()
+        }
+        
+    }                                             //> processLine: (line: Array[String], numberFeatures: Int)Array[spark.TestingW
+                                                  //| orkSheet.FeatureAggregateInfo]
+    
+    val dataInputURL = "/home/loveallufev/semester_project/input/small_input2"
+                                                  //> dataInputURL  : java.lang.String = /home/loveallufev/semester_project/input
+                                                  //| /small_input2
+
+    var myDataFile2 = scala.io.Source.fromFile(dataInputURL).getLines.toList
+                                                  //> myDataFile2  : List[String] = List(hot,sunny,high,false,10,0, hot,sunny,hig
+                                                  //| h,true,8,0, hot,overcast,high,false,12,1, cool,rainy,normal,false,14.5,1, c
+                                                  //| ool,overcast,normal,true,6.24,1, mild,sunny,high,false,8,0, cool,sunny,norm
+                                                  //| al,false,30,1, mild,rainy,normal,false,10,1, mild,sunny,normal,true,1,1, mi
+                                                  //| ld,overcast,high,true,7,1, hot,overcast,normal,false,9,1, mild,rainy,high,t
+                                                  //| rue,10,0, cool,rainy,normal,true,5,0, mild,rainy,high,false,7,1)
+
+    var mydata = myDataFile2.map(line => line.split(","))
+                                                  //> mydata  : List[Array[java.lang.String]] = List(Array(hot, sunny, high, fals
+                                                  //| e, 10, 0), Array(hot, sunny, high, true, 8, 0), Array(hot, overcast, high, 
+                                                  //| false, 12, 1), Array(cool, rainy, normal, false, 14.5, 1), Array(cool, over
+                                                  //| cast, normal, true, 6.24, 1), Array(mild, sunny, high, false, 8, 0), Array(
+                                                  //| cool, sunny, normal, false, 30, 1), Array(mild, rainy, normal, false, 10, 1
+                                                  //| ), Array(mild, sunny, normal, true, 1, 1), Array(mild, overcast, high, true
+                                                  //| , 7, 1), Array(hot, overcast, normal, false, 9, 1), Array(mild, rainy, high
+                                                  //| , true, 10, 0), Array(cool, rainy, normal, true, 5, 0), Array(mild, rainy, 
+                                                  //| high, false, 7, 1))
+    val number_of_features = mydata.take(1)(0).length
+                                                  //> number_of_features  : Int = 6
+    val temp = mydata.flatMap(processLine(_, number_of_features))
+                                                  //> temp  : List[spark.TestingWorkSheet.FeatureAggregateInfo] = List(spark.Test
+                                                  //| ingWorkSheet$FeatureAggregateInfo@4ab7532a, spark.TestingWorkSheet$FeatureA
+                                                  //| ggregateInfo@49b510b8, spark.TestingWorkSheet$FeatureAggregateInfo@e5cc5d6,
+                                                  //|  spark.TestingWorkSheet$FeatureAggregateInfo@6cc06bf7, spark.TestingWorkShe
+                                                  //| et$FeatureAggregateInfo@4cf05ce8, spark.TestingWorkSheet$FeatureAggregateIn
+                                                  //| fo@3863aace, spark.TestingWorkSheet$FeatureAggregateInfo@1762d74e, spark.Te
+                                                  //| stingWorkSheet$FeatureAggregateInfo@5a254de0, spark.TestingWorkSheet$Featur
+                                                  //| eAggregateInfo@471bdb5c, spark.TestingWorkSheet$FeatureAggregateInfo@75de99
+                                                  //| 7c, spark.TestingWorkSheet$FeatureAggregateInfo@692ed858, spark.TestingWork
+                                                  //| Sheet$FeatureAggregateInfo@27daf5b, spark.TestingWorkSheet$FeatureAggregate
+                                                  //| Info@98380a4, spark.TestingWorkSheet$FeatureAggregateInfo@187293dd, spark.T
+                                                  //| estingWorkSheet$FeatureAggregateInfo@a499eb5, spark.TestingWorkSheet$Featur
+                                                  //| eAggregateInfo@67528259
+                                                  //| Output exceeds cutoff limit.
+    
+    buildTree(temp)                               //> (0,spark.TestingWorkSheet$FeatureAggregateInfo@6275a43c)
+                                                  //| (5,spark.TestingWorkSheet$FeatureAggregateInfo@197191a4)
+                                                  //| (1,spark.TestingWorkSheet$FeatureAggregateInfo@6f10b308)
+                                                  //| (2,spark.TestingWorkSheet$FeatureAggregateInfo@315a0b2f)
+                                                  //| (3,spark.TestingWorkSheet$FeatureAggregateInfo@e9453f9)
+                                                  //| (4,spark.TestingWorkSheet$FeatureAggregateInfo@2c1507e9)
+    
+    def buildTree(data: List[FeatureAggregateInfo]) : Unit = {
+        
+        var tmp = (data.groupBy(x => (x.index, x.xValue))
+                	.map(x => (x._1._1 ,x._2.foldLeft(new FeatureAggregateInfo(x._1._1, x._1._2, 0,0))(_ + _)))
+                )
+        tmp.foreach(x => println(x))
+    }                                             //> buildTree: (data: List[spark.TestingWorkSheet.FeatureAggregateInfo])Unit
+    
+    
+}

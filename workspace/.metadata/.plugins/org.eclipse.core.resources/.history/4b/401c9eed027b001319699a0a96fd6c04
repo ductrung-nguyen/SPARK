@@ -1,0 +1,64 @@
+package spark
+
+import collection.immutable.TreeMap
+
+object TestingWorkSheet {
+
+    trait Node {
+        def condition: (String, String)
+        var feature: FeatureInfo
+        def left: Node
+        def right: Node
+        def isEmpty: Boolean
+        def toStringWithLevel(level: Int): String
+       	override def toString : String = "\n" + toStringWithLevel(1)
+    }
+
+    case class Empty extends Node {
+        def isEmpty = true
+        def condition : Nothing = throw new NoSuchElementException("empty.condition")
+        def left : Nothing = throw new NoSuchElementException("empty.left")
+        def right : Nothing = throw new NoSuchElementException("empty.right")
+        var feature: FeatureInfo = FeatureInfo("Empty", "0", 0)
+        def toStringWithLevel(level: Int) = "Empty"
+    }
+
+    case class NonEmpty(xFeature: FeatureInfo, xCondition: (String, String), xLeft: Node, xRight: Node) extends Node {
+        def isEmpty = false
+        def condition = xCondition
+        def left = xLeft
+        def right = xRight
+        var feature: FeatureInfo = xFeature
+
+        def toStringWithLevel(level: Int) =
+        	feature.Name + "\n" +
+        		("".padTo(level, "|")).mkString("    ") + "-(" + condition._1 + ")" + ("".padTo(level, "-")).mkString("") + left.toStringWithLevel(level + 1) + "\n" +
+        		("".padTo(level, "|")).mkString("    ") + "-(" + condition._2 + ")" + ("".padTo(level, "-")).mkString("") +right.toStringWithLevel(level + 1)
+    }
+
+    var v2 = Vector(0, 1, 2, 3, 4, 5, 6, 7)
+    v2.take(0)
+    case class FeatureValueMap[+T](val fValue: T, var frequency: Int, var sumYValue: Double) {
+    }
+
+
+    var node: Node =
+        new NonEmpty(
+            FeatureInfo("F 1", "1", 0),
+            ("x < 3", "x >= 3"),
+            NonEmpty(
+                FeatureInfo("F 2", "1", 1),
+                ("y < 0","y > 3"),
+                Empty(),
+                Empty()),
+            NonEmpty(
+                FeatureInfo("F 3", "1", 1),
+                ("z <6", "z > 3"),
+                Empty(),
+                Empty()))
+    node
+    
+    
+    var l = List((1,8), (2,6), (3,7))
+    l.maxBy(_._2,_._2)
+}

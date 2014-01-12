@@ -1,0 +1,154 @@
+package spark
+
+import collection.immutable.TreeMap
+import org.apache.spark._
+import org.apache.spark.SparkContext._
+
+object TestingWorkSheet {
+
+    class FeatureAggregateInfo(val index: Int, var xValue: Any, var yValue: Double, var frequency: Int) extends Serializable {
+        def addFrequency(acc: Int): FeatureAggregateInfo = { this.frequency = this.frequency + acc; this }
+        def +(that: FeatureAggregateInfo) = {
+            this.frequency = this.frequency + that.frequency
+            this.yValue = this.yValue + that.yValue
+            this
+        }
+        override def toString() = "Feature(index:" + index + " | xValue:" + xValue +
+            " | yValue" + yValue + " | frequency:" + frequency + ")";
+    }
+
+    case class FeatureSet(file: String, val context: SparkContext) {
+        def this(file: String) = this(file, new SparkContext("local", "SparkContext"))
+        private def loadFromFile() = {
+
+            //val input_fileName: String = "/home/loveallufev/semester_project/input/small_input";
+            val myTagInputFile = context.textFile(file, 1)
+
+            var tags = myTagInputFile.take(2).flatMap(line => line.split(",")).toSeq.toList
+
+            // ( index_of_feature, (Feature_Name, Feature_Type))
+            //( (0,(Temperature,1))  , (1,(Outlook,1)) ,  (2,(Humidity,1)) , ... )
+            (((0 until tags.length / 2) map (index => (tags(index), tags(index + tags.length / 2)))) zip (0 until tags.length))
+                .map(x => FeatureInfo(x._1._1, x._1._2, x._2)).toList
+        }
+
+        lazy val data = loadFromFile()
+        lazy val numberOfFeature = data.length
+    }
+
+    def parseDouble(s: String) = try { Some(s.toDouble) } catch { case _ => None }
+    def processLine(line: Array[String], numberFeatures: Int, fTypes: Vector[String]): Array[FeatureAggregateInfo] = {
+        val length = numberFeatures
+        var i = -1;
+        parseDouble(line(length - 1)) match {
+            case Some(yValue) => { // check type of Y : if isn't continuos type, return nothing
+                line.map(f => {
+                    i = (i + 1) % length
+                    fTypes(i) match {
+                        case "0" => {	// If this is a numerical feature => parse value from string to double
+                            val v = parseDouble(f);
+                            v match {
+                                case Some(d) => new FeatureAggregateInfo(i, d, yValue, 1)
+                                case None => new FeatureAggregateInfo(-1, f, 0, 0)
+                            }
+                        }
+                        // if this is a categorial feature => return a FeatureAggregateInfo
+                        case "1" => new FeatureAggregateInfo(i, f, yValue, 1)
+                    }
+                })
+            }
+            case None => Array[FeatureAggregateInfo]()
+        }
+
+    }
+
+    val context = new SparkContext("local", "SparkContext")
+    val dataInputURL = "/home/loveallufev/semester_project/input/small_input2"
+
+    var featureSet = new FeatureSet("/home/loveallufev/semester_project/input/tag_small_input2", context)
+
+    var myDataFile2 = scala.io.Source.fromFile(dataInputURL).getLines.toList
+
+    var mydata = myDataFile2.map(line => line.split(","))
+    val number_of_features = mydata.take(1)(0).length
+    val featureTypes = Vector[String]() ++ featureSet.data.map(x => x.Type)
+    val temp = mydata.flatMap(processLine(_, number_of_features, featureTypes))
+
+    buildTree(temp)
+
+    def buildTree(data: List[FeatureAggregateInfo]): Unit = {
+
+				
+        var featureValueSorted = (data.groupBy(x => (x.index, x.xValue))
+            .map(x => (new FeatureAggregateInfo(x._1._1, x._1._2, 0, 0)
+                + x._2.foldLeft(new FeatureAggregateInfo(x._1._1, x._1._2, 0, 0))(_ + _)))
+            /*
+                																	Feature(index:2 | xValue:normal | yValue6.0 | frequency:7)
+                                                  Feature(index:1 | xValue:sunny | yValue2.0 | frequency:5)
+                                                  Feature(index:4 | xValue:14.5 | yValue1.0 | frequency:1)
+                                                  Feature(index:2 | xValue:high | yValue3.0 | frequency:7)
+                  */
+            .groupBy(x => x.index)
+            .map(x =>
+            	(x._1, x._2.toList.sortBy(
+            		v => v.xValue match {
+	                case d: Double => d // sort by xValue if this is numerical feature
+	                case s: String => v.yValue / v.frequency // sort by the average of Y if this is categorical value
+            		})
+            	))
+            	)
+            	
+         var splittingPointFeature = featureValueSorted.map(x =>
+            				(	x._1,
+            					x._2(0).xValue match {
+            						case s: String => // process with categorical feature
+            							//x._2.map (f => f)
+	        							{
+	        								var acc: Int = 0; // the number records on the left of current feature
+	        								var currentSumY : Double = 0	// current sum of Y of elements on the left of current feature
+	        								val numRecs : Int = x._2.foldLeft(0)(_ + _.frequency)	// number of records
+	        								val sumY = x._2.foldLeft(0.0)(_ + _.yValue)	// total sum of Y
+	        								var splitPoint: Set[String] = Set[String]()
+	        								x._2.map(f => {
+	        																
+	        																acc = acc + f.frequency
+	        																currentSumY = currentSumY + f.yValue
+	        																if (acc == f.frequency) ("", 0.0)	// mock object
+	        																else {
+	        																	splitPoint = splitPoint + f.xValue.asInstanceOf[String]
+	        																	val weight = currentSumY*currentSumY/acc + (sumY - currentSumY)*(sumY - currentSumY)/(numRecs - acc)
+	        																	(splitPoint, weight)
+	        																}
+	        															}
+	        												)
+	        							}
+            						case d: Double => // process with numerical feature
+            						{
+            							var lastValue : Double = 0	// the value of the current feature
+            							var acc: Int = 0	// number of records on the left of the current element
+            							val numRecs : Int = x._2.foldLeft(0)(_ + _.frequency)
+            							var currentSumY : Double = 0
+            							val sumY = x._2.foldLeft(0.0)(_ + _.yValue)
+            							var posibleSplitPoint : Double = 0
+            							x._2.map (f => {
+            														posibleSplitPoint = (f.xValue.asInstanceOf[Double] + lastValue)/2;
+	            													lastValue = posibleSplitPoint*2 - lastValue;
+		            												acc = acc + f.frequency
+		            												currentSumY = currentSumY + f.yValue
+		            												
+	            													if (acc == f.frequency) (0.0,0.0)	// this is mock object
+	            													else {
+		            													var weight = currentSumY*currentSumY/acc + (sumY - currentSumY)*(sumY - currentSumY)/(numRecs - acc)
+		            													(posibleSplitPoint, weight)
+	            													}
+	            													
+            													}).drop(1).maxBy(_._2)
+            						}
+            					}
+            				)
+            		)
+        splittingPointFeature.foreach(x => println(x))
+        //println(tmp.mkString("***"))
+    }
+
+}

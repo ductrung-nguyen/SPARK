@@ -1,0 +1,32 @@
+package learnscala1
+
+object test8 {
+  println("Welcome to the Scala worksheet")
+}
+
+abstract class Nat {
+	def isZero() : Boolean
+	def predecessor : Nat
+	def successor = new Succ(this)
+	def + (that : Nat) : Nat
+	def - (that : Nat) : Nat
+}
+
+class Zero extends Nat {
+	override def isZero() = true
+	override def predecessor() = throw new Error(" No predecessor")
+	override def + (that :Nat) = that
+	override def - (that : Nat) = throw new Error("Negative")
+}
+
+class Succ(val n: Nat) extends Nat {
+	override def isZero() = false
+	override def predecessor = n
+	override def + (that : Nat){  // n +  that
+		def addIter (currentValue : Nat, acc: Nat) : Nat =
+			if (acc.isZero) currentValue
+			else addIter(currentValue.successor, acc.predecessor)
+		
+		addIter(n, that)
+	}
+}

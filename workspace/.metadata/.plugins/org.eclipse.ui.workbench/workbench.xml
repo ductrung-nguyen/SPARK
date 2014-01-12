@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<workbench progressCount="63" version="2.0">
+<workbench progressCount="39" version="2.0">
 <workbenchAdvisor/>
 <window height="768" maximized="true" width="1024" x="65" y="24">
 <fastViewData fastViewLocation="1024"/>
@@ -10,7 +10,7 @@
 <coolItem id="group.file" itemType="typeGroupMarker"/>
 <coolItem id="org.eclipse.ui.workbench.file" itemType="typeToolBarContribution" x="132" y="30"/>
 <coolItem id="additions" itemType="typeGroupMarker"/>
-<coolItem id="org.eclipse.debug.ui.launchActionSet" itemType="typeToolBarContribution" x="148" y="30"/>
+<coolItem id="org.eclipse.debug.ui.launchActionSet" itemType="typeToolBarContribution" x="120" y="30"/>
 <coolItem id="org.eclipse.jdt.ui.JavaElementCreationActionSet" itemType="typeToolBarContribution" x="76" y="30"/>
 <coolItem id="org.eclipse.jst.j2ee.J2eeMainActionSet" itemType="typeToolBarContribution" x="84" y="30"/>
 <coolItem id="org.eclipse.search.searchActionSet" itemType="typeToolBarContribution" x="104" y="30"/>
@@ -23,11 +23,12 @@
 <coolItem id="group.nav" itemType="typeGroupMarker"/>
 <coolItem id="org.eclipse.ui.workbench.navigate" itemType="typeToolBarContribution" x="184" y="30"/>
 <coolItem id="group.editor" itemType="typeGroupMarker"/>
+<coolItem id="org.scalaide.worksheet.editors.ScriptEditor" itemType="typeToolBarContribution" x="-1" y="-1"/>
 <coolItem id="scala.tools.eclipse.ScalaSourceFileEditor" itemType="typeToolBarContribution" x="-1" y="-1"/>
 <coolItem id="group.help" itemType="typeGroupMarker"/>
 <coolItem id="org.eclipse.ui.workbench.help" itemType="typeToolBarContribution" x="-1" y="-1"/>
 </coolbarLayout>
-<page aggregateWorkingSetId="Aggregate for window 1386712648075" focus="true" label="Workspace - Java">
+<page aggregateWorkingSetId="Aggregate for window 1386712648075" focus="true" label="Workspace - Scala">
 <editors>
 <editorArea activeWorkbook="DefaultEditorWorkbook">
 <info part="DefaultEditorWorkbook">
@@ -37,31 +38,38 @@
 <part id="1"/>
 <part id="2"/>
 <part id="3"/>
+<part id="4"/>
+<part id="5"/>
 </presentation>
 </folder>
 </info>
 </editorArea>
-<editor id="scala.tools.eclipse.ScalaSourceFileEditor" name="Reader.scala" partName="Reader.scala" path="/home/loveallufev/workspace/TimeSeriesPackage/src/reader/Reader.scala" title="Reader.scala" tooltip="TimeSeriesPackage/src/reader/Reader.scala" workbook="DefaultEditorWorkbook">
-<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/TimeSeriesPackage/src/reader/Reader.scala"/>
-<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="559" selectionTopPixel="0"/>
+<editor activePart="true" focus="true" id="org.scalaide.worksheet.editors.ScriptEditor" name="TestingWorkSheet.sc" partName="TestingWorkSheet.sc" path="/home/loveallufev/projects/SPARK/workspace/TimeSeriesPackage/src/spark/TestingWorkSheet.sc" title="TestingWorkSheet.sc" tooltip="TimeSeriesPackage/src/spark/TestingWorkSheet.sc" workbook="DefaultEditorWorkbook">
+<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/TimeSeriesPackage/src/spark/TestingWorkSheet.sc"/>
+<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="2195" selectionTopPixel="612"/>
 </editor>
-<editor id="scala.tools.eclipse.ScalaSourceFileEditor" name="LineHandler.scala" partName="LineHandler.scala" path="/home/loveallufev/workspace/TimeSeriesPackage/src/reader/LineHandler.scala" title="LineHandler.scala" tooltip="TimeSeriesPackage/src/reader/LineHandler.scala" workbook="DefaultEditorWorkbook">
-<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/TimeSeriesPackage/src/reader/LineHandler.scala"/>
-<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="14" selectionTopPixel="0"/>
+<editor id="scala.tools.eclipse.ScalaSourceFileEditor" name="FeatureSet.scala" partName="FeatureSet.scala" path="/home/loveallufev/projects/SPARK/workspace/TimeSeriesPackage/src/spark/FeatureSet.scala" title="FeatureSet.scala" tooltip="TimeSeriesPackage/src/spark/FeatureSet.scala" workbook="DefaultEditorWorkbook">
+<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/TimeSeriesPackage/src/spark/FeatureSet.scala"/>
+<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="969" selectionTopPixel="0"/>
 </editor>
-<editor activePart="true" focus="true" id="scala.tools.eclipse.ScalaSourceFileEditor" name="EnergyLineHandler.scala" partName="EnergyLineHandler.scala" path="/home/loveallufev/workspace/TimeSeriesPackage/src/reader/EnergyLineHandler.scala" title="EnergyLineHandler.scala" tooltip="TimeSeriesPackage/src/reader/EnergyLineHandler.scala" workbook="DefaultEditorWorkbook">
-<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/TimeSeriesPackage/src/reader/EnergyLineHandler.scala"/>
-<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="144" selectionTopPixel="0"/>
+<editor id="scala.tools.eclipse.ScalaSourceFileEditor" name="FeatureInfo.scala" partName="FeatureInfo.scala" path="/home/loveallufev/projects/SPARK/workspace/TimeSeriesPackage/src/spark/FeatureInfo.scala" title="FeatureInfo.scala" tooltip="TimeSeriesPackage/src/spark/FeatureInfo.scala" workbook="DefaultEditorWorkbook">
+<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/TimeSeriesPackage/src/spark/FeatureInfo.scala"/>
+<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="5524" selectionTopPixel="2241"/>
 </editor>
-<editor id="scala.tools.eclipse.ScalaSourceFileEditor" name="Test.scala" partName="Test.scala" path="/home/loveallufev/workspace/TimeSeriesPackage/src/reader/Test.scala" title="Test.scala" tooltip="TimeSeriesPackage/src/reader/Test.scala" workbook="DefaultEditorWorkbook">
-<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/TimeSeriesPackage/src/reader/Test.scala"/>
-<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="517" selectionTopPixel="0"/>
+<editor id="scala.tools.eclipse.ScalaSourceFileEditor" name="Test.scala" partName="Test.scala" path="/home/loveallufev/projects/SPARK/workspace/TimeSeriesPackage/src/spark/Test.scala" title="Test.scala" tooltip="TimeSeriesPackage/src/spark/Test.scala" workbook="DefaultEditorWorkbook">
+<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/TimeSeriesPackage/src/spark/Test.scala"/>
+<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="96" selectionTopPixel="0"/>
+</editor>
+<editor id="scala.tools.eclipse.ScalaSourceFileEditor" name="RegressionTree.scala" partName="RegressionTree.scala" path="/home/loveallufev/projects/SPARK/workspace/TimeSeriesPackage/src/spark/RegressionTree.scala" title="RegressionTree.scala" tooltip="TimeSeriesPackage/src/spark/RegressionTree.scala" workbook="DefaultEditorWorkbook">
+<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/TimeSeriesPackage/src/spark/RegressionTree.scala"/>
+<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="1140" selectionTopPixel="84"/>
+</editor>
+<editor id="scala.tools.eclipse.ScalaSourceFileEditor" name="Node.scala" partName="Node.scala" path="/home/loveallufev/projects/SPARK/workspace/TimeSeriesPackage/src/spark/Node.scala" title="Node.scala" tooltip="TimeSeriesPackage/src/spark/Node.scala" workbook="DefaultEditorWorkbook">
+<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/TimeSeriesPackage/src/spark/Node.scala"/>
+<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="1305" selectionTopPixel="17"/>
 </editor>
 </editors>
 <views>
-<view id="org.eclipse.ui.views.ContentOutline" partName="Outline">
-<viewState/>
-</view>
 <view id="org.eclipse.ui.navigator.ProjectExplorer" partName="Project Explorer">
 <viewState CommonNavigator.LINKING_ENABLED="0" org.eclipse.ui.navigator.resources.workingSets.showTopLevelWorkingSets="0"/>
 </view>
@@ -79,8 +87,7 @@
 </view>
 <view id="org.eclipse.wst.common.snippets.internal.ui.SnippetsView" partName="Snippets">
 <viewState>
-<entry expansion="false" extent="20" maximum="100" minimum="0" pinned="false" value="0">
-<entry selection="0"/>
+<entry expansion="false" extent="20" maximum="100" minimum="0" pinned="false" value="0">&#x0A;<entry selection="0"/>
 <entry selection="0"/>
 <entry selection="0"/>
 <entry selection="0"/>
@@ -91,14 +98,13 @@
 </viewState>
 </view>
 <view id="org.eclipse.ui.views.PropertySheet" partName="Properties"/>
-<view id="org.eclipse.datatools.connectivity.DataSourceExplorerNavigator" partName="Data Source Explorer"/>
 <view id="org.eclipse.ui.views.ProblemView" partName="Problems">
 <viewState PRIMARY_SORT_FIELD="org.eclipse.ui.ide.severityAndDescriptionField" categoryGroup="org.eclipse.ui.ide.severity" markerContentGenerator="org.eclipse.ui.ide.problemsGenerator" partName="Problems">
 <expanded>
-<category IMemento.internal.id="Warnings"/>
 <category IMemento.internal.id="Errors"/>
+<category IMemento.internal.id="Warnings (2 items)"/>
 </expanded>
-<columnWidths org.eclipse.ui.ide.locationField="105" org.eclipse.ui.ide.markerType="202" org.eclipse.ui.ide.pathField="140" org.eclipse.ui.ide.resourceField="105" org.eclipse.ui.ide.severityAndDescriptionField="487"/>
+<columnWidths org.eclipse.ui.ide.locationField="105" org.eclipse.ui.ide.markerType="215" org.eclipse.ui.ide.pathField="140" org.eclipse.ui.ide.resourceField="105" org.eclipse.ui.ide.severityAndDescriptionField="487"/>
 <visible IMemento.internal.id="org.eclipse.ui.ide.severityAndDescriptionField"/>
 <visible IMemento.internal.id="org.eclipse.ui.ide.resourceField"/>
 <visible IMemento.internal.id="org.eclipse.ui.ide.pathField"/>
@@ -106,9 +112,7 @@
 <visible IMemento.internal.id="org.eclipse.ui.ide.markerType"/>
 </viewState>
 </view>
-<view id="org.eclipse.ui.console.ConsoleView" partName="Console">
-<viewState/>
-</view>
+<view id="org.eclipse.datatools.connectivity.DataSourceExplorerNavigator" partName="Data Source Explorer"/>
 <view id="org.eclipse.jdt.ui.PackageExplorer" partName="Package Explorer">
 <viewState group_libraries="1" layout="2" linkWithEditor="0" rootMode="1" workingSetName="Aggregate for window 1386695929822">
 <customFilters userDefinedPatternsEnabled="false">
@@ -142,11 +146,12 @@
 </customFilters>
 </viewState>
 </view>
+<view id="org.eclipse.ui.console.ConsoleView" partName="Console">
+<viewState/>
+</view>
 <view id="org.eclipse.mylyn.tasks.ui.views.tasks" partName="Task List">
 <viewState linkWithEditor="true" presentation="org.eclipse.mylyn.tasks.ui.categorized">
-<sorter groupBy="CATEGORY_QUERY">
-<sorter>
-<sort0 sortDirection="1" sortKey="PRIORITY"/>
+<sorter groupBy="CATEGORY_QUERY">&#x0A;<sorter>&#x0A;<sort0 sortDirection="1" sortKey="PRIORITY"/>
 <sort1 sortDirection="1" sortKey="RANK"/>
 <sort2 sortDirection="1" sortKey="DATE_CREATED"/>
 <sort3 sortDirection="1" sortKey="NONE"/>
@@ -159,11 +164,24 @@
 <filteredTreeFindHistory/>
 </viewState>
 </view>
-<view id="org.eclipse.jdt.ui.SourceView" partName="Declaration"/>
+<view id="org.eclipse.ui.views.TaskList" partName="Tasks">
+<viewState PRIMARY_SORT_FIELD="org.eclipse.ui.ide.completionField" categoryGroup="none" markerContentGenerator="org.eclipse.ui.ide.tasksGenerator" partName="Tasks">
+<columnWidths org.eclipse.ui.ide.completionField="40" org.eclipse.ui.ide.descriptionField="350" org.eclipse.ui.ide.locationField="105" org.eclipse.ui.ide.markerType="250" org.eclipse.ui.ide.pathField="140" org.eclipse.ui.ide.priorityField="35" org.eclipse.ui.ide.resourceField="105"/>
+<visible IMemento.internal.id="org.eclipse.ui.ide.completionField"/>
+<visible IMemento.internal.id="org.eclipse.ui.ide.priorityField"/>
+<visible IMemento.internal.id="org.eclipse.ui.ide.descriptionField"/>
+<visible IMemento.internal.id="org.eclipse.ui.ide.resourceField"/>
+<visible IMemento.internal.id="org.eclipse.ui.ide.pathField"/>
+<visible IMemento.internal.id="org.eclipse.ui.ide.locationField"/>
+<visible IMemento.internal.id="org.eclipse.ui.ide.markerType"/>
+</viewState>
+</view>
+<view id="org.eclipse.ui.views.ContentOutline" partName="Outline">
+<viewState/>
+</view>
 <view id="org.eclipse.wst.server.ui.ServersView" partName="Servers"/>
-<view id="org.eclipse.jdt.ui.JavadocView" partName="Javadoc"/>
 </views>
-<perspectives activePart="scala.tools.eclipse.ScalaSourceFileEditor" activePerspective="org.eclipse.jdt.ui.JavaPerspective">
+<perspectives activePart="org.scalaide.worksheet.editors.ScriptEditor" activePerspective="org.scala-ide.sdt.core.perspective">
 <perspective editorAreaTrimState="2" editorAreaVisible="1" fixed="0" version="0.016">
 <descriptor class="org.eclipse.jst.j2ee.internal.perspective.J2EEPerspective" id="org.eclipse.jst.j2ee.J2EEPerspective" label="Java EE"/>
 <alwaysOnActionSet id="org.eclipse.mylyn.context.ui.actionSet"/>
@@ -231,30 +249,21 @@
 <view id="org.eclipse.ui.views.ContentOutline"/>
 <view id="org.eclipse.mylyn.tasks.ui.views.tasks"/>
 <fastViewBars/>
-<layout>
-<mainWindow>
-<info folder="true" part="topLeft">
-<folder activePageID="org.eclipse.ui.navigator.ProjectExplorer" appearance="2" expanded="2">
-<page content="org.eclipse.ui.navigator.ProjectExplorer" label="Project Explorer"/>
+<layout>&#x0A;<mainWindow>&#x0A;<info folder="true" part="topLeft">&#x0A;<folder activePageID="org.eclipse.ui.navigator.ProjectExplorer" appearance="2" expanded="2">&#x0A;<page content="org.eclipse.ui.navigator.ProjectExplorer" label="Project Explorer"/>
 <page content="org.eclipse.ui.views.ResourceNavigator" label="LabelNotFound"/>
 <page content="org.eclipse.jdt.ui.TypeHierarchy" label="LabelNotFound"/>
 <page content="org.eclipse.jdt.ui.PackagesView" label="LabelNotFound"/>
-<presentation id="org.eclipse.ui.presentations.WorkbenchPresentationFactory">
-<part id="0"/>
+<presentation id="org.eclipse.ui.presentations.WorkbenchPresentationFactory">&#x0A;<part id="0"/>
 </presentation>
 </folder>
 </info>
-<info folder="true" part="stickyFolderRight" ratio="0.7495049" ratioLeft="757" ratioRight="253" relationship="2" relative="topLeft">
-<folder appearance="2" expanded="2">
-<page content="org.eclipse.help.ui.HelpView" label="LabelNotFound"/>
+<info folder="true" part="stickyFolderRight" ratio="0.7495049" ratioLeft="757" ratioRight="253" relationship="2" relative="topLeft">&#x0A;<folder appearance="2" expanded="2">&#x0A;<page content="org.eclipse.help.ui.HelpView" label="LabelNotFound"/>
 <page content="org.eclipse.ui.internal.introview" label="LabelNotFound"/>
 <page content="org.eclipse.ui.cheatsheets.views.CheatSheetView" label="LabelNotFound"/>
 </folder>
 </info>
 <info part="org.eclipse.ui.editorss" ratio="0.24950495" ratioLeft="252" ratioRight="758" relationship="2" relative="topLeft"/>
-<info folder="true" part="bottomRight" ratio="0.698908" ratioLeft="448" ratioRight="193" relationship="4" relative="org.eclipse.ui.editorss">
-<folder activePageID="org.eclipse.ui.console.ConsoleView" appearance="2" expanded="2">
-<page content="org.eclipse.ui.views.AllMarkersView" label="Markers"/>
+<info folder="true" part="bottomRight" ratio="0.698908" ratioLeft="448" ratioRight="193" relationship="4" relative="org.eclipse.ui.editorss">&#x0A;<folder activePageID="org.eclipse.ui.console.ConsoleView" appearance="2" expanded="2">&#x0A;<page content="org.eclipse.ui.views.AllMarkersView" label="Markers"/>
 <page content="org.eclipse.ui.views.PropertySheet" label="Properties"/>
 <page content="org.eclipse.wst.server.ui.ServersView" label="Servers"/>
 <page content="org.eclipse.datatools.connectivity.DataSourceExplorerNavigator" label="Data Source Explorer"/>
@@ -265,8 +274,7 @@
 <page content="org.eclipse.ui.views.BookmarkView" label="LabelNotFound"/>
 <page content="org.eclipse.ui.views.ProgressView" label="LabelNotFound"/>
 <page content="org.eclipse.search.ui.views.SearchView" label="LabelNotFound"/>
-<presentation id="org.eclipse.ui.presentations.WorkbenchPresentationFactory">
-<part id="0"/>
+<presentation id="org.eclipse.ui.presentations.WorkbenchPresentationFactory">&#x0A;<part id="0"/>
 <part id="1"/>
 <part id="2"/>
 <part id="3"/>
@@ -275,12 +283,9 @@
 </presentation>
 </folder>
 </info>
-<info folder="true" part="topRight" ratio="0.69920844" ratioLeft="530" ratioRight="228" relationship="2" relative="org.eclipse.ui.editorss">
-<folder activePageID="org.eclipse.ui.views.ContentOutline" appearance="2" expanded="2">
-<page content="org.eclipse.ui.views.ContentOutline" label="Outline"/>
+<info folder="true" part="topRight" ratio="0.69920844" ratioLeft="530" ratioRight="228" relationship="2" relative="org.eclipse.ui.editorss">&#x0A;<folder activePageID="org.eclipse.ui.views.ContentOutline" appearance="2" expanded="2">&#x0A;<page content="org.eclipse.ui.views.ContentOutline" label="Outline"/>
 <page content="org.eclipse.mylyn.tasks.ui.views.tasks" label="Task List"/>
-<presentation id="org.eclipse.ui.presentations.WorkbenchPresentationFactory">
-<part id="0"/>
+<presentation id="org.eclipse.ui.presentations.WorkbenchPresentationFactory">&#x0A;<part id="0"/>
 <part id="1"/>
 </presentation>
 </folder>
@@ -347,46 +352,32 @@
 <hide_toolbar_item_id id="org.eclipse.jdt.ui.actions.OpenProjectWizard"/>
 <hide_toolbar_item_id id="org.eclipse.ui.edit.text.toggleShowSelectedElementOnly"/>
 <view id="org.eclipse.jdt.ui.PackageExplorer"/>
-<fastViewBars>
-<fastViewBar fastViewLocation="1024" id="bottom" orientation="256" selectedTabId="org.eclipse.ui.console.ConsoleView" style="0">
-<fastViews>
-<view id="org.eclipse.ui.views.ProblemView" ratio="0.299458"/>
+<fastViewBars>&#x0A;<fastViewBar fastViewLocation="1024" id="bottom" orientation="256" selectedTabId="org.eclipse.ui.console.ConsoleView" style="0">&#x0A;<fastViews>&#x0A;<view id="org.eclipse.ui.views.ProblemView" ratio="0.2984496"/>
 <view id="org.eclipse.jdt.ui.JavadocView" ratio="0.3"/>
 <view id="org.eclipse.jdt.ui.SourceView" ratio="0.3"/>
-<view id="org.eclipse.ui.console.ConsoleView" ratio="0.299458"/>
+<view id="org.eclipse.ui.console.ConsoleView" ratio="0.2984496"/>
 </fastViews>
 </fastViewBar>
-<fastViewBar fastViewLocation="131072" id="org.eclipse.ui.internal.ViewStack@7bcca235" orientation="512" selectedTabId="org.eclipse.mylyn.tasks.ui.views.tasks" style="0">
-<fastViews>
-<view id="org.eclipse.mylyn.tasks.ui.views.tasks" ratio="0.3"/>
+<fastViewBar fastViewLocation="131072" id="org.eclipse.ui.internal.ViewStack@7bcca235" orientation="512" selectedTabId="org.eclipse.mylyn.tasks.ui.views.tasks" style="0">&#x0A;<fastViews>&#x0A;<view id="org.eclipse.mylyn.tasks.ui.views.tasks" ratio="0.3"/>
 </fastViews>
 </fastViewBar>
 </fastViewBars>
-<layout>
-<mainWindow>
-<info folder="true" part="left">
-<folder activePageID="org.eclipse.jdt.ui.PackageExplorer" appearance="2" expanded="2">
-<page content="org.eclipse.jdt.ui.PackageExplorer" label="Package Explorer"/>
+<layout>&#x0A;<mainWindow>&#x0A;<info folder="true" part="left">&#x0A;<folder activePageID="org.eclipse.jdt.ui.PackageExplorer" appearance="2" expanded="2">&#x0A;<page content="org.eclipse.jdt.ui.PackageExplorer" label="Package Explorer"/>
 <page content="org.eclipse.jdt.ui.TypeHierarchy" label="LabelNotFound"/>
 <page content="org.eclipse.ui.views.ResourceNavigator" label="LabelNotFound"/>
 <page content="org.eclipse.ui.navigator.ProjectExplorer" label="LabelNotFound"/>
 <page content="org.eclipse.jdt.junit.ResultView" label="LabelNotFound"/>
-<presentation id="org.eclipse.ui.presentations.WorkbenchPresentationFactory">
-<part id="0"/>
+<presentation id="org.eclipse.ui.presentations.WorkbenchPresentationFactory">&#x0A;<part id="0"/>
 </presentation>
 </folder>
 </info>
-<info folder="true" part="stickyFolderRight" ratio="0.7497683" ratioLeft="809" ratioRight="270" relationship="2" relative="left">
-<folder appearance="2" expanded="2">
-<page content="org.eclipse.help.ui.HelpView" label="LabelNotFound"/>
+<info folder="true" part="stickyFolderRight" ratio="0.7497683" ratioLeft="809" ratioRight="270" relationship="2" relative="left">&#x0A;<folder appearance="2" expanded="2">&#x0A;<page content="org.eclipse.help.ui.HelpView" label="LabelNotFound"/>
 <page content="org.eclipse.ui.internal.introview" label="LabelNotFound"/>
 <page content="org.eclipse.ui.cheatsheets.views.CheatSheetView" label="LabelNotFound"/>
 </folder>
 </info>
 <info part="org.eclipse.ui.editorss" ratio="0.2493049" ratioLeft="269" ratioRight="810" relationship="2" relative="left"/>
-<info folder="true" part="bottom" ratio="0.74932617" ratioLeft="556" ratioRight="186" relationship="4" relative="org.eclipse.ui.editorss">
-<folder appearance="2" expanded="0">
-<page content="org.eclipse.ui.views.ProblemView" label="LabelNotFound"/>
+<info folder="true" part="bottom" ratio="0.74932617" ratioLeft="556" ratioRight="186" relationship="4" relative="org.eclipse.ui.editorss">&#x0A;<folder appearance="2" expanded="2">&#x0A;<page content="org.eclipse.ui.views.ProblemView" label="LabelNotFound"/>
 <page content="org.eclipse.jdt.ui.JavadocView" label="LabelNotFound"/>
 <page content="org.eclipse.jdt.ui.SourceView" label="LabelNotFound"/>
 <page content="org.eclipse.search.ui.views.SearchView" label="LabelNotFound"/>
@@ -396,17 +387,102 @@
 <presentation id="org.eclipse.ui.presentations.WorkbenchPresentationFactory"/>
 </folder>
 </info>
-<info folder="true" part="org.eclipse.ui.internal.ViewStack@7bcca235" ratio="0.74938273" ratioLeft="607" ratioRight="203" relationship="2" relative="org.eclipse.ui.editorss">
-<folder appearance="2" expanded="0">
-<page content="org.eclipse.mylyn.tasks.ui.views.tasks" label="LabelNotFound"/>
+<info folder="true" part="org.eclipse.ui.internal.ViewStack@7bcca235" ratio="0.74938273" ratioLeft="607" ratioRight="203" relationship="2" relative="org.eclipse.ui.editorss">&#x0A;<folder appearance="2" expanded="2">&#x0A;<page content="org.eclipse.mylyn.tasks.ui.views.tasks" label="LabelNotFound"/>
 <presentation id="org.eclipse.ui.presentations.WorkbenchPresentationFactory"/>
 </folder>
 </info>
-<info folder="true" part="right" ratio="0.5" ratioLeft="278" ratioRight="278" relationship="4" relative="org.eclipse.ui.internal.ViewStack@7bcca235">
-<folder appearance="2" expanded="2">
-<page content="org.eclipse.ui.views.ContentOutline" label="LabelNotFound"/>
+<info folder="true" part="right" ratio="0.5" ratioLeft="278" ratioRight="278" relationship="4" relative="org.eclipse.ui.internal.ViewStack@7bcca235">&#x0A;<folder appearance="2" expanded="2">&#x0A;<page content="org.eclipse.ui.views.ContentOutline" label="LabelNotFound"/>
 <page content="org.eclipse.ui.texteditor.TemplatesView" label="LabelNotFound"/>
 <page content="org.eclipse.ant.ui.views.AntView" label="LabelNotFound"/>
+<presentation id="org.eclipse.ui.presentations.WorkbenchPresentationFactory"/>
+</folder>
+</info>
+</mainWindow>
+</layout>
+</perspective>
+<perspective editorAreaTrimState="2" editorAreaVisible="1" fixed="0" version="0.016">
+<descriptor class="scala.tools.eclipse.PerspectiveFactory" id="org.scala-ide.sdt.core.perspective" label="Scala"/>
+<alwaysOnActionSet id="org.eclipse.mylyn.context.ui.actionSet"/>
+<alwaysOnActionSet id="org.eclipse.mylyn.doc.actionSet"/>
+<alwaysOnActionSet id="org.eclipse.mylyn.tasks.ui.navigation"/>
+<alwaysOnActionSet id="org.eclipse.ui.cheatsheets.actionSet"/>
+<alwaysOnActionSet id="org.eclipse.rse.core.search.searchActionSet"/>
+<alwaysOnActionSet id="org.eclipse.search.searchActionSet"/>
+<alwaysOnActionSet id="org.eclipse.ui.edit.text.actionSet.annotationNavigation"/>
+<alwaysOnActionSet id="org.eclipse.ui.edit.text.actionSet.navigation"/>
+<alwaysOnActionSet id="org.eclipse.ui.edit.text.actionSet.convertLineDelimitersTo"/>
+<alwaysOnActionSet id="org.eclipse.ui.externaltools.ExternalToolsSet"/>
+<alwaysOnActionSet id="org.eclipse.ui.actionSet.keyBindings"/>
+<alwaysOnActionSet id="org.eclipse.ui.actionSet.openFiles"/>
+<alwaysOnActionSet id="scala.texteditor.actionset"/>
+<alwaysOnActionSet id="org.eclipse.debug.ui.launchActionSet"/>
+<alwaysOnActionSet id="org.eclipse.jdt.ui.JavaActionSet"/>
+<alwaysOnActionSet id="org.scala-ide.sdt.ui.scalaMenu.actionSet"/>
+<alwaysOnActionSet id="org.eclipse.debug.ui.breakpointActionSet"/>
+<show_view_action id="org.eclipse.ui.views.ResourceNavigator"/>
+<show_view_action id="org.eclipse.ui.navigator.ProjectExplorer"/>
+<show_view_action id="org.eclipse.ui.views.ContentOutline"/>
+<show_view_action id="org.eclipse.pde.runtime.LogView"/>
+<show_view_action id="org.scala-ide.sdt.core.consoleView"/>
+<new_wizard_action id="org.scala-ide.sdt.core.wizards.newProject"/>
+<new_wizard_action id="org.scala-ide.sdt.core.wizards.newNetProject"/>
+<new_wizard_action id="org.eclipse.jdt.ui.wizards.NewPackageCreationWizard"/>
+<new_wizard_action id="org.scala-ide.sdt.core.wizards.newClass"/>
+<new_wizard_action id="org.scala-ide.sdt.core.wizards.newTrait"/>
+<new_wizard_action id="org.scala-ide.sdt.core.wizards.newObject"/>
+<new_wizard_action id="org.scala-ide.sdt.core.wizards.newPackageObject"/>
+<new_wizard_action id="org.scala-ide.sdt.core.wizards.newApplication"/>
+<new_wizard_action id="org.eclipse.ui.wizards.new.folder"/>
+<new_wizard_action id="org.eclipse.ui.wizards.new.file"/>
+<new_wizard_action id="org.scalaide.worksheet.wizards.newWorksheet"/>
+<perspective_action id="org.eclipse.debug.ui.DebugPerspective"/>
+<hide_toolbar_item_id id="org.eclipse.jdt.ui.actions.OpenProjectWizard"/>
+<hide_toolbar_item_id id="org.eclipse.ui.edit.text.toggleShowSelectedElementOnly"/>
+<view id="org.eclipse.jdt.ui.PackageExplorer"/>
+<view id="org.eclipse.ui.views.ProblemView"/>
+<view id="org.eclipse.ui.views.TaskList"/>
+<view id="org.eclipse.ui.console.ConsoleView"/>
+<fastViewBars>
+<fastViewBar fastViewLocation="131072" id="right" orientation="512" selectedTabId="org.eclipse.ui.views.ContentOutline" style="0">
+<fastViews>
+<view id="org.eclipse.ui.views.ContentOutline" ratio="0.3"/>
+</fastViews>
+</fastViewBar>
+</fastViewBars>
+<layout>
+<mainWindow>
+<info folder="true" part="explorer">
+<folder activePageID="org.eclipse.jdt.ui.PackageExplorer" appearance="2" expanded="2">
+<page content="org.eclipse.jdt.ui.PackageExplorer" label="Package Explorer"/>
+<presentation id="org.eclipse.ui.presentations.WorkbenchPresentationFactory">
+<part id="0"/>
+</presentation>
+</folder>
+</info>
+<info folder="true" part="stickyFolderRight" ratio="0.74943733" ratioLeft="999" ratioRight="334" relationship="2" relative="explorer">
+<folder appearance="2" expanded="2">
+<page content="org.eclipse.help.ui.HelpView" label="LabelNotFound"/>
+<page content="org.eclipse.ui.internal.introview" label="LabelNotFound"/>
+<page content="org.eclipse.ui.cheatsheets.views.CheatSheetView" label="LabelNotFound"/>
+</folder>
+</info>
+<info part="org.eclipse.ui.editorss" ratio="0.20451128" ratioLeft="272" ratioRight="1058" relationship="2" relative="explorer"/>
+<info folder="true" part="problems" ratio="0.749354" ratioLeft="580" ratioRight="194" relationship="4" relative="org.eclipse.ui.editorss">
+<folder activePageID="org.eclipse.ui.console.ConsoleView" appearance="2" expanded="2">
+<page content="org.eclipse.ui.views.ProblemView" label="Problems"/>
+<page content="org.eclipse.ui.views.TaskList" label="Tasks"/>
+<page content="org.eclipse.ui.console.ConsoleView" label="Console"/>
+<page content="org.scala-ide.sdt.core.consoleView:TimeSeriesPackage" label="LabelNotFound"/>
+<presentation id="org.eclipse.ui.presentations.WorkbenchPresentationFactory">
+<part id="0"/>
+<part id="1"/>
+<part id="2"/>
+</presentation>
+</folder>
+</info>
+<info folder="true" part="right" ratio="0.75" ratioLeft="750" ratioRight="250" relationship="2" relative="org.eclipse.ui.editorss">
+<folder appearance="2" expanded="2">
+<page content="org.eclipse.ui.views.ContentOutline" label="LabelNotFound"/>
 <presentation id="org.eclipse.ui.presentations.WorkbenchPresentationFactory"/>
 </folder>
 </info>
@@ -417,161 +493,160 @@
 <workingSets/>
 <navigationHistory>
 <editors>
-<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" path="/TimeSeriesPackage/src/reader/Reader.scala"/>
-<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" path="/TimeSeriesPackage/src/reader/LineHandler.scala"/>
-<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" path="/TimeSeriesPackage/src/EnergyConsumption/EnergyLineHandler.scala"/>
-<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" path="/TimeSeriesPackage/src/reader/EnergyLineHandler.scala"/>
-<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" path="/TimeSeriesPackage/src/reader/Test.scala"/>
+<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" path="/TimeSeriesPackage/src/spark/RegressionTree.scala"/>
+<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.scalaide.worksheet.editors.ScriptEditor" path="/TimeSeriesPackage/src/spark/TestingWorkSheet.sc"/>
+<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" path="/TimeSeriesPackage/src/spark/Node.scala"/>
+<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" path="/TimeSeriesPackage/src/spark/FeatureInfo.scala"/>
 </editors>
-<item historyLabel="Reader.scala" index="0">
-<position info="not_deleted" x="79" y="0"/>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="1239" y="0"/>
 </item>
-<item historyLabel="Reader.scala" index="0">
-<position info="not_deleted" x="638" y="0"/>
+<item historyLabel="FeatureInfo.scala" index="3">
+<position info="not_deleted" x="6150" y="0"/>
 </item>
-<item historyLabel="Reader.scala" index="0">
-<position info="not_deleted" x="79" y="0"/>
-</item>
-<item historyLabel="Reader.scala" index="0">
-<position info="not_deleted" x="638" y="0"/>
-</item>
-<item historyLabel="Reader.scala" index="0">
-<position info="not_deleted" x="638" y="0"/>
-</item>
-<item historyLabel="Reader.scala" index="0">
-<position info="not_deleted" x="644" y="0"/>
-</item>
-<item historyLabel="Reader.scala" index="0">
-<position info="not_deleted" x="638" y="0"/>
-</item>
-<item historyLabel="EnergyLineHandler.scala" index="2">
-<position info="not_deleted" x="0" y="0"/>
-</item>
-<item historyLabel="EnergyLineHandler.scala" index="2">
-<position info="not_deleted" x="40" y="0"/>
-</item>
-<item historyLabel="EnergyLineHandler.scala" index="2">
-<position info="not_deleted" x="0" y="1"/>
-</item>
-<item historyLabel="EnergyLineHandler.scala" index="2">
+<item historyLabel="Node.scala" index="2">
 <position/>
 </item>
-<item historyLabel="EnergyLineHandler.scala" index="2">
-<position info="not_deleted" x="146" y="0"/>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="870" y="0"/>
 </item>
-<item historyLabel="EnergyLineHandler.scala" index="2">
-<position info="not_deleted" x="6" y="17"/>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="801" y="0"/>
 </item>
-<item historyLabel="EnergyLineHandler.scala" index="2">
-<position info="not_deleted" x="143" y="0"/>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="1239" y="0"/>
 </item>
-<item historyLabel="Reader.scala" index="0">
-<position info="not_deleted" x="559" y="0"/>
-</item>
-<item historyLabel="EnergyLineHandler.scala" index="2">
-<position info="not_deleted" x="143" y="0"/>
-</item>
-<item historyLabel="EnergyLineHandler.scala" index="2">
+<item historyLabel="Node.scala" index="2">
 <position/>
 </item>
-<item historyLabel="LineHandler.scala" index="1">
-<position info="not_deleted" x="14" y="0"/>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="1239" y="0"/>
 </item>
-<item historyLabel="EnergyLineHandler.scala" index="2">
-<position info="not_deleted" x="131" y="0"/>
+<item historyLabel="Node.scala" index="2">
+<position/>
 </item>
-<item historyLabel="EnergyLineHandler.scala" index="2">
-<position info="not_deleted" x="6" y="17"/>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="1239" y="0"/>
 </item>
-<item historyLabel="LineHandler.scala" index="1">
-<position info="not_deleted" x="14" y="0"/>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="1200" y="0"/>
 </item>
-<item historyLabel="EnergyLineHandler.scala" index="2">
-<position info="not_deleted" x="146" y="0"/>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="862" y="0"/>
 </item>
-<item historyLabel="LineHandler.scala" index="1">
-<position info="not_deleted" x="14" y="0"/>
+<item historyLabel="Node.scala" index="2">
+<position/>
 </item>
-<item historyLabel="EnergyLineHandler.scala" index="2">
-<position info="not_deleted" x="146" y="0"/>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="1173" y="0"/>
 </item>
-<item historyLabel="LineHandler.scala" index="1">
-<position info="not_deleted" x="14" y="0"/>
+<item historyLabel="Node.scala" index="2">
+<position/>
 </item>
-<item historyLabel="EnergyLineHandler.scala" index="2">
-<position info="not_deleted" x="146" y="0"/>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="1173" y="0"/>
 </item>
-<item historyLabel="EnergyLineHandler.scala" index="2">
-<position info="not_deleted" x="6" y="17"/>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="1275" y="0"/>
 </item>
-<item historyLabel="EnergyLineHandler.scala" index="3">
-<position info="not_deleted" x="6" y="17"/>
+<item historyLabel="Node.scala" index="2">
+<position/>
 </item>
-<item historyLabel="LineHandler.scala" index="1">
-<position info="not_deleted" x="14" y="0"/>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="1276" y="0"/>
 </item>
-<item historyLabel="Reader.scala" index="0">
-<position info="not_deleted" x="559" y="0"/>
+<item historyLabel="TestingWorkSheet.sc" index="1">
+<position/>
 </item>
-<item historyLabel="Test.scala" index="4">
-<position info="not_deleted" x="95" y="0"/>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="1254" y="7"/>
 </item>
-<item historyLabel="Test.scala" index="4">
-<position info="not_deleted" x="140" y="0"/>
+<item historyLabel="Node.scala" index="2">
+<position/>
 </item>
-<item historyLabel="Test.scala" index="4">
-<position info="not_deleted" x="139" y="0"/>
+<item historyLabel="TestingWorkSheet.sc" index="1">
+<position/>
 </item>
-<item historyLabel="Test.scala" index="4">
-<position info="not_deleted" x="252" y="0"/>
+<item historyLabel="Node.scala" index="2">
+<position info="not_deleted" x="727" y="0"/>
 </item>
-<item historyLabel="Test.scala" index="4">
-<position info="not_deleted" x="538" y="0"/>
+<item historyLabel="TestingWorkSheet.sc" index="1">
+<position/>
 </item>
-<item historyLabel="Test.scala" index="4">
-<position info="not_deleted" x="541" y="0"/>
+<item historyLabel="Node.scala" index="2">
+<position info="not_deleted" x="1305" y="0"/>
 </item>
-<item historyLabel="EnergyLineHandler.scala" index="3">
-<position info="not_deleted" x="0" y="0"/>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="1254" y="7"/>
 </item>
-<item historyLabel="Test.scala" index="4">
-<position info="not_deleted" x="541" y="0"/>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="1150" y="0"/>
 </item>
-<item historyLabel="Test.scala" index="4">
-<position info="not_deleted" x="184" y="0"/>
+<item historyLabel="FeatureInfo.scala" index="3">
+<position info="not_deleted" x="6150" y="0"/>
 </item>
-<item historyLabel="Test.scala" index="4">
-<position info="not_deleted" x="245" y="0"/>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="1150" y="0"/>
 </item>
-<item historyLabel="Test.scala" index="4">
-<position info="not_deleted" x="94" y="0"/>
+<item historyLabel="FeatureInfo.scala" index="3">
+<position info="not_deleted" x="3109" y="22"/>
 </item>
-<item historyLabel="Test.scala" index="4">
-<position info="not_deleted" x="67" y="0"/>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="1150" y="0"/>
 </item>
-<item historyLabel="Test.scala" index="4">
-<position info="not_deleted" x="74" y="17"/>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="1150" y="0"/>
 </item>
-<item historyLabel="Test.scala" index="4">
-<position info="not_deleted" x="538" y="0"/>
+<item historyLabel="FeatureInfo.scala" index="3">
+<position info="not_deleted" x="1581" y="5"/>
 </item>
-<item historyLabel="Test.scala" index="4">
-<position info="not_deleted" x="510" y="0"/>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="1029" y="0"/>
 </item>
-<item historyLabel="Test.scala" index="4">
-<position info="not_deleted" x="538" y="0"/>
+<item historyLabel="TestingWorkSheet.sc" index="1">
+<position info="not_deleted" x="2132" y="0"/>
 </item>
-<item historyLabel="Test.scala" index="4">
-<position info="not_deleted" x="166" y="17"/>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="1029" y="0"/>
 </item>
-<item historyLabel="EnergyLineHandler.scala" index="3">
-<position info="not_deleted" x="144" y="0"/>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="1173" y="0"/>
 </item>
-<item historyLabel="Test.scala" index="4">
-<position info="not_deleted" x="517" y="0"/>
+<item historyLabel="FeatureInfo.scala" index="3">
+<position info="not_deleted" x="5155" y="0"/>
 </item>
-<item active="true" historyLabel="EnergyLineHandler.scala" index="3">
-<position info="not_deleted" x="144" y="0"/>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="1173" y="0"/>
+</item>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="862" y="0"/>
+</item>
+<item historyLabel="FeatureInfo.scala" index="3">
+<position info="not_deleted" x="5155" y="0"/>
+</item>
+<item historyLabel="FeatureInfo.scala" index="3">
+<position info="not_deleted" x="4774" y="0"/>
+</item>
+<item historyLabel="FeatureInfo.scala" index="3">
+<position info="not_deleted" x="4776" y="0"/>
+</item>
+<item historyLabel="FeatureInfo.scala" index="3">
+<position info="not_deleted" x="6482" y="0"/>
+</item>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="862" y="0"/>
+</item>
+<item historyLabel="FeatureInfo.scala" index="3">
+<position info="not_deleted" x="5524" y="0"/>
+</item>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="862" y="0"/>
+</item>
+<item historyLabel="RegressionTree.scala" index="0">
+<position info="not_deleted" x="1140" y="0"/>
+</item>
+<item active="true" historyLabel="TestingWorkSheet.sc" index="1">
+<position/>
 </item>
 </navigationHistory>
 <input factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/" type="8"/>
@@ -580,7 +655,7 @@
 <actionBarAdvisor/>
 <trimLayout>
 <trimArea IMemento.internal.id="131072">
-<trimItem IMemento.internal.id="org.eclipse.ui.internal.ViewStack@7bcca235"/>
+<trimItem IMemento.internal.id="right"/>
 </trimArea>
 <trimArea IMemento.internal.id="128">
 <trimItem IMemento.internal.id="org.eclipse.ui.internal.WorkbenchWindow.topBar"/>
@@ -590,22 +665,54 @@
 <trimItem IMemento.internal.id="org.eclise.ui.internal.FastViewBar"/>
 <trimItem IMemento.internal.id="org.eclipse.jface.action.StatusLineManager"/>
 <trimItem IMemento.internal.id="org.eclipse.ui.internal.progress.ProgressRegion"/>
-<trimItem IMemento.internal.id="bottom"/>
 </trimArea>
 </trimLayout>
 </window>
 <mruList>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" name="Test.scala" tooltip="TimeSeriesPackage/src/reader/Test.scala">
-<persistable path="/TimeSeriesPackage/src/reader/Test.scala"/>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" name="List.scala" tooltip="TimeSeriesPackage/src/learnscala1/List.scala">
+<persistable path="/TimeSeriesPackage/src/learnscala1/List.scala"/>
 </file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" name="EnergyLineHandler.scala" tooltip="TimeSeriesPackage/src/EnergyConsumption/EnergyLineHandler.scala">
-<persistable path="/TimeSeriesPackage/src/EnergyConsumption/EnergyLineHandler.scala"/>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.scalaide.worksheet.editors.ScriptEditor" name="test9.sc" tooltip="TimeSeriesPackage/src/learnscala1/test9.sc">
+<persistable path="/TimeSeriesPackage/src/learnscala1/test9.sc"/>
 </file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" name="LineHandler.scala" tooltip="TimeSeriesPackage/src/reader/LineHandler.scala">
-<persistable path="/TimeSeriesPackage/src/reader/LineHandler.scala"/>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.scalaide.worksheet.editors.ScriptEditor" name="test10.sc" tooltip="TimeSeriesPackage/src/learnscala1/test10.sc">
+<persistable path="/TimeSeriesPackage/src/learnscala1/test10.sc"/>
 </file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" name="Reader.scala" tooltip="TimeSeriesPackage/src/reader/Reader.scala">
-<persistable path="/TimeSeriesPackage/src/reader/Reader.scala"/>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.scalaide.worksheet.editors.ScriptEditor" name="test11.sc" tooltip="TimeSeriesPackage/src/learnscala1/test11.sc">
+<persistable path="/TimeSeriesPackage/src/learnscala1/test11.sc"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.scalaide.worksheet.editors.ScriptEditor" name="test4.sc" tooltip="TimeSeriesPackage/src/test/test4.sc">
+<persistable path="/TimeSeriesPackage/src/test/test4.sc"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.scalaide.worksheet.editors.ScriptEditor" name="test5.sc" tooltip="TimeSeriesPackage/src/test/test5.sc">
+<persistable path="/TimeSeriesPackage/src/test/test5.sc"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.scalaide.worksheet.editors.ScriptEditor" name="test6.sc" tooltip="TimeSeriesPackage/src/test/test6.sc">
+<persistable path="/TimeSeriesPackage/src/test/test6.sc"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.scalaide.worksheet.editors.ScriptEditor" name="test7.sc" tooltip="TimeSeriesPackage/src/learnscala1/test7.sc">
+<persistable path="/TimeSeriesPackage/src/learnscala1/test7.sc"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.scalaide.worksheet.editors.ScriptEditor" name="test8.sc" tooltip="TimeSeriesPackage/src/learnscala1/test8.sc">
+<persistable path="/TimeSeriesPackage/src/learnscala1/test8.sc"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.scalaide.worksheet.editors.ScriptEditor" name="test12.sc" tooltip="TimeSeriesPackage/src/learnscala1/test12.sc">
+<persistable path="/TimeSeriesPackage/src/learnscala1/test12.sc"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" name="Node.scala" tooltip="TimeSeriesPackage/src/spark/Node.scala">
+<persistable path="/TimeSeriesPackage/src/spark/Node.scala"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" name="RegressionTree.scala" tooltip="TimeSeriesPackage/src/spark/RegressionTree.scala">
+<persistable path="/TimeSeriesPackage/src/spark/RegressionTree.scala"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" name="Test.scala" tooltip="TimeSeriesPackage/src/spark/Test.scala">
+<persistable path="/TimeSeriesPackage/src/spark/Test.scala"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" name="Test.scala" tooltip="TimeSeriesPackage/src/test/Test.scala">
+<persistable path="/TimeSeriesPackage/src/test/Test.scala"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" name="FeatureInfo.scala" tooltip="TimeSeriesPackage/src/spark/FeatureInfo.scala">
+<persistable path="/TimeSeriesPackage/src/spark/FeatureInfo.scala"/>
 </file>
 </mruList>
 </workbench>

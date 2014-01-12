@@ -1,0 +1,24 @@
+package learnscala1
+
+import test._
+
+object test7 {
+  val list = new Cons(1, new Cons(2, new Cons(3, new Nil)))
+                                                  //> list  : learnscala1.Cons[Int] = learnscala1.Cons@271816d1
+  
+  list.findElementAtIndex(7)                      //> java.util.NoSuchElementException: nil.tail
+                                                  //| 	at learnscala1.Nil.tail(List.scala:25)
+                                                  //| 	at learnscala1.Nil.tail(List.scala:22)
+                                                  //| 	at learnscala1.Cons.findElementIter$1(List.scala:16)
+                                                  //| 	at learnscala1.Cons.findElementAtIndex(List.scala:18)
+                                                  //| 	at learnscala1.test7$$anonfun$main$1.apply$mcV$sp(learnscala1.test7.scal
+                                                  //| a:8)
+                                                  //| 	at org.scalaide.worksheet.runtime.library.WorksheetSupport$$anonfun$$exe
+                                                  //| cute$1.apply$mcV$sp(WorksheetSupport.scala:76)
+                                                  //| 	at org.scalaide.worksheet.runtime.library.WorksheetSupport$.redirected(W
+                                                  //| orksheetSupport.scala:65)
+                                                  //| 	at org.scalaide.worksheet.runtime.library.WorksheetSupport$.$execute(Wor
+                                                  //| ksheetSupport.scala:75)
+                                                  //| 	at learnscala1.test7$.main(learnscala1.test7.scala:5)
+                                                  //| 	at learnscala1.test7.main(learnscala1.test7.scala)
+}

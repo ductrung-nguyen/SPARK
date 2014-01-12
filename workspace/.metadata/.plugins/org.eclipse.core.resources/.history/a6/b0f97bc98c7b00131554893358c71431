@@ -1,0 +1,254 @@
+package spark
+
+import collection.immutable.TreeMap
+import org.apache.spark._
+import org.apache.spark.SparkContext._
+
+object TestingWorkSheet {
+
+    class FeatureAggregateInfo(val index: Int, var xValue: Any, var yValue: Double, var frequency: Int) extends Serializable {
+        def addFrequency(acc: Int): FeatureAggregateInfo = { this.frequency = this.frequency + acc; this }
+        def +(that: FeatureAggregateInfo) = {
+            this.frequency = this.frequency + that.frequency
+            this.yValue = this.yValue + that.yValue
+            this
+        }
+        override def toString() = "Feature(index:" + index + " | xValue:" + xValue +
+            " | yValue" + yValue + " | frequency:" + frequency + ")";
+    }
+
+    case class FeatureSet(file: String, val context: SparkContext) {
+        def this(file: String) = this(file, new SparkContext("local", "SparkContext"))
+        private def loadFromFile() = {
+
+            //val input_fileName: String = "/home/loveallufev/semester_project/input/small_input";
+            val myTagInputFile = context.textFile(file, 1)
+
+            var tags = myTagInputFile.take(2).flatMap(line => line.split(",")).toSeq.toList
+
+            // ( index_of_feature, (Feature_Name, Feature_Type))
+            //( (0,(Temperature,1))  , (1,(Outlook,1)) ,  (2,(Humidity,1)) , ... )
+            (((0 until tags.length / 2) map (index => (tags(index), tags(index + tags.length / 2)))) zip (0 until tags.length))
+                .map(x => FeatureInfo(x._1._1, x._1._2, x._2)).toList
+        }
+
+        lazy val data = loadFromFile()
+        lazy val numberOfFeature = data.length
+    }
+
+    def parseDouble(s: String) = try { Some(s.toDouble) } catch { case _ => None }
+                                                  //> parseDouble: (s: String)Option[Double]
+    def processLine(line: Array[String], numberFeatures: Int, fTypes: Vector[String]): Array[FeatureAggregateInfo] = {
+        val length = numberFeatures
+        var i = -1;
+        parseDouble(line(length - 1)) match {
+            case Some(yValue) => { // check type of Y : if isn't continuos type, return nothing
+                line.map(f => {
+                    i = (i + 1) % length
+                    fTypes(i) match {
+                        case "0" => {	// If this is a numerical feature => parse value from string to double
+                            val v = parseDouble(f);
+                            v match {
+                                case Some(d) => new FeatureAggregateInfo(i, d, yValue, 1)
+                                case None => new FeatureAggregateInfo(-1, f, 0, 0)
+                            }
+                        }
+                        // if this is a categorial feature => return a FeatureAggregateInfo
+                        case "1" => new FeatureAggregateInfo(i, f, yValue, 1)
+                    }
+                })
+            }
+            case None => Array[FeatureAggregateInfo]()
+        }
+
+    }                                             //> processLine: (line: Array[String], numberFeatures: Int, fTypes: Vector[Stri
+                                                  //| ng])Array[spark.TestingWorkSheet.FeatureAggregateInfo]
+
+    val context = new SparkContext("local", "SparkContext")
+                                                  //> 14/01/12 14:23:31 WARN util.Utils: Your hostname, ubuntu resolves to a loop
+                                                  //| back address: 127.0.1.1; using 192.168.190.138 instead (on interface eth0)
+                                                  //| 14/01/12 14:23:31 WARN util.Utils: Set SPARK_LOCAL_IP if you need to bind t
+                                                  //| o another address
+                                                  //| 14/01/12 14:23:32 INFO slf4j.Slf4jEventHandler: Slf4jEventHandler started
+                                                  //| 14/01/12 14:23:32 INFO spark.SparkEnv: Registering BlockManagerMaster
+                                                  //| 14/01/12 14:23:32 INFO storage.MemoryStore: MemoryStore started with capaci
+                                                  //| ty 390.7 MB.
+                                                  //| 14/01/12 14:23:32 INFO storage.DiskStore: Created local directory at /tmp/s
+                                                  //| park-local-20140112142332-ecdb
+                                                  //| 14/01/12 14:23:32 INFO network.ConnectionManager: Bound socket to port 3699
+                                                  //| 3 with id = ConnectionManagerId(ubuntu.local,36993)
+                                                  //| 14/01/12 14:23:32 INFO storage.BlockManagerMaster: Trying to register Block
+                                                  //| Manager
+                                                  //| 14/01/12 14:23:32 INFO storage.BlockManagerMasterActor$BlockManagerInfo: Re
+                                                  //| gistering block manager ubuntu.local:36993 with
+                                                  //| Output exceeds cutoff limit.
+    val dataInputURL = "/home/loveallufev/semester_project/input/small_input2"
+                                                  //> dataInputURL  : java.lang.String = /home/loveallufev/semester_project/input
+                                                  //| /small_input2
+
+    var featureSet = new FeatureSet("/home/loveallufev/semester_project/input/tag_small_input2", context)
+                                                  //> featureSet  : spark.TestingWorkSheet.FeatureSet = FeatureSet(/home/loveallu
+                                                  //| fev/semester_project/input/tag_small_input2,org.apache.spark.SparkContext@6
+                                                  //| afeeb2f)
+		val myDataFile = context.textFile(dataInputURL, 1)
+                                                  //> 14/01/12 14:23:33 INFO storage.MemoryStore: ensureFreeSpace(33736) called w
+                                                  //| ith curMem=0, maxMem=409699614
+                                                  //| 14/01/12 14:23:33 INFO storage.MemoryStore: Block broadcast_0 stored as val
+                                                  //| ues to memory (estimated size 32.9 KB, free 390.7 MB)
+                                                  //| myDataFile  : org.apache.spark.rdd.RDD[String] = MappedRDD[1] at textFile a
+                                                  //| t spark.TestingWorkSheet.scala:69
+    var myDataFile2 = scala.io.Source.fromFile(dataInputURL).getLines.toList
+                                                  //> myDataFile2  : List[String] = List(hot,sunny,high,false,10,0, hot,sunny,hig
+                                                  //| h,true,8,0, hot,overcast,high,false,12,1, cool,rainy,normal,false,14.5,1, c
+                                                  //| ool,overcast,normal,true,6.24,1, mild,sunny,high,false,8,0, cool,sunny,norm
+                                                  //| al,false,30,1, mild,rainy,normal,false,10,1, mild,sunny,normal,true,1,1, mi
+                                                  //| ld,overcast,high,true,7,1, hot,overcast,normal,false,9,1, mild,rainy,high,t
+                                                  //| rue,10,0, cool,rainy,normal,true,5,0, mild,rainy,high,false,7,1)
+
+    var mydata = myDataFile.map(line => line.split(","))
+                                                  //> mydata  : org.apache.spark.rdd.RDD[Array[java.lang.String]] = MappedRDD[2] 
+                                                  //| at map at spark.TestingWorkSheet.scala:72
+    val number_of_features = mydata.take(1)(0).length
+                                                  //> 14/01/12 14:23:33 WARN util.NativeCodeLoader: Unable to load native-hadoop 
+                                                  //| library for your platform... using builtin-java classes where applicable
+                                                  //| 14/01/12 14:23:33 WARN snappy.LoadSnappy: Snappy native library not loaded
+                                                  //| 14/01/12 14:23:33 INFO mapred.FileInputFormat: Total input paths to process
+                                                  //|  : 1
+                                                  //| 14/01/12 14:23:33 INFO spark.SparkContext: Starting job: take at spark.Test
+                                                  //| ingWorkSheet.scala:73
+                                                  //| 14/01/12 14:23:33 INFO scheduler.DAGScheduler: Got job 0 (take at spark.Tes
+                                                  //| tingWorkSheet.scala:73) with 1 output partitions (allowLocal=true)
+                                                  //| 14/01/12 14:23:33 INFO scheduler.DAGScheduler: Final stage: Stage 0 (take a
+                                                  //| t spark.TestingWorkSheet.scala:73)
+                                                  //| 14/01/12 14:23:33 INFO scheduler.DAGScheduler: Parents of final stage: List
+                                                  //| ()
+                                                  //| 14/01/12 14:23:33 INFO scheduler.DAGScheduler: Missing parents: List()
+                                                  //| 14/01/12 14:23:33 INFO scheduler.DAGScheduler: Computing the requested part
+                                                  //| ition locally
+                                                  //| 14/01/12 14:23:33 
+                                                  //| Output exceeds cutoff limit.
+    val featureTypes = Vector[String]() ++ featureSet.data.map(x => x.Type)
+                                                  //> 14/01/12 14:23:33 INFO storage.MemoryStore: ensureFreeSpace(33744) called w
+                                                  //| ith curMem=33736, maxMem=409699614
+                                                  //| 14/01/12 14:23:33 INFO storage.MemoryStore: Block broadcast_1 stored as val
+                                                  //| ues to memory (estimated size 33.0 KB, free 390.7 MB)
+                                                  //| 14/01/12 14:23:33 INFO mapred.FileInputFormat: Total input paths to process
+                                                  //|  : 1
+                                                  //| 14/01/12 14:23:33 INFO spark.SparkContext: Starting job: take at spark.Test
+                                                  //| ingWorkSheet.scala:27
+                                                  //| 14/01/12 14:23:33 INFO scheduler.DAGScheduler: Got job 1 (take at spark.Tes
+                                                  //| tingWorkSheet.scala:27) with 1 output partitions (allowLocal=true)
+                                                  //| 14/01/12 14:23:33 INFO scheduler.DAGScheduler: Final stage: Stage 1 (take a
+                                                  //| t spark.TestingWorkSheet.scala:27)
+                                                  //| 14/01/12 14:23:33 INFO scheduler.DAGScheduler: Parents of final stage: List
+                                                  //| ()
+                                                  //| 14/01/12 14:23:33 INFO scheduler.DAGScheduler: Missing parents: List()
+                                                  //| 14/01/12 14:23:33 INFO scheduler.DAGScheduler: Computing the requested part
+                                                  //| ition locally
+    val temp = mydata.flatMap(processLine(_, number_of_features, featureTypes))
+                                                  //> temp  : org.apache.spark.rdd.RDD[spark.TestingWorkSheet.FeatureAggregateInf
+                                                  //| o] = FlatMappedRDD[5] at flatMap at spark.TestingWorkSheet.scala:75
+
+    println(buildTree(temp)  )                    //> 14/01/12 14:23:33 INFO spark.SparkContext: Starting job: collect at spark.T
+                                                  //| estingWorkSheet.scala:156
+                                                  //| 14/01/12 14:23:33 INFO scheduler.DAGScheduler: Registering RDD 10 (groupBy 
+                                                  //| at spark.TestingWorkSheet.scala:91)
+                                                  //| 14/01/12 14:23:33 INFO scheduler.DAGScheduler: Registering RDD 6 (groupBy a
+                                                  //| t spark.TestingWorkSheet.scala:82)
+                                                  //| 14/01/12 14:23:33 INFO scheduler.DAGScheduler: Got job 2 (collect at spark.
+                                                  //| TestingWorkSheet.scala:156) with 1 output partitions (allowLocal=false)
+                                                  //| 14/01/12 14:23:33 INFO scheduler.DAGScheduler: Final stage: Stage 2 (collec
+                                                  //| t at spark.TestingWorkSheet.scala:156)
+                                                  //| 14/01/12 14:23:33 INFO scheduler.DAGScheduler: Parents of final stage: List
+                                                  //| (Stage 3)
+                                                  //| 14/01/12 14:23:33 INFO scheduler.DAGScheduler: Missing parents: List(Stage 
+                                                  //| 3)
+                                                  //| 14/01/12 14:23:33 INFO scheduler.DAGScheduler: Submitting Stage 4 (MappedRD
+                                                  //| D[6] at groupBy at spark.TestingWorkSheet.scala:82), which has no missing p
+                                                  //| arents
+
+    //def buildTree(data: List[FeatureAggregateInfo]): Unit = {
+		def buildTree(data: org.apache.spark.rdd.RDD[FeatureAggregateInfo]): Any = {
+				
+        var featureValueSorted = (data.groupBy(x => (x.index, x.xValue))
+            .map(x => (new FeatureAggregateInfo(x._1._1, x._1._2, 0, 0)
+                + x._2.foldLeft(new FeatureAggregateInfo(x._1._1, x._1._2, 0, 0))(_ + _)))
+            /*
+                																	Feature(index:2 | xValue:normal | yValue6.0 | frequency:7)
+                                                  Feature(index:1 | xValue:sunny | yValue2.0 | frequency:5)
+                                                  Feature(index:4 | xValue:14.5 | yValue1.0 | frequency:1)
+                                                  Feature(index:2 | xValue:high | yValue3.0 | frequency:7)
+                  */
+            .groupBy(x => x.index)
+            .map(x =>
+            	(x._1, x._2.toList.sortBy(
+            		v => v.xValue match {
+	                case d: Double => d // sort by xValue if this is numerical feature
+	                case s: String => v.yValue / v.frequency // sort by the average of Y if this is categorical value
+            		})
+            	))
+            	)
+            	
+         var splittingPointFeature = featureValueSorted.map(x =>
+            				(	x._1,
+            					x._2(0).xValue match {
+            						case s: String => // process with categorical feature
+            							//x._2.map (f => f)
+	        							{
+	        								var acc: Int = 0; // the number records on the left of current feature
+	        								var currentSumY : Double = 0	// current sum of Y of elements on the left of current feature
+	        								val numRecs : Int = x._2.foldLeft(0)(_ + _.frequency)	// number of records
+	        								val sumY = x._2.foldLeft(0.0)(_ + _.yValue)	// total sum of Y
+	        								var splitPoint: Set[String] = Set[String]()
+	        								var lastFeatureValue = new FeatureAggregateInfo(-1,0,0,0)
+	        								x._2.map(f => {
+	        																
+	        																if (lastFeatureValue.index == -1){
+	        																	lastFeatureValue = f
+	        																	(0.0,0.0)
+	        																}else {
+	        																	currentSumY = currentSumY + lastFeatureValue.yValue
+	        																	splitPoint = splitPoint + lastFeatureValue.xValue.asInstanceOf[String]
+	        																	acc = acc + lastFeatureValue.frequency
+	        																	val weight = currentSumY*currentSumY/acc + (sumY - currentSumY)*(sumY - currentSumY)/(numRecs - acc)
+	        																	lastFeatureValue = f
+	        																	(splitPoint, weight)
+	        																}
+	        															}
+	        												).drop(1).maxBy(_._2) // select the best split
+	        							}
+            						case d: Double => // process with numerical feature
+            						{
+            							var acc: Int = 0	// number of records on the left of the current element
+            							val numRecs : Int = x._2.foldLeft(0)(_ + _.frequency)
+            							var currentSumY : Double = 0
+            							val sumY = x._2.foldLeft(0.0)(_ + _.yValue)
+            							var posibleSplitPoint : Double = 0
+            							var lastFeatureValue = new FeatureAggregateInfo(-1,0,0,0)
+            							x._2.map (f => {
+            							
+            														if (lastFeatureValue.index == -1){
+            															lastFeatureValue = f
+            															(0.0,0.0)
+            														}
+            														else {
+            															posibleSplitPoint = (f.xValue.asInstanceOf[Double] + lastFeatureValue.xValue.asInstanceOf[Double])/2;
+            															currentSumY = currentSumY + lastFeatureValue.yValue
+            															acc = acc + lastFeatureValue.frequency
+            															val weight = currentSumY*currentSumY/acc + (sumY - currentSumY)*(sumY - currentSumY)/(numRecs - acc)
+	        																lastFeatureValue = f
+	        																(posibleSplitPoint, weight)
+            														}
+	            													
+            													}).drop(1).maxBy(_._2)	// select the best split
+            						}	// end of matching double
+            					}	// end of matching xValue
+            				)	// end of pair
+            		).filter(_._1 != number_of_features - 1).collect//.maxBy(_._2._2)	// select best feature to split
+        splittingPointFeature
+        //splittingPointFeature.foreach(x => println(x))
+        //println(tmp.mkString("***"))
+    }                                             //> buildTree: (data: org.apache.spark.rdd.RDD[spark.TestingWorkSheet.FeatureAg
+                                                  //| gregateInfo])Any
+
+}

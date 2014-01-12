@@ -1,0 +1,28 @@
+package test
+
+object test3 {
+    def product(f: Int => Int)(a: Int, b: Int): Int =
+        if (a > b) 1
+        else f(a) * product(f)(a + 1, b)          //> product: (f: Int => Int)(a: Int, b: Int)Int
+
+    product(x => x * x)(3, 4);                    //> res0: Int = 144
+
+    def factorial(n: Int) = product(x => x)(1, n) //> factorial: (n: Int)Int
+
+    factorial(3)                                  //> res1: Int = 6
+
+    def abs(x: Double) = if (x < 0) -x else x     //> abs: (x: Double)Double
+
+    def isCloseEnough(a: Double, b: Double) =
+        if (abs(a - b) / b < 0.0001) true else false
+                                                  //> isCloseEnough: (a: Double, b: Double)Boolean
+
+    def fixedPoint(f: Double => Double)(firstPoint: Int) = {
+        def interation(guess: Double) :Double = {
+            val nextGuess = f(guess)
+            if (isCloseEnough(guess, nextGuess)) guess
+            else interation(nextGuess)
+        }
+    }                                             //> fixedPoint: (f: Double => Double)(firstPoint: Int)Unit
+
+}

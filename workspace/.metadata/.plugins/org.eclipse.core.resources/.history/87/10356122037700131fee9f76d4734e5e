@@ -1,0 +1,26 @@
+package learnscala1
+
+trait List[T] {
+	def isEmpty : Boolean
+	def head : T
+	def tail : List[T]
+	def findElementAtIndex(n : Int) : T;
+}
+
+class Cons[T](val head : T, val tail: List[T]) extends List[T] {
+    def isEmpty = false
+    def findElementAtIndex(n : Int) = {
+        def findElementIter(i : Int) : T{
+            if (i == n) head
+            else findElementIter(i+1)
+        }
+        findElementIter(0)
+    }
+}
+
+class Nil[T] extends List[T] {
+    def isEmpty : Boolean = true
+    def head : Nothing = throw new NoSuchElementException ("nil.head")
+    def tail : Nothing = throw new NoSuchElementException ("nil.tail")
+    def findElementAtIndex(n : Int) : Nothing = throw new IndexOutOfBoundException("index out of bound");
+}

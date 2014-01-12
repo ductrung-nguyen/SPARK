@@ -1,0 +1,10 @@
+package learnscala1
+
+import test._
+
+object test7 {
+  val list = new Cons(1, new Cons(2, new Cons(3, new Nil)))
+  
+  list.findElementAtIndex(0)
+ 	var x = List(1)
+}

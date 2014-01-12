@@ -1,0 +1,18 @@
+package test
+
+object test4 {
+  var x = new Rational(1,2)                       //> x  : test.Rational = 1/2
+  var y = new Rational(2,3)                       //> y  : test.Rational = 2/3
+  x.add(y)                                        //> res0: test.Rational = 7/6
+}
+
+class Rational(x: Int, y : Int) {
+	var numer = x
+	var denom = y
+	
+	def add(that : Rational) : Rational =
+		new Rational(numer*that.denom + denom*that.numer, denom*that.denom)
+		
+	override def toString() =
+			numer + "/" + denom
+}

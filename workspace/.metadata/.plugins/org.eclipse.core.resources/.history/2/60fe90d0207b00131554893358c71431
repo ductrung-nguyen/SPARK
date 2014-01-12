@@ -1,0 +1,87 @@
+package spark
+
+import org.apache.spark._
+import org.apache.spark.SparkContext._
+
+class RegressionTree {
+
+    val context = new SparkContext("local", "SparkContext")
+    val dataInputURL = "/home/loveallufev/semester_project/input/small_input2"
+    var featureSet = new FeatureSet("/home/loveallufev/semester_project/input/tag_small_input2", context)
+
+    val myDataFile = context.textFile(dataInputURL, 1)
+    var myDataFile2 = scala.io.Source.fromFile(dataInputURL).getLines
+
+    var data = myDataFile2.map(line => line.split(","))
+    /*
+    featureSet.data.map(x => x.clear)
+    data.foreach(line => processLine(line))
+    //data.map(line => processLine(line))
+
+    
+    val bestSplitPoints = featureSet.data.map(x => (x, x.getBestSplitPoint)).dropRight(1)
+
+    //bestSplitPoints.foreach(println)
+    val bestSplitPoint = (bestSplitPoints.maxBy(_._2._3))
+    println(bestSplitPoint._1.getPossibleSplitPoints)
+    var root: Node =
+        new NonEmpty(
+            bestSplitPoint._1, // featureInfo
+            bestSplitPoint._2._2 match { // left + right conditions
+                case s: Set[Any] => (s.toString, (bestSplitPoint._1.getPossibleSplitPoints.toSet &~ s).toString)
+            },
+            new Empty(), // left
+            new Empty()) // right
+    println(root.toString)
+	*/
+    println(BuildTree(data))
+    
+    def BuildTree(data: Iterator[Array[String]]): Node = {
+        println("Enter Building tree")
+        if (data.length == 0)
+            new Empty()
+        else {
+            featureSet.data.map(x => x.clear)
+            //data.map(line => { processLine(line) })
+            data.foreach(line => processLine(line))
+            
+            val bestSplitPoints = featureSet.data.map(x => (x, x.getBestSplitPoint)).dropRight(1)
+
+            //bestSplitPoints.foreach(println)
+            val bestSplitPoint = (bestSplitPoints.maxBy(_._2._3))
+            println(bestSplitPoint._1.getPossibleSplitPoints)
+
+            bestSplitPoint._2._2 match {
+                case d: Double => { // This is a splitting point on numerical feature
+                    val left = data filter (x => (x(bestSplitPoint._1.index).toDouble < d))
+                    val right = data filter (x => (x(bestSplitPoint._1.index).toDouble >= d))
+                    new NonEmpty(
+                        bestSplitPoint._1, // featureInfo
+                        bestSplitPoint._2._2 match { // left + right conditions
+                            case s: Set[Any] => (s.toString, (bestSplitPoint._1.getPossibleSplitPoints.toSet &~ s).toString)
+                        },
+                        BuildTree(left), // left
+                        BuildTree(right)
+                        ) // right
+                }
+
+            }
+        }
+
+    }
+	
+    def processLine(fields: Array[String]) : Unit = {
+        var i = 0;
+        var yValue = parseDouble(fields(fields.length - 1))
+        yValue match {
+            case Some(yValueDouble) =>
+                fields.map(f => {
+                    featureSet.data(i).addValue(f, yValueDouble)
+                    i = (i + 1) % featureSet.numberOfFeature
+                })
+            case None => "Invalid data"
+        }
+    }
+
+    private def parseDouble(s: String) = try { Some(s.toDouble) } catch { case _ => None }
+}

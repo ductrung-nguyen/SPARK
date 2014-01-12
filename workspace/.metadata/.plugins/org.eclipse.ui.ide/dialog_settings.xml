@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <section name="Workbench">
+	<list key="installedFeatures">
+	</list>
 	<section name="CleanDialogSettings">
 		<item value="567" key="DIALOG_WIDTH"/>
 		<item value="209" key="DIALOG_Y_ORIGIN"/>

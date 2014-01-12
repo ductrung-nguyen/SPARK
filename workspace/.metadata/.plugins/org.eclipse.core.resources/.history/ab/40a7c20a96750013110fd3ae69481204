@@ -1,0 +1,23 @@
+package test
+
+object test2 {
+
+    def abs(x: Double) = if (x < 0) -x else x
+
+    def sqrt(x: Double) = {
+        def sqrtIter(guess: Double): Double =
+            if (isGoodEnough(guess)) guess
+            else sqrtIter(improveGuess(guess))
+
+        def isGoodEnough(guess: Double) =
+            if (abs(guess * guess - x) / x <= 0.001) true else false
+
+        def improveGuess(guess: Double) =
+            (x / guess + guess) / 2
+
+        sqrtIter(1.0)
+    }
+
+    sqrt(1e60)
+
+}
