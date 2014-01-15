@@ -84,9 +84,20 @@ class RegressionTree {
     private def parseDouble(s: String) = try { Some(s.toDouble) } catch { case _ => None }
 }
 */
-class RegressionTree {
 
-    class FeatureAggregateInfo(val index: Int, var xValue: Any, var yValue: Double, var frequency: Int) extends Serializable {
+import com.esotericsoftware.kryo.Kryo
+import org.apache.spark.serializer.KryoRegistrator
+
+class MyRegistrator extends KryoRegistrator {
+  override def registerClasses(kryo: Kryo) {
+    kryo.register(classOf[RegressionTree])
+    kryo.register(classOf[FeatureAggregateInfo])
+    kryo.register(classOf[SplitPoint])
+    kryo.register(classOf[FeatureSet])
+  }
+}
+
+class FeatureAggregateInfo(val index: Int, var xValue: Any, var yValue: Double, var frequency: Int) extends Serializable {
         def addFrequency(acc: Int): FeatureAggregateInfo = { this.frequency = this.frequency + acc; this }
         def +(that: FeatureAggregateInfo) = {
             this.frequency = this.frequency + that.frequency
@@ -96,13 +107,27 @@ class RegressionTree {
         override def toString() = "Feature(index:" + index + " | xValue:" + xValue +
             " | yValue" + yValue + " | frequency:" + frequency + ")";
     }
-
-    def processLine(line: Array[String], numberFeatures: Int, fTypes: Vector[String]): org.apache.spark.rdd.RDD[FeatureAggregateInfo] = {
+    
+    // index : index of feature
+    // point: the split point of this feature
+    // weight: the weight we get if we apply this splitting
+    class SplitPoint(val index : Int, val point: Any, val weight : Double) extends Serializable {
+    	override def toString = index.toString + "," + point.toString + "," + weight.toString
+    }
+    
+class RegressionTree (dataRDD : RDD[String], metadataRDD: RDD[String], context : SparkContext) extends Serializable {
+    
+    val mydata = dataRDD.map(line => line.split(","))
+	val number_of_features = context.broadcast(mydata.take(1)(0).length)
+	val featureSet = context.broadcast(new FeatureSet(metadataRDD))
+    val featureTypes = context.broadcast(Array[String]() ++ featureSet.value.data.map(x => x.Type))
+    
+    private def processLine(line: Array[String], numberFeatures: Int, fTypes: Array[String]): Array[FeatureAggregateInfo] = {
         val length = numberFeatures
         var i = -1;
         parseDouble(line(length - 1)) match {
             case Some(yValue) => { // check type of Y : if isn't continuos type, return nothing
-                context.parallelize(line.map(f => {
+                line.map(f => {
                     i = (i + 1) % length
                     fTypes(i) match {
                         case "0" => {	// If this is a numerical feature => parse value from string to double
@@ -115,44 +140,35 @@ class RegressionTree {
                         // if this is a categorial feature => return a FeatureAggregateInfo
                         case "1" => new FeatureAggregateInfo(i, f, yValue, 1)
                     }
-                }))
+                })
             }
-            //case None => org.apache.spark.rdd.RDD[FeatureAggregateInfo]()
+            case None => Array[FeatureAggregateInfo]()
         }
-    }      
+    }
+    
 
-    val context = new SparkContext("local", "SparkContext")
-
-    val dataInputURL = "/home/loveallufev/semester_project/input/small_input2"
-
-    var featureSet = new FeatureSet("/home/loveallufev/semester_project/input/tag_small_input2", context)
-    val myDataFile = context.textFile(dataInputURL, 1)
-    var myDataFile2 = scala.io.Source.fromFile(dataInputURL).getLines.toList
-
-    var mydata = myDataFile.map(line => line.split(","))
-    val number_of_features = mydata.take(1)(0).length
-    val featureTypes = Vector[String]() ++ featureSet.data.map(x => x.Type)
-    val aggregateData = mydata.map(processLine(_, number_of_features, featureTypes))
-    println(buildTree(aggregateData))
-
-    def buildTree(data: org.apache.spark.rdd.RDD[org.apache.spark.rdd.RDD[FeatureAggregateInfo]]): Node = {
+    def buildTree(): Node = {
+        def buildIter(rawdata: RDD[Array[String]]) : Node = {
 				
 				//var yFeature = data.map(x => x.filter(y => (y.index == number_of_features - 1)).first ).groupBy(x => x.index).take(1)(0)
 				//if (yFeature._2.length == 1) new Empty(yFeature._2(0).toString)
-				
-        var featureValueSorted = (data.reduce(_ union _)
-        													.groupBy(x => (x.index, x.xValue))
+		var data = rawdata.flatMap(processLine(_, number_of_features.value, featureTypes.value) )
+        //var data = rawdata.flatMap(x => "" ).collect
+        
+        var featureValueSorted = (
+            data
+        	.groupBy(x => (x.index, x.xValue))
             .map(x => (new FeatureAggregateInfo(x._1._1, x._1._2, 0, 0)
                 + x._2.foldLeft(new FeatureAggregateInfo(x._1._1, x._1._2, 0, 0))(_ + _)))
-            /*
-                																	Feature(index:2 | xValue:normal | yValue6.0 | frequency:7)
-                                                  Feature(index:1 | xValue:sunny | yValue2.0 | frequency:5)
-                                                  Feature(index:4 | xValue:14.5 | yValue1.0 | frequency:1)
-                                                  Feature(index:2 | xValue:high | yValue3.0 | frequency:7)
-                  */
+            									// sample results
+                								//Feature(index:2 | xValue:normal | yValue6.0 | frequency:7)
+                                                //Feature(index:1 | xValue:sunny | yValue2.0 | frequency:5)
+                                                //Feature(index:4 | xValue:14.5 | yValue1.0 | frequency:1)
+                                                //Feature(index:2 | xValue:high | yValue3.0 | frequency:7)
+                  
             .groupBy(x => x.index)
             .map(x =>
-            	(x._1, x._2.toList.sortBy(
+            	(x._1, x._2.toSeq.sortBy(
             		v => v.xValue match {
 	                case d: Double => d // sort by xValue if this is numerical feature
 	                case s: String => v.yValue / v.frequency // sort by the average of Y if this is categorical value
@@ -161,7 +177,7 @@ class RegressionTree {
             	)
          
          var splittingPointFeature = featureValueSorted.map(x =>
-            				(	x._1,
+            				//(	x._1,
             					x._2(0).xValue match {
             						case s: String => // process with categorical feature
             							//x._2.map (f => f)
@@ -176,17 +192,17 @@ class RegressionTree {
 	        																
 	        																if (lastFeatureValue.index == -1){
 	        																	lastFeatureValue = f
-	        																	(0.0,0.0)
+	        																	new SplitPoint(x._1, 0.0,0.0)
 	        																}else {
 	        																	currentSumY = currentSumY + lastFeatureValue.yValue
 	        																	splitPoint = splitPoint + lastFeatureValue.xValue.asInstanceOf[String]
 	        																	acc = acc + lastFeatureValue.frequency
 	        																	val weight = currentSumY*currentSumY/acc + (sumY - currentSumY)*(sumY - currentSumY)/(numRecs - acc)
 	        																	lastFeatureValue = f
-	        																	(splitPoint, weight)
+	        																	new SplitPoint(x._1, splitPoint, weight)
 	        																}
 	        															}
-	        												).drop(1).maxBy(_._2) // select the best split
+	        												).drop(1).maxBy(_.weight) // select the best split
 	        							}
             						case d: Double => // process with numerical feature
             						{
@@ -200,7 +216,7 @@ class RegressionTree {
             							
             														if (lastFeatureValue.index == -1){
             															lastFeatureValue = f
-            															(0.0,0.0)
+            															 new SplitPoint(x._1, 0.0,0.0)
             														}
             														else {
             															posibleSplitPoint = (f.xValue.asInstanceOf[Double] + lastFeatureValue.xValue.asInstanceOf[Double])/2;
@@ -208,62 +224,47 @@ class RegressionTree {
             															acc = acc + lastFeatureValue.frequency
             															val weight = currentSumY*currentSumY/acc + (sumY - currentSumY)*(sumY - currentSumY)/(numRecs - acc)
 	        																lastFeatureValue = f
-	        																(posibleSplitPoint, weight)
+	        																new SplitPoint(x._1, posibleSplitPoint, weight)
             														}
 	            													
-            													}).drop(1).maxBy(_._2)	// select the best split
+            													}).drop(1).maxBy(_.weight)	// select the best split
             						}	// end of matching double
             					}	// end of matching xValue
-            				)	// end of pair
-            		).filter(_._1 != number_of_features - 1).collect.toList.maxBy(_._2._2)	// select best feature to split
+            				//)	// end of pair
+            		).
+            		//filter(_._1 != number_of_features - 1).map(x => new SplitPoint(x._1, x._2._1, x._2._2)).collect.maxBy(_.weight)	// select best feature to split
+            		filter(_.index != number_of_features.value - 1).collect.maxBy(_.weight)	// select best feature to split
+           		
+        val chosenFeatureInfo = featureSet.value.data.filter(f => f.index == splittingPointFeature.index).first
         
-        val chosenFeatureInfo = featureSet.data.filter(f => f.index == splittingPointFeature._1)(0)
-        
-        splittingPointFeature match {
-        	case fs : (Int, (Set[String], Double)) => {	// split on categorical feature
-        		//val left = data filter (x => fs._2._1.contains(x(chosenFeatureInfo.index).xValue.asInstanceOf[String]))
-            //val right = data filter (x => !fs._2._1.contains(x(chosenFeatureInfo.index).xValue.asInstanceOf[String]))
-            val left = data.filter {
-            	x => (
-            	x.filter( y => ( y.index == chosenFeatureInfo.index && fs._2._1.contains(y.xValue.asInstanceOf[String]))).count > 0
-            	)
-            }
-            val right = data.filter {
-            	x => (
-            	x.filter( y => ( y.index == chosenFeatureInfo.index && fs._2._1.contains(y.xValue.asInstanceOf[String]))).count == 0
-            	)
-            }
+        splittingPointFeature.point match {
+        	case s : Set[String] => {	// split on categorical feature
+        		val left = rawdata filter (x => s.contains(x(chosenFeatureInfo.index)))
+        		val right = rawdata filter (x => !s.contains(x(chosenFeatureInfo.index)))
+
                     new NonEmpty(
                         chosenFeatureInfo, // featureInfo
-                        (fs._2._1.toString, "Not in " + fs._2._1.toString), // left + right conditions
-                        buildTree(left), // left
-                        buildTree(right) // right
+                        (s.toString, "Not in " + s.toString), // left + right conditions
+                        buildIter(left), // left
+                        buildIter(right) // right
                         )
         	}
-        	case fd : (Int, (Double, Double)) => {	// split on numerical feature
-        		//val left = data filter (x => (x(chosenFeatureInfo.index).xValue.asInstanceOf[Double] < fd._2._1))
-            //val right = data filter (x => (x(chosenFeatureInfo.index).xValue.asInstanceOf[Double] >= fd._2._1))
-            val left = data.filter {
-            	x => (
-            	x.filter( y => ( y.index == chosenFeatureInfo.index &&  y.xValue.asInstanceOf[Double] < fd._2._1)).count > 0
-            	)
-            }
-            val right = data.filter {
-            	x => (
-            	x.filter( y => ( y.index == chosenFeatureInfo.index &&  y.xValue.asInstanceOf[Double] < fd._2._1)).count == 0
-            	)
-            }
+        	case d : Double => {	// split on numerical feature
+        		val left = rawdata filter (x => (x(chosenFeatureInfo.index).toDouble < d))
+        		val right = rawdata filter (x => (x(chosenFeatureInfo.index).toDouble >= d))
+
         		new NonEmpty(
                         chosenFeatureInfo, // featureInfo
-                        (chosenFeatureInfo.Name + " < " + fd._2._1, chosenFeatureInfo.Name + " >= " + fd._2._1), // left + right conditions
-                        buildTree(left), // left
-                        buildTree(right) // right
+                        (chosenFeatureInfo.Name + " < " + d, chosenFeatureInfo.Name + " >= " + d), // left + right conditions
+                        buildIter(left), // left
+                        buildIter(right) // right
                         )
         	}
         	
         }
-        //splittingPointFeature.foreach(x => println(x))
-        //println(tmp.mkString("***"))
+        }
+        buildIter(mydata)
     }
     private def parseDouble(s: String) = try { Some(s.toDouble) } catch { case _ => None }
 }
+

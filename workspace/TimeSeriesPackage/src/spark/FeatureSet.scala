@@ -2,16 +2,14 @@ package spark
 
 import org.apache.spark._
 import org.apache.spark.SparkContext._
+import org.apache.spark.rdd._
 
 // This class will load Feature Set from a file
-case class FeatureSet(file: String, val context: SparkContext) {
-    def this(file: String) = this(file, new SparkContext("local", "SparkContext"))
+class FeatureSet(val metadataRDD : RDD[String]) extends Serializable {
+
     private def loadFromFile() = {
 
-        //val input_fileName: String = "/home/loveallufev/semester_project/input/small_input";
-        val myTagInputFile = context.textFile(file, 1)
-
-        var tags = myTagInputFile.take(2).flatMap(line => line.split(",")).toSeq.toList
+        var tags = metadataRDD.take(2).flatMap(line => line.split(",")).toSeq.toList
 
         // ( index_of_feature, (Feature_Name, Feature_Type))
         //( (0,(Temperature,1))  , (1,(Outlook,1)) ,  (2,(Humidity,1)) , ... )

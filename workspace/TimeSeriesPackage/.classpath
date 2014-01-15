@@ -6,5 +6,6 @@
 	<classpathentry kind="lib" path="lib/spark-assembly_2.9.3-0.8.0-incubating.jar"/>
 	<classpathentry kind="lib" path="lib/spark-assembly-0.8.0-incubating-hadoop1.0.4.jar"/>
 	<classpathentry kind="lib" path="lib/spark-core_2.9.3-0.8.0-incubating.jar"/>
+	<classpathentry kind="lib" path="lib/kryo-2.22.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
