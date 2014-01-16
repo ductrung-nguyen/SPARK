@@ -2485,3 +2485,6 @@ Command-line arguments:  -os linux -ws gtk -arch x86_64 -product org.eclipse.epp
 
 !ENTRY org.scala-ide.sdt.core 1 0 2014-01-15 20:54:19.508
 !MESSAGE InSynth library logger disabled.
+
+!ENTRY org.scala-ide.sdt.core 1 0 2014-01-16 04:36:04.498
+!MESSAGE Timeout while resolving hyperlink in /home/loveallufev/projects/SPARK/workspace/TimeSeriesPackage/src/spark/RegressionTree.scala at: offset: 6759, length: 0
