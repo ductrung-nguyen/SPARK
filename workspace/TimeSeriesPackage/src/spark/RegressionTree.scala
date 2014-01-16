@@ -151,117 +151,136 @@ class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: Sp
         def buildIter(rawdata: RDD[Array[String]]): Node = {
             println("Build branch")
 
-            //var yFeature = data.map(x => x.filter(y => (y.index == number_of_features - 1)).first ).groupBy(x => x.index).take(1)(0)
-            //if (yFeature._2.length == 1) new Empty(yFeature._2(0).toString)
             var data = rawdata.flatMap(processLine(_, number_of_features.value, featureTypes.value))
-            data.collect.sortBy(_.index).foreach(println)
+            //data.collect.sortBy(_.index).foreach(println)
+            var yFeature = data.filter(x => x.index == number_of_features.value - 1).groupBy(_.xValue)
+            //data.filter(x => x.index == number_of_features.value - 1).groupBy(x => (x.xValue)).first	// this RDD always has only one item
+            // yFeature: (Index, [Array of value])
+            yFeature.foreach(println)
+            val yCount = yFeature.count
+            println("YCount = " + yCount)
+            if (yCount < 2)
+                // pre-prune tree :  don't need to expand node if every Y values are the same
+                if (yCount == 1) new Empty(yFeature.first._2(0).yValue.toString) // create leave node with value of Y
+                else new Empty("Unknown")
+            else {
 
-            var featureValueSorted = (
-                data
-                .groupBy(x => (x.index, x.xValue))
-                .map(x => (new FeatureAggregateInfo(x._1._1, x._1._2, 0, 0)
-                    + x._2.foldLeft(new FeatureAggregateInfo(x._1._1, x._1._2, 0, 0))(_ + _)))
-                // sample results
-                //Feature(index:2 | xValue:normal | yValue6.0 | frequency:7)
-                //Feature(index:1 | xValue:sunny | yValue2.0 | frequency:5)
-                //Feature(index:4 | xValue:14.5 | yValue1.0 | frequency:1)
-                //Feature(index:2 | xValue:high | yValue3.0 | frequency:7)
+                var featureValueSorted = (
+                    data
+                    .groupBy(x => (x.index, x.xValue))
+                    .map(x => (new FeatureAggregateInfo(x._1._1, x._1._2, 0, 0)
+                        + x._2.foldLeft(new FeatureAggregateInfo(x._1._1, x._1._2, 0, 0))(_ + _)))
+                    // sample results
+                    //Feature(index:2 | xValue:normal | yValue6.0 | frequency:7)
+                    //Feature(index:1 | xValue:sunny | yValue2.0 | frequency:5)
+                    //Feature(index:4 | xValue:14.5 | yValue1.0 | frequency:1)
+                    //Feature(index:2 | xValue:high | yValue3.0 | frequency:7)
 
-                .groupBy(x => x.index)
-                .map(x =>
-                    (x._1, x._2.toSeq.sortBy(
-                        v => v.xValue match {
-                            case d: Double => d // sort by xValue if this is numerical feature
-                            case s: String => v.yValue / v.frequency // sort by the average of Y if this is categorical value
-                        }))))
+                    .groupBy(x => x.index)
+                    .map(x =>
+                        (x._1, x._2.toSeq.sortBy(
+                            v => v.xValue match {
+                                case d: Double => d // sort by xValue if this is numerical feature
+                                case s: String => v.yValue / v.frequency // sort by the average of Y if this is categorical value
+                            }))))
 
-            var splittingPointFeature = featureValueSorted.map(x =>
-                //(	x._1,
-                x._2(0).xValue match {
-                    case s: String => // process with categorical feature
-                        //x._2.map (f => f)
-                        {
-                            var acc: Int = 0; // the number records on the left of current feature
-                            var currentSumY: Double = 0 // current sum of Y of elements on the left of current feature
-                            val numRecs: Int = x._2.foldLeft(0)(_ + _.frequency) // number of records
-                            val sumY = x._2.foldLeft(0.0)(_ + _.yValue) // total sum of Y
+                var splittingPointFeature = featureValueSorted.map(x =>
+                    //(	x._1,
+                    x._2(0).xValue match {
+                        case s: String => // process with categorical feature
+                            //x._2.map (f => f)
+                            {
+                                var acc: Int = 0; // the number records on the left of current feature
+                                var currentSumY: Double = 0 // current sum of Y of elements on the left of current feature
+                                val numRecs: Int = x._2.foldLeft(0)(_ + _.frequency) // number of records
+                                val sumY = x._2.foldLeft(0.0)(_ + _.yValue) // total sum of Y
 
-                            var splitPoint: Set[String] = Set[String]()
-                            var lastFeatureValue = new FeatureAggregateInfo(-1, 0, 0, 0)
-                            x._2.map(f => {
+                                var splitPoint: Set[String] = Set[String]()
+                                var lastFeatureValue = new FeatureAggregateInfo(-1, 0, 0, 0)
+                                try {
+                                    x._2.map(f => {
 
-                                if (lastFeatureValue.index == -1) {
-                                    lastFeatureValue = f
-                                    new SplitPoint(x._1, 0.0, 0.0)
-                                } else {
-                                    currentSumY = currentSumY + lastFeatureValue.yValue
-                                    splitPoint = splitPoint + lastFeatureValue.xValue.asInstanceOf[String]
-                                    acc = acc + lastFeatureValue.frequency
-                                    val weight = currentSumY * currentSumY / acc + (sumY - currentSumY) * (sumY - currentSumY) / (numRecs - acc)
-                                    lastFeatureValue = f
-                                    new SplitPoint(x._1, splitPoint, weight)
+                                        if (lastFeatureValue.index == -1) {
+                                            lastFeatureValue = f
+                                            new SplitPoint(x._1, Set(), 0.0)
+                                        } else {
+                                            currentSumY = currentSumY + lastFeatureValue.yValue
+                                            splitPoint = splitPoint + lastFeatureValue.xValue.asInstanceOf[String]
+                                            acc = acc + lastFeatureValue.frequency
+                                            val weight = currentSumY * currentSumY / acc + (sumY - currentSumY) * (sumY - currentSumY) / (numRecs - acc)
+                                            lastFeatureValue = f
+                                            new SplitPoint(x._1, splitPoint, weight)
+                                        }
+                                    }).drop(1).maxBy(_.weight) // select the best split
+                                    // we drop 1 element because with Set{A,B,C} , the best split point only be {A} or {A,B}
+                                } catch {
+                                    case e: UnsupportedOperationException => new SplitPoint(-1, 0.0, 0.0)
                                 }
-                            }).drop(1).maxBy(_.weight) // select the best split
+                            }
+                        case d: Double => // process with numerical feature
+                            {
+                                var acc: Int = 0 // number of records on the left of the current element
+                                val numRecs: Int = x._2.foldLeft(0)(_ + _.frequency)
+                                var currentSumY: Double = 0
+                                val sumY = x._2.foldLeft(0.0)(_ + _.yValue)
+                                var posibleSplitPoint: Double = 0
+                                var lastFeatureValue = new FeatureAggregateInfo(-1, 0, 0, 0)
+                                try {
+                                    x._2.map(f => {
+
+                                        if (lastFeatureValue.index == -1) {
+                                            lastFeatureValue = f
+                                            new SplitPoint(x._1, 0.0, 0.0)
+                                        } else {
+                                            posibleSplitPoint = (f.xValue.asInstanceOf[Double] + lastFeatureValue.xValue.asInstanceOf[Double]) / 2;
+                                            currentSumY = currentSumY + lastFeatureValue.yValue
+                                            acc = acc + lastFeatureValue.frequency
+                                            val weight = currentSumY * currentSumY / acc + (sumY - currentSumY) * (sumY - currentSumY) / (numRecs - acc)
+                                            lastFeatureValue = f
+                                            new SplitPoint(x._1, posibleSplitPoint, weight)
+                                        }
+                                    }).drop(1).maxBy(_.weight) // select the best split
+                                } catch {
+                                    case e: UnsupportedOperationException => new SplitPoint(-1, 0.0, 0.0)
+                                }
+                            } // end of matching double
+                    } // end of matching xValue
+                    //)	// end of pair
+                    ).
+                    filter(_.index != number_of_features.value - 1).collect.maxBy(_.weight) // select best feature to split
+
+                println("Best splitpoint:" + splittingPointFeature)
+                if (splittingPointFeature.index == -1) // the chosen feature has only one value
+                    new Empty("Common value")
+                else {
+                    val chosenFeatureInfo = context1.value.broadcast(featureSet.value.data.filter(f => f.index == splittingPointFeature.index).first)
+                    //println(chosenFeatureInfo, splittingPointFeature)
+                    //val left = rawdata.filter(x => Set("sunny", "rainy").contains(x(chosenFeatureInfo.value.index))).count
+
+                    splittingPointFeature.point match {
+                        case s: Set[String] => { // split on categorical feature
+                            val left = rawdata.filter(x => s.contains(x(chosenFeatureInfo.value.index)))
+                            val right = rawdata.filter(x => !s.contains(x(chosenFeatureInfo.value.index)))
+                            new NonEmpty(
+                                chosenFeatureInfo.value, // featureInfo
+                                (s.toString, "Not in " + s.toString), // left + right conditions
+                                buildIter(left), // left
+                                buildIter(right) // right
+                                )
                         }
-                    case d: Double => // process with numerical feature
-                        {
-                            var acc: Int = 0 // number of records on the left of the current element
-                            val numRecs: Int = x._2.foldLeft(0)(_ + _.frequency)
-                            var currentSumY: Double = 0
-                            val sumY = x._2.foldLeft(0.0)(_ + _.yValue)
-                            var posibleSplitPoint: Double = 0
-                            var lastFeatureValue = new FeatureAggregateInfo(-1, 0, 0, 0)
-                            x._2.map(f => {
-
-                                if (lastFeatureValue.index == -1) {
-                                    lastFeatureValue = f
-                                    new SplitPoint(x._1, 0.0, 0.0)
-                                } else {
-                                    posibleSplitPoint = (f.xValue.asInstanceOf[Double] + lastFeatureValue.xValue.asInstanceOf[Double]) / 2;
-                                    currentSumY = currentSumY + lastFeatureValue.yValue
-                                    acc = acc + lastFeatureValue.frequency
-                                    val weight = currentSumY * currentSumY / acc + (sumY - currentSumY) * (sumY - currentSumY) / (numRecs - acc)
-                                    lastFeatureValue = f
-                                    new SplitPoint(x._1, posibleSplitPoint, weight)
-                                }
-
-                            }).drop(1).maxBy(_.weight) // select the best split
-                        } // end of matching double
-                } // end of matching xValue
-                //)	// end of pair
-                ).
-                filter(_.index != number_of_features.value - 1).collect.maxBy(_.weight) // select best feature to split
-            
-            println("Best splitpoint:" + splittingPointFeature)
-            val chosenFeatureInfo = context1.value.broadcast(featureSet.value.data.filter
-                    (f => f.index == splittingPointFeature.index).first)
-            //println(chosenFeatureInfo, splittingPointFeature)
-            //val left = rawdata.filter(x => Set("sunny", "rainy").contains(x(chosenFeatureInfo.value.index))).count
-            
-            
-            splittingPointFeature.point match {
-                case s: Set[String] => { // split on categorical feature
-                    val left = rawdata.filter(x => s.contains(x(chosenFeatureInfo.value.index)))
-                    val right = rawdata.filter(x => !s.contains(x(chosenFeatureInfo.value.index)))
-                    new NonEmpty(
-                        chosenFeatureInfo.value, // featureInfo
-                        (s.toString, "Not in " + s.toString), // left + right conditions
-                        buildIter(left), // left
-                        buildIter(right) // right
-                        )
-                }
-                case d: Double => { // split on numerical feature
-                    val left = rawdata.filter(x => (x(chosenFeatureInfo.value.index).toDouble < d))
-                    val right = rawdata.filter(x => (x(chosenFeatureInfo.value.index).toDouble >= d))
-                    new NonEmpty(
-                        chosenFeatureInfo.value, // featureInfo
-                        (chosenFeatureInfo.value.Name + " < " + d, chosenFeatureInfo.value.Name + " >= " + d), // left + right conditions
-                        buildIter(left), // left
-                        buildIter(right) // right
-                        )
-                }
+                        case d: Double => { // split on numerical feature
+                            val left = rawdata.filter(x => (x(chosenFeatureInfo.value.index).toDouble < d))
+                            val right = rawdata.filter(x => (x(chosenFeatureInfo.value.index).toDouble >= d))
+                            new NonEmpty(
+                                chosenFeatureInfo.value, // featureInfo
+                                (chosenFeatureInfo.value.Name + " < " + d, chosenFeatureInfo.value.Name + " >= " + d), // left + right conditions
+                                buildIter(left), // left
+                                buildIter(right) // right
+                                )
+                        }
+                    } // end of matching
+                } // end of if index == -1
             }
-            
             //new Empty
         }
         buildIter(mydata)
