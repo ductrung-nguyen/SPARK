@@ -1,5 +1,0 @@
-package learnscala1
-
-object test7 {
-  println("Welcome to the Scala worksheet")
-}

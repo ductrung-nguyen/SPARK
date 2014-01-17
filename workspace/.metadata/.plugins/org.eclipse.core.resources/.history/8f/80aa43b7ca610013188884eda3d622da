@@ -1,9 +1,0 @@
-package reader
-
-import org.apache.spark._
-
-class Reader(xsource: String, xdest: String) {
-    val source: String = xsource
-    val dest: String = xdest
-
-}

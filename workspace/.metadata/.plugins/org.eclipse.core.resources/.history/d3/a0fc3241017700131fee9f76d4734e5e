@@ -1,7 +1,0 @@
-package learnscala1
-
-trait List[T] {
-	def isTempty() : Boolean
-	def head : T
-	def tail : List[T]
-}

@@ -1,5 +1,0 @@
-package learnscala1
-
-trait List {
-
-}
