@@ -1,16 +1,6 @@
 package spark
 
 import collection.immutable.TreeMap
-
-/**
- * Classes in this file will be used in OldRegression Tree, 
- * which not use some function like: reduceByKey, groupBy...
- * The idea is:
- * We have two feature categories : Numerical and Categorical 
- * which are presented by NumericalFeature and CategoricalFeature, respectively
- * Each class contain an array of: ()
- */
-
 // xName: Name of feature, such as temperature, weather...
 // xType: type of feature: 0 (Continuous) or 1 (Category)
 abstract class FeatureInfo(val Name: String, val Type: String, val index: Int) {
@@ -58,11 +48,10 @@ case class NumericalFeature(fName: String, fType: String, fIndex: Int) extends F
     override def addValue(value: Any, yValue: Double): Unit = value match {
         case v: Double => {
             insertValue(v, yValue)
+            sumY = sumY + yValue
             
-            sumY = sumY + yValue	// sum of all Y values
             
-            // We may use min, max to generate a list of candidates of split points
-            /*
+            
             if (isInit(0) == 0)  { min = v; isInit = isInit.updated(0, 1) }
             else {
                 min = if (min > v) v else min
@@ -72,7 +61,6 @@ case class NumericalFeature(fName: String, fType: String, fIndex: Int) extends F
             else {
                 max = if (max < v) v else max
             }
-            */
         }
 
         case s: String => {
@@ -84,23 +72,17 @@ case class NumericalFeature(fName: String, fType: String, fIndex: Int) extends F
     }
     
     private def insertValue(value: Double, yValue: Double) = {
-        
-        // we try to insert value of feature in specific ascending order by using binary search to find the best position
         def insertIter(left: Int, right: Int): Unit = {
         
-            // try to find this value in values array
             if (left <= right && right < values.length) {
                 
                 val mid = (left + right) / 2
                 val midElement = values(mid)
-                // if the new value is smaller than the middle value, try to insert it in the left
                 if (value < midElement.fValue) insertIter(left, mid - 1)
-                else if (value > midElement.fValue) insertIter(mid + 1, right)	// else , if greater, insert on the right
-                // if we found this value, it means that this value has already insert before, 
-                // so increase the frequency of it
+                else if (value > midElement.fValue) insertIter(mid + 1, right)
                 else values = values.updated(mid, FeatureValueMap(value, midElement.frequency + 1, midElement.sumYValue + yValue))
-            } 
-            else {	// if this is a completely new value
+            } else {
+                
                 val (leftPart, rightPart) = values.splitAt(left)
                 values = (leftPart :+ FeatureValueMap(value, 1, yValue)) ++ rightPart
             }
@@ -110,13 +92,6 @@ case class NumericalFeature(fName: String, fType: String, fIndex: Int) extends F
         number_of_record = number_of_record + 1
     }
     
-    /** generate approximation of possible split points base on min, max
-    * it's not set of best split point
-    * we can use this way to increase processing time, if needed
-    * in this version, we don't need to use this approach for numerical feature
-    * we will scan for all points Si = (Xi, Xi+1)/2
-    * Xi and Xi+1 is the values of feature
-    */
     override def getPossibleSplitPoints() = {
         if (isInit(0) + isInit(1) == 0) Vector() 
         else if (max > min) ((min to max by (max - min)/MAX_NUMBER_SPLITPOINT) map (i => i))
@@ -135,7 +110,7 @@ case class NumericalFeature(fName: String, fType: String, fIndex: Int) extends F
             
             nL = nL + x.frequency; nR = nR - x.frequency
             if (nR <= 0) nR = 1
-            // if (X[x + 1] > X[i]) always be true, because of ordered insertion
+            // if (X[x + 1] > X[i]) always be true, because of TreeMap
             val NewSplitValue = sumLeft*sumLeft/nL + sumRight*sumRight/nR
             
             if (NewSplitValue > BestTillNow) {
