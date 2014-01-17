@@ -149,18 +149,22 @@ class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: Sp
 
     def buildTree(): Node = {
         def buildIter(rawdata: RDD[Array[String]]): Node = {
-            
-            var data = rawdata.flatMap(processLine(_, number_of_features.value, featureTypes.value)).cache
+            println("Build branch")
+
+            var data = rawdata.flatMap(processLine(_, number_of_features.value, featureTypes.value))
             //data.collect.sortBy(_.index).foreach(println)
-            val yFeature = data.filter(x => x.index == number_of_features.value - 1).groupBy(_.yValue)
+            var yFeature = data.filter(x => x.index == number_of_features.value - 1).groupBy(_.xValue)
+            //data.filter(x => x.index == number_of_features.value - 1).groupBy(x => (x.xValue)).first	// this RDD always has only one item
             // yFeature: (Index, [Array of value])
-            val yCount = yFeature.count	// how many value of Y
+            yFeature.foreach(println)
+            val yCount = yFeature.count
+            println("YCount = " + yCount)
             if (yCount < 2)
                 // pre-prune tree :  don't need to expand node if every Y values are the same
                 if (yCount == 1) new Empty(yFeature.first._2(0).yValue.toString) // create leave node with value of Y
                 else new Empty("Unknown")
             else {
-            	
+
                 var featureValueSorted = (
                     data
                     .groupBy(x => (x.index, x.xValue))
@@ -181,8 +185,10 @@ class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: Sp
                             }))))
 
                 var splittingPointFeature = featureValueSorted.map(x =>
+                    //(	x._1,
                     x._2(0).xValue match {
                         case s: String => // process with categorical feature
+                            //x._2.map (f => f)
                             {
                                 var acc: Int = 0; // the number records on the left of current feature
                                 var currentSumY: Double = 0 // current sum of Y of elements on the left of current feature
@@ -239,16 +245,17 @@ class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: Sp
                                 }
                             } // end of matching double
                     } // end of matching xValue
+                    //)	// end of pair
                     ).
                     filter(_.index != number_of_features.value - 1).collect.maxBy(_.weight) // select best feature to split
 
                 println("Best splitpoint:" + splittingPointFeature)
-                if (splittingPointFeature.index == -1){ // the chosen feature has only one value
-                    val commonValueY = yFeature.reduce((x, y) => if (x._2.length > y._2.length) x else y)._1
-                    new Empty(commonValueY.toString)
-                }
+                if (splittingPointFeature.index == -1) // the chosen feature has only one value
+                    new Empty("Common value")
                 else {
                     val chosenFeatureInfo = context1.value.broadcast(featureSet.value.data.filter(f => f.index == splittingPointFeature.index).first)
+                    //println(chosenFeatureInfo, splittingPointFeature)
+                    //val left = rawdata.filter(x => Set("sunny", "rainy").contains(x(chosenFeatureInfo.value.index))).count
 
                     splittingPointFeature.point match {
                         case s: Set[String] => { // split on categorical feature
@@ -276,7 +283,7 @@ class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: Sp
             }
             //new Empty
         }
-        buildIter(mydata.cache())
+        buildIter(mydata)
     }
     private def parseDouble(s: String) = try { Some(s.toDouble) } catch { case _ => None }
 }

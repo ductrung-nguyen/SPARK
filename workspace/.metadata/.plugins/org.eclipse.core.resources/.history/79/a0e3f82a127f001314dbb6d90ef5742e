@@ -150,9 +150,9 @@ class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: Sp
     def buildTree(): Node = {
         def buildIter(rawdata: RDD[Array[String]]): Node = {
             
-            var data = rawdata.flatMap(processLine(_, number_of_features.value, featureTypes.value)).cache
+            var data = rawdata.flatMap(processLine(_, number_of_features.value, featureTypes.value))
             //data.collect.sortBy(_.index).foreach(println)
-            val yFeature = data.filter(x => x.index == number_of_features.value - 1).groupBy(_.yValue)
+            val yFeature = data.filter(x => x.index == number_of_features.value - 1).groupBy(_.xValue)
             // yFeature: (Index, [Array of value])
             val yCount = yFeature.count	// how many value of Y
             if (yCount < 2)
@@ -160,7 +160,7 @@ class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: Sp
                 if (yCount == 1) new Empty(yFeature.first._2(0).yValue.toString) // create leave node with value of Y
                 else new Empty("Unknown")
             else {
-            	
+
                 var featureValueSorted = (
                     data
                     .groupBy(x => (x.index, x.xValue))
@@ -243,10 +243,8 @@ class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: Sp
                     filter(_.index != number_of_features.value - 1).collect.maxBy(_.weight) // select best feature to split
 
                 println("Best splitpoint:" + splittingPointFeature)
-                if (splittingPointFeature.index == -1){ // the chosen feature has only one value
-                    val commonValueY = yFeature.reduce((x, y) => if (x._2.length > y._2.length) x else y)._1
-                    new Empty(commonValueY.toString)
-                }
+                if (splittingPointFeature.index == -1) // the chosen feature has only one value
+                    new Empty("Common value")
                 else {
                     val chosenFeatureInfo = context1.value.broadcast(featureSet.value.data.filter(f => f.index == splittingPointFeature.index).first)
 
