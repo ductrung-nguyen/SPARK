@@ -63,9 +63,7 @@ object TestingWorkSheet {
             //case None => org.apache.spark.rdd.RDD[FeatureAggregateInfo]()
         }
 
-    };System.out.println("""processLine: (line: Array[String], numberFeatures: Int, fTypes: Vector[String])org.apache.spark.rdd.RDD[machinelearning.TestingWorkSheet.FeatureAggregateInfo]""");$skip(90); 
-
-    
+    };System.out.println("""processLine: (line: Array[String], numberFeatures: Int, fTypes: Vector[String])org.apache.spark.rdd.RDD[machinelearning.TestingWorkSheet.FeatureAggregateInfo]""");$skip(84); 
     
     val dataInputURL = "/home/loveallufev/semester_project/input/small_input2";System.out.println("""dataInputURL  : java.lang.String = """ + $show(dataInputURL ));$skip(107); 
 

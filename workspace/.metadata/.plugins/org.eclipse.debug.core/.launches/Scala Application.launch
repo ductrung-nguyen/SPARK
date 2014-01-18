@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <launchConfiguration type="scala.application">
 <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
-<listEntry value="/TimeSeriesPackage/src/machinelearning/Test.scala"/>
+<listEntry value="/TimeSeriesPackage/src/test/Test.scala"/>
 </listAttribute>
 <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
 <listEntry value="1"/>
 </listAttribute>
-<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="machinelearning.Test"/>
+<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="test.Test"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-cp ./ -classpath ./"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="TimeSeriesPackage"/>
 </launchConfiguration>

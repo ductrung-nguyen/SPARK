@@ -3077,3 +3077,9 @@ org.eclipse.core.internal.resources.ResourceException: Resource '/TimeSeriesPack
 	at org.eclipse.equinox.launcher.Main.main(Main.java:1386)
 !SUBENTRY 1 org.eclipse.core.resources 4 368 2014-01-17 04:44:09.078
 !MESSAGE Resource '/TimeSeriesPackage/src/spark/TestingWorkSheet.sc' does not exist.
+
+!ENTRY org.eclipse.jdt.core 4 0 2014-01-18 02:13:58.411
+!MESSAGE Invalid ZIP archive: data/tag_ bodyfat [in TimeSeriesPackage]
+
+!ENTRY org.eclipse.jst.jsp.core 2 2 2014-01-18 02:14:04.986
+!MESSAGE Taglib Index ZipException: /home/loveallufev/projects/SPARK/workspace/TimeSeriesPackage/data/tag_ bodyfat error in opening zip file
