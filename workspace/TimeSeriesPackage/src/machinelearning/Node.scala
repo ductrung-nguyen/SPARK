@@ -42,6 +42,7 @@ class NonEmpty(xFeature: FeatureInfo, xCondition: Any, xLeft: Node, xRight: Node
         	}) +
         	("".padTo(level, "|")).mkString("    ") + "-(yes)" + ("".padTo(level, "-")).mkString("") + left.toStringWithLevel(level + 1) + "\n" +
             ("".padTo(level, "|")).mkString("    ") + "-(no)" + ("".padTo(level, "-")).mkString("") + right.toStringWithLevel(level + 1)
+            
    private def setToString(s : Set[String]) : String = {
         val s1 = s.toString
         val len = s1.length

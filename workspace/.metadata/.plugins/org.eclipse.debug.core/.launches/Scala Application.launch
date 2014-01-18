@@ -9,4 +9,5 @@
 <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="test.Test"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="-cp ./ -classpath ./"/>
 <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="TimeSeriesPackage"/>
+<stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-Dsun.io.serialization.extendedDebugInfo=true"/>
 </launchConfiguration>

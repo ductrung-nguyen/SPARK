@@ -14,7 +14,7 @@ object Test {
 	    val metadata = context.textFile("/home/loveallufev/semester_project/input/tag_small_input2", 1)
 	
 	    val tree = new RegressionTree(myDataFile, metadata, context)
-	    val stime = System.nanoTime()
+	    var stime = System.nanoTime()
 	    println(tree.buildTree())
 	    println("Build tree in %f second(s)".format((System.nanoTime() - stime)/1e9))
 	    println("Predict:" + tree.predict("cool,sunny,normal,false,30,1".split(",")))
@@ -22,7 +22,10 @@ object Test {
 	    val bodyfat_data = context.textFile("data/bodyfat.csv", 1)
 	    val bodyfat_metadata = context.textFile("data/bodyfat.tag", 1)
 	    val tree2 = new RegressionTree(bodyfat_data, bodyfat_metadata, context,2)
-	    println(tree2.buildTree())
+	    stime = System.nanoTime()
+	    println(tree2.buildTree("DEXfat", Set("age", "waistcirc","hipcirc","elbowbreadth","kneebreadth")))
+	    println("Build tree in %f second(s)".format((System.nanoTime() - stime)/1e9))
+	    
 	    
 	}
 }

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<workbench progressCount="36" version="2.0">
+<workbench progressCount="39" version="2.0">
 <workbenchAdvisor/>
 <window height="768" maximized="true" width="1024" x="65" y="24">
 <fastViewData fastViewLocation="1024"/>
@@ -14,6 +14,7 @@
 <coolItem id="org.eclipse.jdt.ui.JavaElementCreationActionSet" itemType="typeToolBarContribution" x="76" y="30"/>
 <coolItem id="org.eclipse.jst.j2ee.J2eeMainActionSet" itemType="typeToolBarContribution" x="84" y="30"/>
 <coolItem id="org.eclipse.search.searchActionSet" itemType="typeToolBarContribution" x="104" y="30"/>
+<coolItem id="org.eclipse.ui.edit.text.actionSet.presentation" itemType="typeToolBarContribution" x="68" y="30"/>
 <coolItem id="org.eclipse.wst.server.ui.internal.webbrowser.actionSet" itemType="typeToolBarContribution" x="40" y="30"/>
 <coolItem id="org.eclipse.wst.ws.explorer.explorer" itemType="typeToolBarContribution" x="40" y="30"/>
 <coolItem id="org.scala-ide.sdt.core.toolbar" itemType="typeToolBarContribution" x="68" y="30"/>
@@ -23,6 +24,8 @@
 <coolItem id="group.nav" itemType="typeGroupMarker"/>
 <coolItem id="org.eclipse.ui.workbench.navigate" itemType="typeToolBarContribution" x="184" y="30"/>
 <coolItem id="group.editor" itemType="typeGroupMarker"/>
+<coolItem id="org.eclipse.jst.jsp.core.jspsource.source" itemType="typeToolBarContribution" x="-1" y="-1"/>
+<coolItem id="org.eclipse.ui.DefaultTextEditor" itemType="typeToolBarContribution" x="-1" y="-1"/>
 <coolItem id="scala.tools.eclipse.ScalaClassFileEditor" itemType="typePlaceholder" x="-1" y="-1"/>
 <coolItem id="org.scalaide.worksheet.editors.ScriptEditor" itemType="typeToolBarContribution" x="-1" y="-1"/>
 <coolItem id="scala.tools.eclipse.ScalaSourceFileEditor" itemType="typeToolBarContribution" x="-1" y="-1"/>
@@ -41,33 +44,43 @@
 <part id="3"/>
 <part id="4"/>
 <part id="5"/>
+<part id="6"/>
+<part id="7"/>
 </presentation>
 </folder>
 </info>
 </editorArea>
-<editor id="org.scalaide.worksheet.editors.ScriptEditor" name="TestingWorkSheet.sc" partName="TestingWorkSheet.sc" path="/home/loveallufev/projects/SPARK/workspace/TimeSeriesPackage/src/spark/TestingWorkSheet.sc" title="TestingWorkSheet.sc" tooltip="TimeSeriesPackage/src/spark/TestingWorkSheet.sc" workbook="DefaultEditorWorkbook">
-<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/TimeSeriesPackage/src/spark/TestingWorkSheet.sc"/>
-<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="20560" selectionTopPixel="1050"/>
+<editor activePart="true" focus="true" id="scala.tools.eclipse.ScalaSourceFileEditor" name="FeatureInfo.scala" partName="FeatureInfo.scala" path="/home/loveallufev/projects/SPARK/workspace/TimeSeriesPackage/src/machinelearning/FeatureInfo.scala" title="FeatureInfo.scala" tooltip="TimeSeriesPackage/src/machinelearning/FeatureInfo.scala" workbook="DefaultEditorWorkbook">
+<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/TimeSeriesPackage/src/machinelearning/FeatureInfo.scala"/>
+<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="1887" selectionTopPixel="475"/>
 </editor>
-<editor activePart="true" focus="true" id="scala.tools.eclipse.ScalaSourceFileEditor" name="RegressionTree.scala" partName="RegressionTree.scala" path="/home/loveallufev/projects/SPARK/workspace/TimeSeriesPackage/src/spark/RegressionTree.scala" title="RegressionTree.scala" tooltip="TimeSeriesPackage/src/spark/RegressionTree.scala" workbook="DefaultEditorWorkbook">
-<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/TimeSeriesPackage/src/spark/RegressionTree.scala"/>
-<editorState selectionHorizontalPixel="55" selectionLength="0" selectionOffset="11383" selectionTopPixel="3042"/>
+<editor id="scala.tools.eclipse.ScalaSourceFileEditor" name="Node.scala" partName="Node.scala" path="/home/loveallufev/projects/SPARK/workspace/TimeSeriesPackage/src/machinelearning/Node.scala" title="Node.scala" tooltip="TimeSeriesPackage/src/machinelearning/Node.scala" workbook="DefaultEditorWorkbook">
+<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/TimeSeriesPackage/src/machinelearning/Node.scala"/>
+<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="696" selectionTopPixel="0"/>
 </editor>
-<editor id="scala.tools.eclipse.ScalaSourceFileEditor" name="Node.scala" partName="Node.scala" path="/home/loveallufev/projects/SPARK/workspace/TimeSeriesPackage/src/spark/Node.scala" title="Node.scala" tooltip="TimeSeriesPackage/src/spark/Node.scala" workbook="DefaultEditorWorkbook">
-<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/TimeSeriesPackage/src/spark/Node.scala"/>
-<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="13" selectionTopPixel="0"/>
+<editor id="scala.tools.eclipse.ScalaSourceFileEditor" name="RegressionTree.scala" partName="RegressionTree.scala" path="/home/loveallufev/projects/SPARK/workspace/TimeSeriesPackage/src/machinelearning/RegressionTree.scala" title="RegressionTree.scala" tooltip="TimeSeriesPackage/src/machinelearning/RegressionTree.scala" workbook="DefaultEditorWorkbook">
+<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/TimeSeriesPackage/src/machinelearning/RegressionTree.scala"/>
+<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="12142" selectionTopPixel="3188"/>
 </editor>
-<editor id="scala.tools.eclipse.ScalaSourceFileEditor" name="Test.scala" partName="Test.scala" path="/home/loveallufev/projects/SPARK/workspace/TimeSeriesPackage/src/spark/Test.scala" title="Test.scala" tooltip="TimeSeriesPackage/src/spark/Test.scala" workbook="DefaultEditorWorkbook">
-<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/TimeSeriesPackage/src/spark/Test.scala"/>
-<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="559" selectionTopPixel="0"/>
+<editor id="org.eclipse.ui.DefaultTextEditor" name="bodyfat.csv" partName="bodyfat.csv" path="/home/loveallufev/projects/SPARK/workspace/TimeSeriesPackage/data/bodyfat.csv" title="bodyfat.csv" tooltip="TimeSeriesPackage/data/bodyfat.csv" workbook="DefaultEditorWorkbook">
+<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/TimeSeriesPackage/data/bodyfat.csv"/>
+<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="0" selectionTopPixel="0"/>
 </editor>
-<editor id="scala.tools.eclipse.ScalaSourceFileEditor" name="FeatureInfo.scala" partName="FeatureInfo.scala" path="/home/loveallufev/projects/SPARK/workspace/TimeSeriesPackage/src/spark/FeatureInfo.scala" title="FeatureInfo.scala" tooltip="TimeSeriesPackage/src/spark/FeatureInfo.scala" workbook="DefaultEditorWorkbook">
-<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/TimeSeriesPackage/src/spark/FeatureInfo.scala"/>
-<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="5196" selectionTopPixel="3055"/>
+<editor id="scala.tools.eclipse.ScalaSourceFileEditor" name="Test.scala" partName="Test.scala" path="/home/loveallufev/projects/SPARK/workspace/TimeSeriesPackage/src/test/Test.scala" title="Test.scala" tooltip="TimeSeriesPackage/src/test/Test.scala" workbook="DefaultEditorWorkbook">
+<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/TimeSeriesPackage/src/test/Test.scala"/>
+<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="1129" selectionTopPixel="0"/>
 </editor>
-<editor id="scala.tools.eclipse.ScalaSourceFileEditor" name="OldRegressionTree.scala" partName="OldRegressionTree.scala" path="/home/loveallufev/projects/SPARK/workspace/TimeSeriesPackage/src/spark/OldRegressionTree.scala" title="OldRegressionTree.scala" tooltip="TimeSeriesPackage/src/spark/OldRegressionTree.scala" workbook="DefaultEditorWorkbook">
-<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/TimeSeriesPackage/src/spark/OldRegressionTree.scala"/>
-<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="270" selectionTopPixel="0"/>
+<editor id="scala.tools.eclipse.ScalaSourceFileEditor" name="FeatureSet.scala" partName="FeatureSet.scala" path="/home/loveallufev/projects/SPARK/workspace/TimeSeriesPackage/src/machinelearning/FeatureSet.scala" title="FeatureSet.scala" tooltip="TimeSeriesPackage/src/machinelearning/FeatureSet.scala" workbook="DefaultEditorWorkbook">
+<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/TimeSeriesPackage/src/machinelearning/FeatureSet.scala"/>
+<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="1388" selectionTopPixel="80"/>
+</editor>
+<editor id="org.eclipse.jst.jsp.core.jspsource.source" name="bodyfat.tag" partName="bodyfat.tag" path="/home/loveallufev/projects/SPARK/workspace/TimeSeriesPackage/data/bodyfat.tag" title="bodyfat.tag" tooltip="TimeSeriesPackage/data/bodyfat.tag" workbook="DefaultEditorWorkbook">
+<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/TimeSeriesPackage/data/bodyfat.tag"/>
+<editorState selectionHorizontalPixel="0" selectionLength="50" selectionOffset="18" selectionTopPixel="0"/>
+</editor>
+<editor id="org.scalaide.worksheet.editors.ScriptEditor" name="TestingWorkSheet.sc" partName="TestingWorkSheet.sc" path="/home/loveallufev/projects/SPARK/workspace/TimeSeriesPackage/src/test/TestingWorkSheet.sc" title="TestingWorkSheet.sc" tooltip="TimeSeriesPackage/src/test/TestingWorkSheet.sc" workbook="DefaultEditorWorkbook">
+<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/TimeSeriesPackage/src/test/TestingWorkSheet.sc"/>
+<editorState selectionHorizontalPixel="0" selectionLength="247" selectionOffset="5614" selectionTopPixel="1365"/>
 </editor>
 </editors>
 <views>
@@ -102,8 +115,9 @@
 <view id="org.eclipse.ui.views.ProblemView" partName="Problems">
 <viewState PRIMARY_SORT_FIELD="org.eclipse.ui.ide.severityAndDescriptionField" categoryGroup="org.eclipse.ui.ide.severity" markerContentGenerator="org.eclipse.ui.ide.problemsGenerator" partName="Problems">
 <expanded>
-<category IMemento.internal.id="Warnings (4 items)"/>
+<category IMemento.internal.id="Warnings (1 item)"/>
 <category IMemento.internal.id="Errors"/>
+<category IMemento.internal.id="Warnings"/>
 </expanded>
 <columnWidths org.eclipse.ui.ide.locationField="105" org.eclipse.ui.ide.markerType="215" org.eclipse.ui.ide.pathField="140" org.eclipse.ui.ide.resourceField="105" org.eclipse.ui.ide.severityAndDescriptionField="487"/>
 <visible IMemento.internal.id="org.eclipse.ui.ide.severityAndDescriptionField"/>
@@ -167,7 +181,7 @@
 </view>
 <view id="org.eclipse.ui.views.TaskList" partName="Tasks">
 <viewState PRIMARY_SORT_FIELD="org.eclipse.ui.ide.completionField" categoryGroup="none" markerContentGenerator="org.eclipse.ui.ide.tasksGenerator" partName="Tasks">
-<columnWidths org.eclipse.ui.ide.completionField="40" org.eclipse.ui.ide.descriptionField="350" org.eclipse.ui.ide.locationField="105" org.eclipse.ui.ide.markerType="250" org.eclipse.ui.ide.pathField="140" org.eclipse.ui.ide.priorityField="35" org.eclipse.ui.ide.resourceField="105"/>
+<columnWidths org.eclipse.ui.ide.completionField="40" org.eclipse.ui.ide.descriptionField="350" org.eclipse.ui.ide.locationField="105" org.eclipse.ui.ide.markerType="277" org.eclipse.ui.ide.pathField="140" org.eclipse.ui.ide.priorityField="35" org.eclipse.ui.ide.resourceField="105"/>
 <visible IMemento.internal.id="org.eclipse.ui.ide.completionField"/>
 <visible IMemento.internal.id="org.eclipse.ui.ide.priorityField"/>
 <visible IMemento.internal.id="org.eclipse.ui.ide.descriptionField"/>
@@ -468,7 +482,7 @@
 </folder>
 </info>
 <info part="org.eclipse.ui.editorss" ratio="0.20451128" ratioLeft="272" ratioRight="1058" relationship="2" relative="explorer"/>
-<info folder="true" part="problems" ratio="0.7406452" ratioLeft="574" ratioRight="201" relationship="4" relative="org.eclipse.ui.editorss">
+<info folder="true" part="problems" ratio="0.756129" ratioLeft="586" ratioRight="189" relationship="4" relative="org.eclipse.ui.editorss">
 <folder activePageID="org.eclipse.ui.console.ConsoleView" appearance="2" expanded="2">
 <page content="org.eclipse.ui.views.ProblemView" label="Problems"/>
 <page content="org.eclipse.ui.views.TaskList" label="Tasks"/>
@@ -494,161 +508,162 @@
 <workingSets/>
 <navigationHistory>
 <editors>
-<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" path="/TimeSeriesPackage/src/spark/RegressionTree.scala"/>
-<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" path="/TimeSeriesPackage/src/spark/FeatureInfo.scala"/>
-<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" path="/TimeSeriesPackage/src/spark/Test.scala"/>
-<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" path="/TimeSeriesPackage/src/spark/Node.scala"/>
-<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" path="/TimeSeriesPackage/src/spark/OldRegressionTree.scala"/>
+<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" path="/TimeSeriesPackage/src/machinelearning/FeatureInfo.scala"/>
+<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" path="/TimeSeriesPackage/src/machinelearning/RegressionTree.scala"/>
+<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" path="/TimeSeriesPackage/src/machinelearning/FeatureSet.scala"/>
+<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" path="/TimeSeriesPackage/src/test/Test.scala"/>
+<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.jst.jsp.core.jspsource.source" path="/TimeSeriesPackage/data/bodyfat.tag"/>
+<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.scalaide.worksheet.editors.ScriptEditor" path="/TimeSeriesPackage/src/test/TestingWorkSheet.sc"/>
 </editors>
-<item historyLabel="Node.scala" index="3">
-<position info="not_deleted" x="13" y="0"/>
+<item historyLabel="RegressionTree.scala" index="1">
+<position info="not_deleted" x="3819" y="0"/>
 </item>
-<item historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="1456" y="0"/>
+<item historyLabel="Test.scala" index="3">
+<position info="not_deleted" x="1121" y="0"/>
 </item>
-<item historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="6876" y="0"/>
+<item historyLabel="bodyfat.tag" index="4">
+<position info="not_deleted" x="10" y="6"/>
 </item>
-<item historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="6859" y="0"/>
-</item>
-<item historyLabel="RegressionTree.scala" index="0">
+<item historyLabel="FeatureSet.scala" index="2">
 <position/>
 </item>
-<item historyLabel="RegressionTree.scala" index="0">
+<item historyLabel="Test.scala" index="3">
+<position info="not_deleted" x="1121" y="0"/>
+</item>
+<item historyLabel="Test.scala" index="3">
+<position info="not_deleted" x="1120" y="0"/>
+</item>
+<item historyLabel="FeatureSet.scala" index="2">
 <position/>
 </item>
-<item historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="7026" y="0"/>
+<item historyLabel="bodyfat.tag" index="4">
+<position info="not_deleted" x="10" y="6"/>
 </item>
-<item historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="6596" y="0"/>
+<item historyLabel="Test.scala" index="3">
+<position info="not_deleted" x="1120" y="0"/>
 </item>
-<item historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="9611" y="0"/>
+<item historyLabel="bodyfat.tag" index="4">
+<position info="not_deleted" x="18" y="50"/>
 </item>
-<item historyLabel="Test.scala" index="2">
-<position info="not_deleted" x="564" y="0"/>
+<item historyLabel="Test.scala" index="3">
+<position info="not_deleted" x="1120" y="0"/>
 </item>
-<item historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="9611" y="0"/>
+<item historyLabel="RegressionTree.scala" index="1">
+<position info="not_deleted" x="3728" y="0"/>
 </item>
-<item historyLabel="RegressionTree.scala" index="0">
+<item historyLabel="FeatureSet.scala" index="2">
 <position/>
 </item>
-<item historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="3780" y="0"/>
+<item historyLabel="Test.scala" index="3">
+<position info="not_deleted" x="1129" y="0"/>
 </item>
-<item historyLabel="RegressionTree.scala" index="0">
+<item historyLabel="RegressionTree.scala" index="1">
+<position info="not_deleted" x="4002" y="0"/>
+</item>
+<item historyLabel="FeatureInfo.scala" index="0">
 <position/>
 </item>
-<item historyLabel="RegressionTree.scala" index="0">
+<item historyLabel="FeatureInfo.scala" index="0">
 <position/>
 </item>
-<item historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="3780" y="0"/>
-</item>
-<item historyLabel="RegressionTree.scala" index="0">
+<item historyLabel="FeatureInfo.scala" index="0">
 <position/>
 </item>
-<item historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="3780" y="0"/>
-</item>
-<item historyLabel="RegressionTree.scala" index="0">
+<item historyLabel="FeatureInfo.scala" index="0">
 <position/>
 </item>
-<item historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="12999" y="0"/>
-</item>
-<item historyLabel="Test.scala" index="2">
-<position info="not_deleted" x="564" y="0"/>
-</item>
-<item historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="9695" y="0"/>
-</item>
-<item historyLabel="Test.scala" index="2">
-<position info="not_deleted" x="527" y="0"/>
-</item>
-<item historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="1456" y="0"/>
-</item>
-<item historyLabel="Test.scala" index="2">
-<position info="not_deleted" x="559" y="0"/>
-</item>
-<item historyLabel="Node.scala" index="3">
-<position info="not_deleted" x="13" y="0"/>
-</item>
-<item historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="1456" y="0"/>
-</item>
-<item historyLabel="FeatureInfo.scala" index="1">
-<position info="not_deleted" x="5605" y="0"/>
-</item>
-<item historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="1456" y="0"/>
-</item>
-<item historyLabel="OldRegressionTree.scala" index="4">
-<position info="not_deleted" x="0" y="0"/>
-</item>
-<item historyLabel="RegressionTree.scala" index="0">
+<item historyLabel="FeatureSet.scala" index="2">
 <position/>
 </item>
-<item historyLabel="OldRegressionTree.scala" index="4">
-<position info="not_deleted" x="119" y="0"/>
+<item historyLabel="Test.scala" index="3">
+<position info="not_deleted" x="1129" y="0"/>
 </item>
-<item historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="15" y="94"/>
+<item historyLabel="RegressionTree.scala" index="1">
+<position info="not_deleted" x="4002" y="0"/>
 </item>
-<item historyLabel="OldRegressionTree.scala" index="4">
-<position info="not_deleted" x="108" y="0"/>
+<item historyLabel="RegressionTree.scala" index="1">
+<position info="not_deleted" x="2188" y="0"/>
 </item>
-<item historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="15" y="94"/>
+<item historyLabel="RegressionTree.scala" index="1">
+<position info="not_deleted" x="2300" y="0"/>
 </item>
-<item historyLabel="FeatureInfo.scala" index="1">
-<position info="not_deleted" x="177" y="0"/>
-</item>
-<item historyLabel="OldRegressionTree.scala" index="4">
-<position info="not_deleted" x="108" y="0"/>
-</item>
-<item historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="15" y="94"/>
-</item>
-<item historyLabel="OldRegressionTree.scala" index="4">
-<position info="not_deleted" x="108" y="0"/>
-</item>
-<item historyLabel="FeatureInfo.scala" index="1">
-<position info="not_deleted" x="5196" y="0"/>
-</item>
-<item historyLabel="OldRegressionTree.scala" index="4">
-<position info="not_deleted" x="270" y="0"/>
-</item>
-<item historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="15" y="94"/>
-</item>
-<item historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="11708" y="0"/>
-</item>
-<item historyLabel="RegressionTree.scala" index="0">
+<item historyLabel="FeatureSet.scala" index="2">
 <position/>
 </item>
-<item historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="11708" y="0"/>
+<item historyLabel="FeatureSet.scala" index="2">
+<position info="not_deleted" x="969" y="0"/>
 </item>
-<item historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="11689" y="0"/>
+<item historyLabel="FeatureSet.scala" index="2">
+<position info="not_deleted" x="929" y="0"/>
 </item>
-<item historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="20077" y="0"/>
+<item historyLabel="FeatureInfo.scala" index="0">
+<position info="not_deleted" x="1417" y="0"/>
 </item>
-<item historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="20076" y="0"/>
+<item historyLabel="RegressionTree.scala" index="1">
+<position info="not_deleted" x="12142" y="0"/>
 </item>
-<item historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="18521" y="0"/>
+<item historyLabel="FeatureInfo.scala" index="0">
+<position info="not_deleted" x="1416" y="0"/>
 </item>
-<item active="true" historyLabel="RegressionTree.scala" index="0">
-<position info="not_deleted" x="18520" y="0"/>
+<item historyLabel="RegressionTree.scala" index="1">
+<position info="not_deleted" x="12142" y="0"/>
+</item>
+<item historyLabel="FeatureSet.scala" index="2">
+<position info="not_deleted" x="929" y="0"/>
+</item>
+<item historyLabel="FeatureSet.scala" index="2">
+<position info="not_deleted" x="1133" y="255"/>
+</item>
+<item historyLabel="FeatureInfo.scala" index="0">
+<position info="not_deleted" x="1416" y="0"/>
+</item>
+<item historyLabel="FeatureInfo.scala" index="0">
+<position/>
+</item>
+<item historyLabel="FeatureInfo.scala" index="0">
+<position info="not_deleted" x="1632" y="249"/>
+</item>
+<item historyLabel="FeatureSet.scala" index="2">
+<position/>
+</item>
+<item historyLabel="FeatureInfo.scala" index="0">
+<position info="not_deleted" x="1632" y="249"/>
+</item>
+<item historyLabel="TestingWorkSheet.sc" index="5">
+<position/>
+</item>
+<item historyLabel="FeatureInfo.scala" index="0">
+<position info="not_deleted" x="1632" y="249"/>
+</item>
+<item historyLabel="TestingWorkSheet.sc" index="5">
+<position info="not_deleted" x="5614" y="241"/>
+</item>
+<item historyLabel="RegressionTree.scala" index="1">
+<position info="not_deleted" x="12142" y="0"/>
+</item>
+<item historyLabel="FeatureInfo.scala" index="0">
+<position info="not_deleted" x="1881" y="0"/>
+</item>
+<item historyLabel="FeatureSet.scala" index="2">
+<position info="not_deleted" x="1382" y="0"/>
+</item>
+<item historyLabel="FeatureInfo.scala" index="0">
+<position info="not_deleted" x="1881" y="0"/>
+</item>
+<item historyLabel="FeatureInfo.scala" index="0">
+<position info="not_deleted" x="1670" y="0"/>
+</item>
+<item historyLabel="TestingWorkSheet.sc" index="5">
+<position info="not_deleted" x="5614" y="247"/>
+</item>
+<item historyLabel="RegressionTree.scala" index="1">
+<position info="not_deleted" x="12142" y="0"/>
+</item>
+<item historyLabel="FeatureSet.scala" index="2">
+<position info="not_deleted" x="1388" y="0"/>
+</item>
+<item active="true" historyLabel="FeatureInfo.scala" index="0">
+<position info="not_deleted" x="1670" y="0"/>
 </item>
 </navigationHistory>
 <input factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/" type="8"/>
@@ -656,9 +671,6 @@
 <workbenchWindowAdvisor/>
 <actionBarAdvisor/>
 <trimLayout>
-<trimArea IMemento.internal.id="16384">
-<trimItem IMemento.internal.id="explorer"/>
-</trimArea>
 <trimArea IMemento.internal.id="131072">
 <trimItem IMemento.internal.id="right"/>
 </trimArea>
@@ -670,11 +682,46 @@
 <trimItem IMemento.internal.id="org.eclise.ui.internal.FastViewBar"/>
 <trimItem IMemento.internal.id="org.eclipse.jface.action.StatusLineManager"/>
 <trimItem IMemento.internal.id="org.eclipse.ui.internal.progress.ProgressRegion"/>
-<trimItem IMemento.internal.id="problems"/>
 </trimArea>
 </trimLayout>
 </window>
 <mruList>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.scalaide.worksheet.editors.ScriptEditor" name="TestingWorkSheet.sc" tooltip="TimeSeriesPackage/src/test/TestingWorkSheet.sc">
+<persistable path="/TimeSeriesPackage/src/test/TestingWorkSheet.sc"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.jst.jsp.core.jspsource.source" name="bodyfat.tag" tooltip="TimeSeriesPackage/data/bodyfat.tag">
+<persistable path="/TimeSeriesPackage/data/bodyfat.tag"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" name="FeatureSet.scala" tooltip="TimeSeriesPackage/src/machinelearning/FeatureSet.scala">
+<persistable path="/TimeSeriesPackage/src/machinelearning/FeatureSet.scala"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" name="Test.scala" tooltip="TimeSeriesPackage/src/test/Test.scala">
+<persistable path="/TimeSeriesPackage/src/test/Test.scala"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" name="Test.scala" tooltip="TimeSeriesPackage/src/machinelearning/Test.scala">
+<persistable path="/TimeSeriesPackage/src/machinelearning/Test.scala"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.ui.DefaultTextEditor" name=" bodyfat.meta" tooltip="TimeSeriesPackage/src/test/ bodyfat.meta">
+<persistable path="/TimeSeriesPackage/src/test/ bodyfat.meta"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.ui.DefaultTextEditor" name="bodyfat.csv" tooltip="TimeSeriesPackage/src/test/bodyfat.csv">
+<persistable path="/TimeSeriesPackage/src/test/bodyfat.csv"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" name="RegressionTree.scala" tooltip="TimeSeriesPackage/src/machinelearning/RegressionTree.scala">
+<persistable path="/TimeSeriesPackage/src/machinelearning/RegressionTree.scala"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" name="Node.scala" tooltip="TimeSeriesPackage/src/machinelearning/Node.scala">
+<persistable path="/TimeSeriesPackage/src/machinelearning/Node.scala"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" name="FeatureInfo.scala" tooltip="TimeSeriesPackage/src/machinelearning/FeatureInfo.scala">
+<persistable path="/TimeSeriesPackage/src/machinelearning/FeatureInfo.scala"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.scalaide.worksheet.editors.ScriptEditor" name="TestingWorkSheet.sc" tooltip="TimeSeriesPackage/src/machinelearning/TestingWorkSheet.sc">
+<persistable path="/TimeSeriesPackage/src/machinelearning/TestingWorkSheet.sc"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" name="FeatureSet.scala" tooltip="TimeSeriesPackage/src/spark/FeatureSet.scala">
+<persistable path="/TimeSeriesPackage/src/spark/FeatureSet.scala"/>
+</file>
 <file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" name="OldRegressionTree.scala" tooltip="TimeSeriesPackage/src/spark/OldRegressionTree.scala">
 <persistable path="/TimeSeriesPackage/src/spark/OldRegressionTree.scala"/>
 </file>
@@ -683,42 +730,6 @@
 </file>
 <file factoryID="org.eclipse.jdt.ui.ClassFileEditorInputFactory" id="scala.tools.eclipse.ScalaClassFileEditor" name="LinearSeqOptimized.class" tooltip="scala.collection.LinearSeqOptimized">
 <persistable org.eclipse.jdt.ui.ClassFileIdentifier="=TimeSeriesPackage/\/home\/loveallufev\/Downloads\/eclipse3.7\/eclipse\/configuration\/org.eclipse.osgi\/bundles\/766\/1\/.cp\/lib\/scala-library.jar&lt;scala.collection(LinearSeqOptimized.class"/>
-</file>
-<file factoryID="org.eclipse.jdt.ui.ClassFileEditorInputFactory" id="scala.tools.eclipse.ScalaClassFileEditor" name="List.class" tooltip="scala.collection.immutable.List">
-<persistable org.eclipse.jdt.ui.ClassFileIdentifier="=TimeSeriesPackage/\/home\/loveallufev\/Downloads\/eclipse3.7\/eclipse\/configuration\/org.eclipse.osgi\/bundles\/766\/1\/.cp\/lib\/scala-library.jar&lt;scala.collection.immutable(List.class"/>
-</file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" name="Test.scala" tooltip="TimeSeriesPackage/src/spark/Test.scala">
-<persistable path="/TimeSeriesPackage/src/spark/Test.scala"/>
-</file>
-<file factoryID="org.eclipse.jdt.ui.ClassFileEditorInputFactory" id="scala.tools.eclipse.ScalaClassFileEditor" name="ResizableArray.class" tooltip="scala.collection.mutable.ResizableArray">
-<persistable org.eclipse.jdt.ui.ClassFileIdentifier="=TimeSeriesPackage/\/home\/loveallufev\/Downloads\/eclipse3.7\/eclipse\/configuration\/org.eclipse.osgi\/bundles\/766\/1\/.cp\/lib\/scala-library.jar&lt;scala.collection.mutable(ResizableArray.class"/>
-</file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="scala.tools.eclipse.ScalaSourceFileEditor" name="List.scala" tooltip="TimeSeriesPackage/src/learnscala1/List.scala">
-<persistable path="/TimeSeriesPackage/src/learnscala1/List.scala"/>
-</file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.scalaide.worksheet.editors.ScriptEditor" name="test9.sc" tooltip="TimeSeriesPackage/src/learnscala1/test9.sc">
-<persistable path="/TimeSeriesPackage/src/learnscala1/test9.sc"/>
-</file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.scalaide.worksheet.editors.ScriptEditor" name="test10.sc" tooltip="TimeSeriesPackage/src/learnscala1/test10.sc">
-<persistable path="/TimeSeriesPackage/src/learnscala1/test10.sc"/>
-</file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.scalaide.worksheet.editors.ScriptEditor" name="test11.sc" tooltip="TimeSeriesPackage/src/learnscala1/test11.sc">
-<persistable path="/TimeSeriesPackage/src/learnscala1/test11.sc"/>
-</file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.scalaide.worksheet.editors.ScriptEditor" name="test4.sc" tooltip="TimeSeriesPackage/src/test/test4.sc">
-<persistable path="/TimeSeriesPackage/src/test/test4.sc"/>
-</file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.scalaide.worksheet.editors.ScriptEditor" name="test5.sc" tooltip="TimeSeriesPackage/src/test/test5.sc">
-<persistable path="/TimeSeriesPackage/src/test/test5.sc"/>
-</file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.scalaide.worksheet.editors.ScriptEditor" name="test6.sc" tooltip="TimeSeriesPackage/src/test/test6.sc">
-<persistable path="/TimeSeriesPackage/src/test/test6.sc"/>
-</file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.scalaide.worksheet.editors.ScriptEditor" name="test7.sc" tooltip="TimeSeriesPackage/src/learnscala1/test7.sc">
-<persistable path="/TimeSeriesPackage/src/learnscala1/test7.sc"/>
-</file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.scalaide.worksheet.editors.ScriptEditor" name="test8.sc" tooltip="TimeSeriesPackage/src/learnscala1/test8.sc">
-<persistable path="/TimeSeriesPackage/src/learnscala1/test8.sc"/>
 </file>
 </mruList>
 </workbench>

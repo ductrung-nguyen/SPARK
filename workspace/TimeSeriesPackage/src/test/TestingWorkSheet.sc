@@ -40,22 +40,22 @@ object TestingWorkSheet {
     def parseDouble(s: String) = try { Some(s.toDouble) } catch { case _ => None }
                                                   //> parseDouble: (s: String)Option[Double]
     val context = new SparkContext("local", "SparkContext")
-                                                  //> 14/01/17 20:58:40 WARN util.Utils: Your hostname, ubuntu resolves to a loop
-                                                  //| back address: 127.0.1.1; using 192.168.190.144 instead (on interface eth0)
-                                                  //| 14/01/17 20:58:40 WARN util.Utils: Set SPARK_LOCAL_IP if you need to bind t
+                                                  //> 14/01/18 16:54:17 WARN util.Utils: Your hostname, ubuntu resolves to a loop
+                                                  //| back address: 127.0.1.1; using 192.168.190.145 instead (on interface eth0)
+                                                  //| 14/01/18 16:54:17 WARN util.Utils: Set SPARK_LOCAL_IP if you need to bind t
                                                   //| o another address
-                                                  //| 14/01/17 20:58:40 INFO slf4j.Slf4jEventHandler: Slf4jEventHandler started
-                                                  //| 14/01/17 20:58:40 INFO spark.SparkEnv: Registering BlockManagerMaster
-                                                  //| 14/01/17 20:58:41 INFO storage.MemoryStore: MemoryStore started with capaci
+                                                  //| 14/01/18 16:54:18 INFO slf4j.Slf4jEventHandler: Slf4jEventHandler started
+                                                  //| 14/01/18 16:54:18 INFO spark.SparkEnv: Registering BlockManagerMaster
+                                                  //| 14/01/18 16:54:18 INFO storage.MemoryStore: MemoryStore started with capaci
                                                   //| ty 390.7 MB.
-                                                  //| 14/01/17 20:58:41 INFO storage.DiskStore: Created local directory at /tmp/s
-                                                  //| park-local-20140117205841-f5b1
-                                                  //| 14/01/17 20:58:41 INFO network.ConnectionManager: Bound socket to port 6096
-                                                  //| 6 with id = ConnectionManagerId(ubuntu.local,60966)
-                                                  //| 14/01/17 20:58:41 INFO storage.BlockManagerMaster: Trying to register Block
+                                                  //| 14/01/18 16:54:18 INFO storage.DiskStore: Created local directory at /tmp/s
+                                                  //| park-local-20140118165418-9a74
+                                                  //| 14/01/18 16:54:18 INFO network.ConnectionManager: Bound socket to port 3988
+                                                  //| 6 with id = ConnectionManagerId(ubuntu.local,39886)
+                                                  //| 14/01/18 16:54:18 INFO storage.BlockManagerMaster: Trying to register Block
                                                   //| Manager
-                                                  //| 14/01/17 20:58:41 INFO storage.BlockManagerMasterActor$BlockManagerInfo: Re
-                                                  //| gistering block manager ubuntu.local:60966 with
+                                                  //| 14/01/18 16:54:18 INFO storage.BlockManagerMasterActor$BlockManagerInfo: Re
+                                                  //| gistering block manager ubuntu.local:39886 with
                                                   //| Output exceeds cutoff limit.
     
     def processLine(line: Array[String], numberFeatures: Int, fTypes: Vector[String]): org.apache.spark.rdd.RDD[FeatureAggregateInfo] = {
@@ -85,6 +85,23 @@ object TestingWorkSheet {
                                                   //| ng])org.apache.spark.rdd.RDD[machinelearning.TestingWorkSheet.FeatureAggreg
                                                   //| ateInfo]
     
+    var s="\"abcdef\""                            //> s  : java.lang.String = "abcdef"
+    var s1= "abcdef"                              //> s1  : java.lang.String = abcdef
+    s.length                                      //> res0: Int = 8
+    println("(%s)".format(s))                     //> ("abcdef")
+    def normalizeString(s: String) = {
+        var s1 = s.trim
+        val len = s1.length
+        if (len <= 2 || s1 == "\"\"") s1
+        else if (s1(0) == '\"' && s1(len - 1) == '\"')
+            s1.substring(1, len - 1)
+        else s1
+    }                                             //> normalizeString: (s: String)java.lang.String
+    normalizeString(s)                            //> res1: java.lang.String = abcdef
+    s(0)                                          //> res2: Char = "
+    s(6)                                          //> res3: Char = f
+    s                                             //> res4: java.lang.String = "abcdef"
+    
     val dataInputURL = "/home/loveallufev/semester_project/input/small_input2"
                                                   //> dataInputURL  : java.lang.String = /home/loveallufev/semester_project/input
                                                   //| /small_input2
@@ -92,14 +109,14 @@ object TestingWorkSheet {
     var featureSet = new FeatureSet("/home/loveallufev/semester_project/input/tag_small_input2", context)
                                                   //> featureSet  : machinelearning.TestingWorkSheet.FeatureSet = FeatureSet(/hom
                                                   //| e/loveallufev/semester_project/input/tag_small_input2,org.apache.spark.Spar
-                                                  //| kContext@276e2428)
+                                                  //| kContext@6119d61b)
 		val myDataFile = context.textFile(dataInputURL, 1)
-                                                  //> 14/01/17 20:58:42 INFO storage.MemoryStore: ensureFreeSpace(33736) called w
+                                                  //> 14/01/18 16:54:20 INFO storage.MemoryStore: ensureFreeSpace(33736) called w
                                                   //| ith curMem=0, maxMem=409699614
-                                                  //| 14/01/17 20:58:42 INFO storage.MemoryStore: Block broadcast_0 stored as val
+                                                  //| 14/01/18 16:54:20 INFO storage.MemoryStore: Block broadcast_0 stored as val
                                                   //| ues to memory (estimated size 32.9 KB, free 390.7 MB)
                                                   //| myDataFile  : org.apache.spark.rdd.RDD[String] = MappedRDD[1] at textFile a
-                                                  //| t machinelearning.TestingWorkSheet.scala:71
+                                                  //| t machinelearning.TestingWorkSheet.scala:88
     var myDataFile2 = scala.io.Source.fromFile(dataInputURL).getLines.toList
                                                   //> myDataFile2  : List[String] = List(hot,sunny,high,false,10,0, hot,sunny,hig
                                                   //| h,true,8,0, hot,overcast,high,false,12,1, cool,rainy,normal,false,14.5,1, c
@@ -110,66 +127,67 @@ object TestingWorkSheet {
 
     var mydata = myDataFile.map(line => line.split(","))
                                                   //> mydata  : org.apache.spark.rdd.RDD[Array[java.lang.String]] = MappedRDD[2] 
-                                                  //| at map at machinelearning.TestingWorkSheet.scala:74
+                                                  //| at map at machinelearning.TestingWorkSheet.scala:91
     val number_of_features = mydata.take(1)(0).length
-                                                  //> 14/01/17 20:58:42 WARN util.NativeCodeLoader: Unable to load native-hadoop 
+                                                  //> 14/01/18 16:54:20 WARN util.NativeCodeLoader: Unable to load native-hadoop 
                                                   //| library for your platform... using builtin-java classes where applicable
-                                                  //| 14/01/17 20:58:42 WARN snappy.LoadSnappy: Snappy native library not loaded
-                                                  //| 14/01/17 20:58:42 INFO mapred.FileInputFormat: Total input paths to process
+                                                  //| 14/01/18 16:54:20 WARN snappy.LoadSnappy: Snappy native library not loaded
+                                                  //| 14/01/18 16:54:20 INFO mapred.FileInputFormat: Total input paths to process
                                                   //|  : 1
-                                                  //| 14/01/17 20:58:42 INFO spark.SparkContext: Starting job: take at machinelea
-                                                  //| rning.TestingWorkSheet.scala:75
-                                                  //| 14/01/17 20:58:42 INFO scheduler.DAGScheduler: Got job 0 (take at machinele
-                                                  //| arning.TestingWorkSheet.scala:75) with 1 output partitions (allowLocal=true
+                                                  //| 14/01/18 16:54:20 INFO spark.SparkContext: Starting job: take at machinelea
+                                                  //| rning.TestingWorkSheet.scala:92
+                                                  //| 14/01/18 16:54:20 INFO scheduler.DAGScheduler: Got job 0 (take at machinele
+                                                  //| arning.TestingWorkSheet.scala:92) with 1 output partitions (allowLocal=true
                                                   //| )
-                                                  //| 14/01/17 20:58:42 INFO scheduler.DAGScheduler: Final stage: Stage 0 (take a
-                                                  //| t machinelearning.TestingWorkSheet.scala:75)
-                                                  //| 14/01/17 20:58:42 INFO scheduler.DAGScheduler: Parents of final stage: List
+                                                  //| 14/01/18 16:54:20 INFO scheduler.DAGScheduler: Final stage: Stage 0 (take a
+                                                  //| t machinelearning.TestingWorkSheet.scala:92)
+                                                  //| 14/01/18 16:54:20 INFO scheduler.DAGScheduler: Parents of final stage: List
                                                   //| ()
-                                                  //| 14/01/17 20:58:42 INFO scheduler.DAGScheduler: Missing parents: List()
-                                                  //| 14/01/17 20:58:42 INFO scheduler.DAGScheduler: Computing the requested part
+                                                  //| 14/01/18 16:54:20 INFO scheduler.DAGScheduler: Missing parents: List()
+                                                  //| 14/01/18 16:54:20 INFO scheduler.DAGScheduler: Computing the requested part
                                                   //| i
                                                   //| Output exceeds cutoff limit.
     val featureTypes = Vector[String]() ++ featureSet.data.map(x => x.Type)
-                                                  //> 14/01/17 20:58:42 INFO storage.MemoryStore: ensureFreeSpace(33744) called w
+                                                  //> 14/01/18 16:54:20 INFO storage.MemoryStore: ensureFreeSpace(33744) called w
                                                   //| ith curMem=33736, maxMem=409699614
-                                                  //| 14/01/17 20:58:42 INFO storage.MemoryStore: Block broadcast_1 stored as val
+                                                  //| 14/01/18 16:54:20 INFO storage.MemoryStore: Block broadcast_1 stored as val
                                                   //| ues to memory (estimated size 33.0 KB, free 390.7 MB)
-                                                  //| 14/01/17 20:58:42 INFO mapred.FileInputFormat: Total input paths to process
+                                                  //| 14/01/18 16:54:20 INFO mapred.FileInputFormat: Total input paths to process
                                                   //|  : 1
-                                                  //| 14/01/17 20:58:42 INFO spark.SparkContext: Starting job: take at machinelea
+                                                  //| 14/01/18 16:54:20 INFO spark.SparkContext: Starting job: take at machinelea
                                                   //| rning.TestingWorkSheet.scala:28
-                                                  //| 14/01/17 20:58:42 INFO scheduler.DAGScheduler: Got job 1 (take at machinele
+                                                  //| 14/01/18 16:54:20 INFO scheduler.DAGScheduler: Got job 1 (take at machinele
                                                   //| arning.TestingWorkSheet.scala:28) with 1 output partitions (allowLocal=true
                                                   //| )
-                                                  //| 14/01/17 20:58:42 INFO scheduler.DAGScheduler: Final stage: Stage 1 (take a
+                                                  //| 14/01/18 16:54:20 INFO scheduler.DAGScheduler: Final stage: Stage 1 (take a
                                                   //| t machinelearning.TestingWorkSheet.scala:28)
-                                                  //| 14/01/17 20:58:42 INFO scheduler.DAGScheduler: Parents of final stage: List
+                                                  //| 14/01/18 16:54:20 INFO scheduler.DAGScheduler: Parents of final stage: List
                                                   //| ()
-                                                  //| 14/01/17 20:58:42 INFO scheduler.DAGScheduler: Missing parents: List()
-                                                  //| 14/01/17 20:58:42 INFO scheduler.DAGScheduler: Computing the
+                                                  //| 14/01/18 16:54:20 INFO scheduler.DAGScheduler: Missing parents: List()
+                                                  //| 14/01/18 16:54:20 INFO scheduler.DAGScheduler: Computing the
                                                   //| Output exceeds cutoff limit.
     val aggregateData = mydata.map(processLine(_, number_of_features, featureTypes))
                                                   //> aggregateData  : org.apache.spark.rdd.RDD[org.apache.spark.rdd.RDD[machinel
                                                   //| earning.TestingWorkSheet.FeatureAggregateInfo]] = MappedRDD[5] at map at ma
-                                                  //| chinelearning.TestingWorkSheet.scala:77
-    println(buildTree(aggregateData))             //> 14/01/17 20:58:42 INFO spark.SparkContext: Starting job: take at machinelea
-                                                  //| rning.TestingWorkSheet.scala:84
-                                                  //| 14/01/17 20:58:42 INFO scheduler.DAGScheduler: Registering RDD 7 (groupBy a
-                                                  //| t machinelearning.TestingWorkSheet.scala:84)
-                                                  //| 14/01/17 20:58:42 INFO scheduler.DAGScheduler: Got job 2 (take at machinele
-                                                  //| arning.TestingWorkSheet.scala:84) with 1 output partitions (allowLocal=true
-                                                  //| )
-                                                  //| 14/01/17 20:58:42 INFO scheduler.DAGScheduler: Final stage: Stage 2 (take a
-                                                  //| t machinelearning.TestingWorkSheet.scala:84)
-                                                  //| 14/01/17 20:58:42 INFO scheduler.DAGScheduler: Parents of final stage: List
+                                                  //| chinelearning.TestingWorkSheet.scala:94
+    println(buildTree(aggregateData))             //> 14/01/18 16:54:20 INFO spark.SparkContext: Starting job: take at machinelea
+                                                  //| rning.TestingWorkSheet.scala:101
+                                                  //| 14/01/18 16:54:20 INFO scheduler.DAGScheduler: Registering RDD 7 (groupBy a
+                                                  //| t machinelearning.TestingWorkSheet.scala:101)
+                                                  //| 14/01/18 16:54:20 INFO scheduler.DAGScheduler: Got job 2 (take at machinele
+                                                  //| arning.TestingWorkSheet.scala:101) with 1 output partitions (allowLocal=tru
+                                                  //| e)
+                                                  //| 14/01/18 16:54:20 INFO scheduler.DAGScheduler: Final stage: Stage 2 (take a
+                                                  //| t machinelearning.TestingWorkSheet.scala:101)
+                                                  //| 14/01/18 16:54:20 INFO scheduler.DAGScheduler: Parents of final stage: List
                                                   //| (Stage 3)
-                                                  //| 14/01/17 20:58:42 INFO scheduler.DAGScheduler: Missing parents: List(Stage 
+                                                  //| 14/01/18 16:54:20 INFO scheduler.DAGScheduler: Missing parents: List(Stage 
                                                   //| 3)
-                                                  //| 14/01/17 20:58:42 INFO scheduler.DAGScheduler: Submitting Stage 3 (MappedRD
-                                                  //| D[7] at groupBy at machinelearning.TestingWorkSheet.scala:84), which has no
-                                                  //|  missing parents
-                                                  //| 14/01/17 20:58:42 INFO scheduler.DAGScheduler: Failed to run take at machin
+                                                  //| 14/01/18 16:54:20 INFO scheduler.DAGScheduler: Submitting Stage 3 (MappedRD
+                                                  //| D[7] at groupBy at machinelearning.TestingWorkSheet.scala:101), which has n
+                                                  //| o missing parents
+                                                  //| 14/01/18 16:54:20 INFO scheduler.DAGScheduler: Failed to run take at mac
+                                                  //| Output exceeds cutoff limit.
 
     //def buildTree(data: List[FeatureAggregateInfo]): Unit = {
 
