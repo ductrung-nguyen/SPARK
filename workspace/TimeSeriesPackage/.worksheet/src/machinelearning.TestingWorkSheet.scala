@@ -63,24 +63,9 @@ object TestingWorkSheet {
             //case None => org.apache.spark.rdd.RDD[FeatureAggregateInfo]()
         }
 
-    };System.out.println("""processLine: (line: Array[String], numberFeatures: Int, fTypes: Vector[String])org.apache.spark.rdd.RDD[machinelearning.TestingWorkSheet.FeatureAggregateInfo]""");$skip(28); 
+    };System.out.println("""processLine: (line: Array[String], numberFeatures: Int, fTypes: Vector[String])org.apache.spark.rdd.RDD[machinelearning.TestingWorkSheet.FeatureAggregateInfo]""");$skip(22); val res$0 = 
     
-    var s="\"abcdef\"";System.out.println("""s  : java.lang.String = """ + $show(s ));$skip(21); 
-    var s1= "abcdef";System.out.println("""s1  : java.lang.String = """ + $show(s1 ));$skip(13); val res$0 = 
-    s.length;System.out.println("""res0: Int = """ + $show(res$0));$skip(30); 
-    println("(%s)".format(s));$skip(246); 
-    def normalizeString(s: String) = {
-        var s1 = s.trim
-        val len = s1.length
-        if (len <= 2 || s1 == "\"\"") s1
-        else if (s1(0) == '\"' && s1(len - 1) == '\"')
-            s1.substring(1, len - 1)
-        else s1
-    };System.out.println("""normalizeString: (s: String)java.lang.String""");$skip(23); val res$1 = 
-    normalizeString(s);System.out.println("""res1: java.lang.String = """ + $show(res$1));$skip(9); val res$2 = 
-    s(0);System.out.println("""res2: Char = """ + $show(res$2));$skip(9); val res$3 = 
-    s(6);System.out.println("""res3: Char = """ + $show(res$3));$skip(6); val res$4 = 
-    s;System.out.println("""res4: java.lang.String = """ + $show(res$4));$skip(84); 
+    "0".toDouble;System.out.println("""res0: Double = """ + $show(res$0));$skip(84); 
     
     val dataInputURL = "/home/loveallufev/semester_project/input/small_input2";System.out.println("""dataInputURL  : java.lang.String = """ + $show(dataInputURL ));$skip(107); 
 

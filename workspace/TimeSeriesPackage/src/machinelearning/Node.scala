@@ -11,6 +11,9 @@ trait Node extends Serializable {
     override def toString: String = "\n" + toStringWithLevel(1)
 }
 
+/**
+ * A left node
+ */
 class Empty(xValue: String = "Empty") extends Node {
     def this() = this("Empty")
     def isEmpty = true
@@ -22,7 +25,9 @@ class Empty(xValue: String = "Empty") extends Node {
     def toStringWithLevel(level: Int) = xValue
 }
 
-
+/**
+ * An internal node
+ */
 class NonEmpty(xFeature: FeatureInfo, xCondition: Any, xLeft: Node, xRight: Node) extends Node{
     def value = xFeature.Name
     def isEmpty = false

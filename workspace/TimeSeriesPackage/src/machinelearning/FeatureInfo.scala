@@ -8,6 +8,9 @@ import collection.immutable.TreeMap
  * The idea is:
  * We have two feature categories : Numerical and Categorical
  * which are presented by NumericalFeature and CategoricalFeature, respectively
+ * @Name: name of feature
+ * @Type: type of feature: "d" is discrete feature( categorical feature); "c" is continuous feature (numerical feature)
+ * @index: index of this feature in the whole data set, based zero
  */
 
 // xName: Name of feature, such as temperature, weather...
@@ -19,15 +22,22 @@ abstract class FeatureInfo(val Name: String, val Type: String, val index: Int) e
 
     override def toString() = "Index:" + index + " | Name: " + Name + " | Type: " + Type;
 
-    // Process a value of this feature
+    /**
+     *  Process a value of this feature (this function is only used in old regression tree version)
+     */ 
     def addValue(value: Any, yValue: Double)
 
-    // Get all candidates of splitting points
+    /**
+     * Get all candidates of splitting points (this function is only used in old regression tree version)
+     */
     def getPossibleSplitPoints(): IndexedSeq[Any]
 
-    // Return the index of best split point in PossiblePlitPoints, 
-    // the value of left branch's condition, 
-    // and the weight of feature if we apply this splitting
+    /**
+     * (this function is only used in old regression tree version)
+     * Return the index of best split point in PossiblePlitPoints, 
+     * the value of left branch's condition, 
+     * and the weight of feature if we apply this splitting
+     */
     def getBestSplitPoint(): (Int, Any, Double)
 
     def clear()
@@ -57,6 +67,9 @@ object FeatureInfo extends Serializable {
     }      
 }
 
+/**
+ * This class is representative for numerical feature
+ */
 case class NumericalFeature(fName: String, fType: String, fIndex: Int) extends FeatureInfo(fName, fType, fIndex) {
     var min: Double = _
     var max: Double = _

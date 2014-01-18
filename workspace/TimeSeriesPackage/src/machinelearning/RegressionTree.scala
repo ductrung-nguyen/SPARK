@@ -3,9 +3,13 @@ package machinelearning
 import org.apache.spark._
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd._
+import scala.util.Random
 import com.esotericsoftware.kryo.Kryo
 import org.apache.spark.serializer.KryoRegistrator
 
+/**
+ * We will use this class to improve de-serialize speed in future, but not now !!!
+ */
 class MyRegistrator extends KryoRegistrator {
     override def registerClasses(kryo: Kryo) {
         kryo.register(classOf[RegressionTree])
@@ -15,6 +19,14 @@ class MyRegistrator extends KryoRegistrator {
     }
 }
 
+
+/**
+ * This class is representive for each value of each feature in dataset
+ * @index: index of feature in the whole data set, based zero
+ * @xValue: value of current feature
+ * @yValue: value of Y feature coresponding
+ * @frequency : frequency of this value
+ */
 class FeatureAggregateInfo(val index: Int, var xValue: Any, var yValue: Double, var frequency: Int) extends Serializable {
     def addFrequency(acc: Int): FeatureAggregateInfo = { this.frequency = this.frequency + acc; this }
     def +(that: FeatureAggregateInfo) = {
@@ -27,35 +39,65 @@ class FeatureAggregateInfo(val index: Int, var xValue: Any, var yValue: Double, 
 }
 
 // index : index of feature
-// point: the split point of this feature
+// point: the split point of this feature (it can be a Set, or a Double number)
 // weight: the weight we get if we apply this splitting
 class SplitPoint(val index: Int, val point: Any, val weight: Double) extends Serializable {
-    override def toString = index.toString + "," + point.toString + "," + weight.toString
+    override def toString = index.toString + "," + point.toString + "," + weight.toString	// for debugging
 }
 
 class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: SparkContext, YIndex: Int = -1) extends Serializable {
-    val mydata = dataRDD.map(line => line.split(","))
+    val mydata = dataRDD.map(line => line.split(','))
     val number_of_features = context.broadcast(mydata.take(1)(0).length)
     val featureSet = context.broadcast(new FeatureSet(metadataRDD))
     val featureTypes = context.broadcast(Array[String]() ++ featureSet.value.data.map(x => x.Type))
     val contextBroadcast = context.broadcast(context)
+    var threshold = context.broadcast(0.1)
 
     // Index of Y feature
     var yIndex = context.broadcast(number_of_features.value - 1)
     var xIndexs = context.broadcast(featureSet.value.data.map(x => x.index).filter(x => (x != yIndex.value)).toSet[Int])
 
     // Tree model
-    var tree: Node = new Empty("Nil")
-    println("Number of feature:" + number_of_features.value)
-    println("Features: ")
-    featureSet.value.data.foreach(println)
+    private var tree: Node = new Empty("Nil")
 
     // Minimum records to do a splitting
-    var minsplit: Int = 0
+    var minsplit = context.broadcast(10)
+    
+    // user partitioner or not
+    var usePartitioner = context.broadcast(true)
+    val partitioner = context.broadcast(new HashPartitioner(contextBroadcast.value.defaultParallelism))
 
+    /**
+     * Set the minimum records of splitting
+     * It's mean if a node have the number of records <= minsplit, it can't be splitted anymore
+     * @xMinSplit: new minimum records for splitting
+     */
+    def setMinSplit(xMinSlit : Int) = { minsplit = contextBroadcast.value.broadcast(xMinSlit) }
+    
+    /**
+     * Set threshold for stopping criterion. This threshold is coefficient of variation
+     * A node will stop expand if Dev(Y)/E(Y) < threshold
+     * In which: 
+     * Dev(Y) is standard deviation
+     * E(Y) is medium of Y
+     * @xThreshold: new threshold
+     */
+    def setThreshold(xThreshlod : Double) = { threshold = contextBroadcast.value.broadcast(xThreshlod) }
+    
+    def setUsingPartitioner(value: Boolean) = { usePartitioner = contextBroadcast.value.broadcast(value) }
+    
+    /**
+     * Process a line of data set
+     * For each value of each feature, encapsulate it into a FeatureAgregateInfo(fetureIndex, xValue, yValue, frequency)
+     * @line: array of value of each feature in a "record"
+     * @numbeFeatures: the TOTAL number of feature in data set (include features which may be not processed)
+     * @fTypes: type of each feature in each line (in ordered)
+     * @return: an array of FeatureAggregateInfo, each element is a value of each feature on this line
+     */
     private def processLine(line: Array[String], numberFeatures: Int, fTypes: Array[String]): Array[FeatureAggregateInfo] = {
         val length = numberFeatures
         var i = -1;
+        
         parseDouble(line(yIndex.value)) match {
             case Some(yValue) => { // check type of Y : if isn't continuos type, return nothing
                 line.map(f => {
@@ -71,36 +113,71 @@ class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: Sp
                             }
                             // if this is a categorial feature ([d]iscrete values) => return a FeatureAggregateInfo
                             case "d" => new FeatureAggregateInfo(i, f, yValue, 1)
-                        } // end match
+                        } // end match fType(i)
                     } // end if
                     else new FeatureAggregateInfo(-1, f, 0, 0)
-                })
-            }
-            case None => Array[FeatureAggregateInfo]()
-        }
+                })	// end map
+            }	// case Some(yvalue)
+            case None => { println("Y value is invalid:(%s)".format(line(yIndex.value))); Array[FeatureAggregateInfo]() }
+        }	// end match Y value
     }
 
+    /**
+     * Check a sub data set has meet stop criterion or not
+     * @data: data set
+     * @return: true/false and average of Y
+     */
+    def checkStopCriterion(data :RDD[FeatureAggregateInfo] ) : (Boolean, Double) = {
+        val yFeature = data.filter(x => x.index == yIndex.value)
+            
+            val yValues = yFeature.groupBy(_.yValue)
+            
+            val yAggregate = yFeature.map(x => (x.yValue, x.yValue*x.yValue))
+                       
+            val ySumValue = yAggregate.reduce((x,y) => (x._1 + y._1, x._2 + y._2))
+            val numTotalRecs = yFeature.reduce(_ + _).frequency
+            val EY = ySumValue._1/numTotalRecs
+            val EY2 = ySumValue._2/numTotalRecs
+                     
+            val standardDeviation = math.sqrt(EY2 - EY*EY)
+            
+            (
+                (
+                    (numTotalRecs <= minsplit.value) // or the number of records is less than minimum
+                    || ( ((standardDeviation < threshold.value) && (EY == 0)) || (standardDeviation/EY < threshold.value)) // or the 
+                ),
+                EY
+            )
+            
+    }
+    
+    
+    /**
+     * Building tree bases on:
+     * @yFeature: predicted feature
+     * @xFeature: input features
+     * @return: root of tree
+     */
     def buildTree(yFeature: String = featureSet.value.data(yIndex.value).Name, xFeatures: Set[String] = Set[String]()): Node = {
-
-        def buildIter(rawdata: RDD[Array[FeatureAggregateInfo]]): Node = {
-
+    
+        //def buildIter(rawdata: RDD[Array[FeatureAggregateInfo]]): Node = {
+        def buildIter(rawdata: RDD[(Int, Array[FeatureAggregateInfo])]): Node = {
+          
+            //var data = rawdata.flatMap(x => x.toSeq).cache
+            var data = rawdata.flatMap(x => x._2.toSeq).cache
             
-            var data = rawdata.flatMap(x => x.toSeq).cache
-            //data.foreach(println)
-            		
-            val yFeature = data.filter(x => x.index == yIndex.value).groupBy(_.yValue)
-            
-            // yFeature: (Index, [Array of value])
-            val yCount = yFeature.count // how many value of Y
-            if (yCount < 2)
-                // pre-prune tree :  don't need to expand node if every Y values are the same
-                if (yCount == 1) new Empty(yFeature.first._2(0).yValue.toString) // create leave node with value of Y
-                else new Empty("Unknown")
+            val (stopExpand, eY) = checkStopCriterion(data)
+            if (stopExpand){
+                    new Empty(eY.toString)
+            }      
             else {
-
+            	val groupFeatureByIndexAndValue = if (usePartitioner.value)
+                   data.groupBy(x => (x.index, x.xValue)).partitionBy(partitioner.value)
+                else
+                	data.groupBy(x => (x.index, x.xValue))
                 var featureValueSorted = (
-                    data
-                    .groupBy(x => (x.index, x.xValue))
+                    //data.groupBy(x => (x.index, x.xValue))
+                    groupFeatureByIndexAndValue
                     .map(x => (new FeatureAggregateInfo(x._1._1, x._1._2, 0, 0)
                         + x._2.foldLeft(new FeatureAggregateInfo(x._1._1, x._1._2, 0, 0))(_ + _)))
                     // sample results
@@ -180,15 +257,16 @@ class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: Sp
                     filter(_.index != yIndex.value).collect.maxBy(_.weight) // select best feature to split
 
                 if (splittingPointFeature.index == -1) { // the chosen feature has only one value
-                    val commonValueY = yFeature.reduce((x, y) => if (x._2.length > y._2.length) x else y)._1
-                    new Empty(commonValueY.toString)
+                    //val commonValueY = yFeature.reduce((x, y) => if (x._2.length > y._2.length) x else y)._1
+                    //new Empty(commonValueY.toString)
+                    new Empty(eY.toString)
                 } else {
                     val chosenFeatureInfo = contextBroadcast.value.broadcast(featureSet.value.data.filter(f => f.index == splittingPointFeature.index).first)
 
                     splittingPointFeature.point match {
                         case s: Set[String] => { // split on categorical feature
-                            val left = rawdata.filter(x => s.contains(x(chosenFeatureInfo.value.index).xValue.asInstanceOf[String]))
-                            val right = rawdata.filter(x => !s.contains(x(chosenFeatureInfo.value.index).xValue.asInstanceOf[String]))
+                            val left = rawdata.filter(x => s.contains(x._2(chosenFeatureInfo.value.index).xValue.asInstanceOf[String]))
+                            val right = rawdata.filter(x => !s.contains(x._2(chosenFeatureInfo.value.index).xValue.asInstanceOf[String]))
                             new NonEmpty(
                                 chosenFeatureInfo.value, // featureInfo
                                 s, // left + right conditions
@@ -197,8 +275,8 @@ class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: Sp
                                 )
                         }
                         case d: Double => { // split on numerical feature
-                            val left = rawdata.filter(x => (x(chosenFeatureInfo.value.index).xValue.asInstanceOf[Double] < d))
-                            val right = rawdata.filter(x => (x(chosenFeatureInfo.value.index).xValue.asInstanceOf[Double] >= d))
+                            val left = rawdata.filter(x => (x._2(chosenFeatureInfo.value.index).xValue.asInstanceOf[Double] < d))
+                            val right = rawdata.filter(x => (x._2(chosenFeatureInfo.value.index).xValue.asInstanceOf[Double] >= d))
                             new NonEmpty(
                                 chosenFeatureInfo.value, // featureInfo
                                 d, // left + right conditions
@@ -213,19 +291,44 @@ class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: Sp
 
         
         var fYindex = featureSet.value.data.findIndexOf(p => p.Name == yFeature)
-        println("fYindex=" + fYindex)
+        
         if (fYindex >= 0) yIndex = contextBroadcast.value.broadcast(featureSet.value.data(fYindex).index)
         xIndexs =
             if (xFeatures.isEmpty) // if user didn't specify xFeature, we will process on all feature, include Y feature (to check stop criterion)
                 contextBroadcast.value.broadcast(featureSet.value.data.map(x => x.index).toSet[Int])
             else contextBroadcast.value.broadcast(xFeatures.map(x => featureSet.value.getIndex(x)) + yIndex.value)
         
-        tree = buildIter(mydata.map(processLine(_, number_of_features.value, featureTypes.value)))
+        
+        println("Number observations:" + mydata.count)
+        println("Total number of features:" + number_of_features.value)
+
+        tree = if (usePartitioner.value) {
+            buildIter(mydata.map(x => 
+                		( Random.nextInt(number_of_features.value), 
+                		  processLine(x, number_of_features.value, featureTypes.value))
+                    	).partitionBy(partitioner.value))
+        }
+        else {
+            buildIter(mydata.map(x => 
+                ( Random.nextInt(number_of_features.value), 
+                        processLine(x, number_of_features.value, featureTypes.value)
+                        )
+                        ))
+        }
+        //buildIter(mydata.map(processLine(_, number_of_features.value, featureTypes.value)))
         tree
 
     }
+    
+    /**
+     * Parse a string to double
+     */
     private def parseDouble(s: String) = try { Some(s.toDouble) } catch { case _ => None }
 
+    /**
+     * Predict Y base on input features
+     * @record: an array, which its each element is a value of each input feature
+     */
     def predict(record: Array[String]): String = {
 
         def predictIter(root: Node): String = {
@@ -233,6 +336,10 @@ class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: Sp
             else root.condition match {
                 case s: Set[String] => {
                     if (s.contains(record(root.feature.index))) predictIter(root.left)
+                    else predictIter(root.right)
+                }
+                case d : Double => {
+                    if (record(root.feature.index).toDouble < d) predictIter(root.left)
                     else predictIter(root.right)
                 }
             }
