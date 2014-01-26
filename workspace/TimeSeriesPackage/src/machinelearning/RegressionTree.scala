@@ -4,6 +4,9 @@ import org.apache.spark._
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd._
 import scala.util.Random
+import scala.util.Marshal
+import scala.io.Source
+import java.io._
 import com.esotericsoftware.kryo.Kryo
 import org.apache.spark.serializer.KryoRegistrator
 
@@ -13,25 +16,25 @@ import org.apache.spark.serializer.KryoRegistrator
 class MyRegistrator extends KryoRegistrator {
     override def registerClasses(kryo: Kryo) {
         kryo.register(classOf[RegressionTree])
-        kryo.register(classOf[FeatureAggregateInfo])
+        kryo.register(classOf[FeatureValueAggregate])
         kryo.register(classOf[SplitPoint])
         kryo.register(classOf[FeatureSet])
     }
 }
 
 /**
- * This class is representive for each value of each feature in dataset
+ * This class is representative for each value of each feature in data set
  * @index: index of feature in the whole data set, based zero
  * @xValue: value of current feature
- * @yValue: value of Y feature coresponding
+ * @yValue: value of Y feature associated
  * @frequency : frequency of this value
  */
-class FeatureAggregateInfo(val index: Int, var xValue: Any, var yValue: Double, var frequency: Int) extends Serializable {
-    def addFrequency(acc: Int): FeatureAggregateInfo = { this.frequency = this.frequency + acc; this }
-    def +(that: FeatureAggregateInfo) = {
-        this.frequency = this.frequency + that.frequency
-        this.yValue = this.yValue + that.yValue
-        this
+class FeatureValueAggregate(val index: Int, var xValue: Any, var yValue: Double, var frequency: Int) extends Serializable {
+    def addFrequency(acc: Int): FeatureValueAggregate = { FeatureValueAggregate.this.frequency = FeatureValueAggregate.this.frequency + acc; FeatureValueAggregate.this }
+    def +(that: FeatureValueAggregate) = {
+        FeatureValueAggregate.this.frequency = FeatureValueAggregate.this.frequency + that.frequency
+        FeatureValueAggregate.this.yValue = FeatureValueAggregate.this.yValue + that.yValue
+        FeatureValueAggregate.this
     }
     override def toString() = "Feature(index:" + index + " | xValue:" + xValue +
         " | yValue" + yValue + " | frequency:" + frequency + ")";
@@ -44,13 +47,22 @@ class SplitPoint(val index: Int, val point: Any, val weight: Double) extends Ser
     override def toString = index.toString + "," + point.toString + "," + weight.toString // for debugging
 }
 
-class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: SparkContext, YIndex: Int = -1) extends Serializable {
+class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: SparkContext) extends Serializable {
+    // delimiter of fields in data set
     var delimiter = context.broadcast(',')
+    
+    // parse raw data
     val mydata = dataRDD.map(line => line.split(delimiter.value))
+    
+    // number of features
     val number_of_features = context.broadcast(mydata.take(1)(0).length)
+
+    // set of feature in dataset
     val featureSet = context.broadcast(new FeatureSet(metadataRDD))
-    val featureTypes = context.broadcast(Array[String]() ++ featureSet.value.data.map(x => x.Type))
+
     val contextBroadcast = context.broadcast(context)
+    
+    // coefficient of variation
     var threshold = context.broadcast(0.1)
 
     // Index of Y feature
@@ -96,31 +108,31 @@ class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: Sp
      * @fTypes: type of each feature in each line (in ordered)
      * @return: an array of FeatureAggregateInfo, each element is a value of each feature on this line
      */
-    private def processLine(line: Array[String], numberFeatures: Int, fTypes: Array[String]): Array[FeatureAggregateInfo] = {
+    private def processLine(line: Array[String], numberFeatures: Int, featureSet : FeatureSet): Array[FeatureValueAggregate] = {
         val length = numberFeatures
         var i = -1;
 
         parseDouble(line(yIndex.value)) match {
-            case Some(yValue) => { // check type of Y : if isn't continuos type, return nothing
+            case Some(yValue) => { // check type of Y : if isn't continuous type, return nothing
                 line.map(f => {
                     i = (i + 1) % length
                     if (xIndexs.value.contains(i)) {
-                        fTypes(i) match {
-                            case "c" => { // If this is a numerical feature ([c]ontinuos values) => parse value from string to double
+                        featureSet.data(i) match {
+                            case nFeature : NumericalFeature => { // If this is a numerical feature => parse value from string to double
                                 val v = parseDouble(f);
                                 v match {
-                                    case Some(d) => new FeatureAggregateInfo(i, d, yValue, 1)
-                                    case None => new FeatureAggregateInfo(-1, f, 0, 0)
+                                    case Some(d) => new FeatureValueAggregate(i, d, yValue, 1)
+                                    case None => new FeatureValueAggregate(-1, f, 0, 0)
                                 }
                             }
-                            // if this is a categorial feature ([d]iscrete values) => return a FeatureAggregateInfo
-                            case "d" => new FeatureAggregateInfo(i, f, yValue, 1)
+                            // if this is a categorical feature => return a FeatureAggregateInfo
+                            case cFeature : CategoricalFeature => new FeatureValueAggregate(i, f, yValue, 1)
                         } // end match fType(i)
                     } // end if
-                    else new FeatureAggregateInfo(-1, f, 0, 0)
+                    else new FeatureValueAggregate(-1, f, 0, 0)
                 }) // end map
-            } // case Some(yvalue)
-            case None => { println("Y value is invalid:(%s)".format(line(yIndex.value))); Array[FeatureAggregateInfo]() }
+            } // end case Some(yvalue)
+            case None => { println("Y value is invalid:(%s)".format(line(yIndex.value))); Array[FeatureValueAggregate]() }
         } // end match Y value
     }
 
@@ -129,7 +141,7 @@ class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: Sp
      * @data: data set
      * @return: true/false and average of Y
      */
-    def checkStopCriterion(data: RDD[FeatureAggregateInfo]): (Boolean, Double) = {
+    def checkStopCriterion(data: RDD[FeatureValueAggregate]): (Boolean, Double) = {
         val yFeature = data.filter(x => x.index == yIndex.value)
 
         val yValues = yFeature.groupBy(_.yValue)
@@ -146,7 +158,7 @@ class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: Sp
         (
             (
                 (numTotalRecs <= minsplit.value) // or the number of records is less than minimum
-                || (((standardDeviation < threshold.value) && (EY == 0)) || (standardDeviation / EY < threshold.value)) // or the 
+                || (((standardDeviation < threshold.value) && (EY == 0)) || (standardDeviation / EY < threshold.value)) // or standard devariance of values of Y feature is small enough
                 ),
                 EY)
 
@@ -161,9 +173,8 @@ class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: Sp
     def buildTree(yFeature: String = featureSet.value.data(yIndex.value).Name, xFeatures: Set[String] = Set[String]()): Node = {
 
         //def buildIter(rawdata: RDD[Array[FeatureAggregateInfo]]): Node = {
-        def buildIter(rawdata: RDD[(Int, Array[FeatureAggregateInfo])]): Node = {
+        def buildIter(rawdata: RDD[(Int, Array[FeatureValueAggregate])]): Node = {
 
-            //var data = rawdata.flatMap(x => x.toSeq).cache
             var data = rawdata.flatMap(x => x._2.toSeq).cache
 
             val (stopExpand, eY) = checkStopCriterion(data)
@@ -178,12 +189,11 @@ class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: Sp
                 var featureValueSorted = (
                     //data.groupBy(x => (x.index, x.xValue))
                     groupFeatureByIndexAndValue
-                    .map(x => (new FeatureAggregateInfo(x._1._1, x._1._2, 0, 0)
-                        + x._2.foldLeft(new FeatureAggregateInfo(x._1._1, x._1._2, 0, 0))(_ + _)))
+                    .map(x => (new FeatureValueAggregate(x._1._1, x._1._2, 0, 0)
+                        + x._2.foldLeft(new FeatureValueAggregate(x._1._1, x._1._2, 0, 0))(_ + _)))
                     // sample results
                     //Feature(index:2 | xValue:normal | yValue6.0 | frequency:7)
                     //Feature(index:1 | xValue:sunny | yValue2.0 | frequency:5)
-                    //Feature(index:4 | xValue:14.5 | yValue1.0 | frequency:1)
                     //Feature(index:2 | xValue:high | yValue3.0 | frequency:7)
 
                     .groupBy(x => x.index)
@@ -204,7 +214,7 @@ class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: Sp
                                 val sumY = x._2.foldLeft(0.0)(_ + _.yValue) // total sum of Y
 
                                 var splitPoint: Set[String] = Set[String]()
-                                var lastFeatureValue = new FeatureAggregateInfo(-1, 0, 0, 0)
+                                var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0)
                                 try {
                                     x._2.map(f => {
 
@@ -232,7 +242,7 @@ class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: Sp
                                 var currentSumY: Double = 0
                                 val sumY = x._2.foldLeft(0.0)(_ + _.yValue)
                                 var posibleSplitPoint: Double = 0
-                                var lastFeatureValue = new FeatureAggregateInfo(-1, 0, 0, 0)
+                                var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0)
                                 try {
                                     x._2.map(f => {
 
@@ -303,11 +313,11 @@ class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: Sp
         tree = if (usePartitioner.value) {
             buildIter(mydata.map(x =>
                 (Random.nextInt(number_of_features.value),
-                    processLine(x, number_of_features.value, featureTypes.value))).partitionBy(partitioner.value))
+                    processLine(x, number_of_features.value, featureSet.value))).partitionBy(partitioner.value))
         } else {
             buildIter(mydata.map(x =>
                 (Random.nextInt(number_of_features.value),
-                    processLine(x, number_of_features.value, featureTypes.value))))
+                    processLine(x, number_of_features.value, featureSet.value))))
         }
         //buildIter(mydata.map(processLine(_, number_of_features.value, featureTypes.value)))
         tree
@@ -324,25 +334,14 @@ class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: Sp
      * @record: an array, which its each element is a value of each input feature
      */
     def predict(record: Array[String]): String = {
-
-        def predictIter(root: Node): String = {
-            if (root.isEmpty) root.value.toString
-            else root.condition match {
-                case s: Set[String] => {
-                    if (s.contains(record(root.feature.index))) predictIter(root.left)
-                    else predictIter(root.right)
-                }
-                case d: Double => {
-                    if (record(root.feature.index).toDouble < d) predictIter(root.left)
-                    else predictIter(root.right)
-                }
-            }
-
-        }
-        if (tree.isEmpty) "Please build tree first"
-        else predictIter(tree)
+        RegressionTree.predict(record, tree)
     }
 
+    
+    /**
+     * Evaluate the accuracy of regression tree
+     * @input: an input record (uses the same delimiter with trained data set)
+     */
     def evaluate(input: RDD[String]) {
         if (!tree.isEmpty){
             val numTest = input.count
@@ -361,5 +360,47 @@ class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: Sp
             "Please build tree first"
         }
     }
+    
+    def writeTreeToFile(path: String) = {
+        val out = new FileOutputStream(path)
+        out.write(Marshal.dump(tree))
+        out.close
+    }
+     
 }
+
+object RegressionTree extends Serializable {
+    
+    def apply(dataRDD: RDD[String], metadataRDD: RDD[String], context: SparkContext) = 
+        new RegressionTree(dataRDD, metadataRDD, context)
+    
+    var treeModel: Node = new Empty("Nil")
+    
+    def loadTreeFromFile(path: String) = {
+        val in = new FileInputStream(path)
+        val bytes = Stream.continually(in.read).takeWhile(-1 !=).map(_.toByte).toArray
+        treeModel = Marshal.load[Node](bytes)
+    }
+    
+    def predict(record: Array[String], tree: Node = treeModel): String = {
+
+        def predictIter(root: Node): String = {
+            if (root.isEmpty) root.value.toString
+            else root.condition match {
+                case s: Set[String] => {
+                    if (s.contains(record(root.feature.index))) predictIter(root.left)
+                    else predictIter(root.right)
+                }
+                case d: Double => {
+                    if (record(root.feature.index).toDouble < d) predictIter(root.left)
+                    else predictIter(root.right)
+                }
+            }
+
+        }
+        if (tree.isEmpty) "Please build tree first"
+        else predictIter(tree)
+    }
+}
+
 
