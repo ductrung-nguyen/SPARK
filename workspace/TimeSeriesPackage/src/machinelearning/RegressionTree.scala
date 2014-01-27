@@ -7,6 +7,12 @@ import scala.util.Random
 import scala.util.Marshal
 import scala.io.Source
 import java.io._
+import scala.actors.remote.JavaSerializer
+import java.io.DataOutputStream
+import java.io.FileOutputStream
+import java.io.DataInputStream
+import java.io.FileInputStream
+
 import com.esotericsoftware.kryo.Kryo
 import org.apache.spark.serializer.KryoRegistrator
 
@@ -47,18 +53,18 @@ class SplitPoint(val index: Int, val point: Any, val weight: Double) extends Ser
     override def toString = index.toString + "," + point.toString + "," + weight.toString // for debugging
 }
 
-class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: SparkContext) extends Serializable {
+class RegressionTree(context: SparkContext, metadataRDD: RDD[String]) extends Serializable {
+    
+    def this(context : SparkContext) = this(context, context.makeRDD(List[String]()))
+        
     // delimiter of fields in data set
     var delimiter = context.broadcast(',')
     
-    // parse raw data
-    val mydata = dataRDD.map(line => line.split(delimiter.value))
+    // set of feature in dataset
+    var featureSet = context.broadcast(new FeatureSet(metadataRDD))
     
     // number of features
-    val number_of_features = context.broadcast(mydata.take(1)(0).length)
-
-    // set of feature in dataset
-    val featureSet = context.broadcast(new FeatureSet(metadataRDD))
+    val number_of_features = context.broadcast(featureSet.value.data.length)
 
     val contextBroadcast = context.broadcast(context)
     
@@ -170,8 +176,10 @@ class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: Sp
      * @xFeature: input features
      * @return: root of tree
      */
-    def buildTree(yFeature: String = featureSet.value.data(yIndex.value).Name, xFeatures: Set[String] = Set[String]()): Node = {
-
+    def buildTree(trainedData: RDD[String], yFeature: String = featureSet.value.data(yIndex.value).Name, xFeatures: Set[String] = Set[String]()): Node = {
+        // parse raw data
+    	val mydata = trainedData.map(line => line.split(delimiter.value))
+    
         //def buildIter(rawdata: RDD[Array[FeatureAggregateInfo]]): Node = {
         def buildIter(rawdata: RDD[(Int, Array[FeatureValueAggregate])]): Node = {
 
@@ -334,56 +342,6 @@ class RegressionTree(dataRDD: RDD[String], metadataRDD: RDD[String], context: Sp
      * @record: an array, which its each element is a value of each input feature
      */
     def predict(record: Array[String]): String = {
-        RegressionTree.predict(record, tree)
-    }
-
-    
-    /**
-     * Evaluate the accuracy of regression tree
-     * @input: an input record (uses the same delimiter with trained data set)
-     */
-    def evaluate(input: RDD[String]) {
-        if (!tree.isEmpty){
-            val numTest = input.count
-            val inputdata = input.map(x => x.split(delimiter.value))
-            val diff = inputdata.map(x => (predict(x).toDouble, x(yIndex.value).toDouble)).map(x => (x._2 - x._1, (x._2 - x._1)*(x._2-x._1)))
-
-            val sums = diff.reduce((x,y) => (x._1 + y._1, x._2 + y._2))
-
-            val meanDiff = sums._1/numTest
-            val meanDiffPower2 = sums._2/numTest
-            val deviation = math.sqrt(meanDiffPower2 - meanDiff*meanDiff)
-            val SE = deviation/numTest
-            
-            println("Mean of different:%f\nDeviation of different:%f\nSE of different:%f".format(meanDiff, deviation, SE) )
-        }else {
-            "Please build tree first"
-        }
-    }
-    
-    def writeTreeToFile(path: String) = {
-        val out = new FileOutputStream(path)
-        out.write(Marshal.dump(tree))
-        out.close
-    }
-     
-}
-
-object RegressionTree extends Serializable {
-    
-    def apply(dataRDD: RDD[String], metadataRDD: RDD[String], context: SparkContext) = 
-        new RegressionTree(dataRDD, metadataRDD, context)
-    
-    var treeModel: Node = new Empty("Nil")
-    
-    def loadTreeFromFile(path: String) = {
-        val in = new FileInputStream(path)
-        val bytes = Stream.continually(in.read).takeWhile(-1 !=).map(_.toByte).toArray
-        treeModel = Marshal.load[Node](bytes)
-    }
-    
-    def predict(record: Array[String], tree: Node = treeModel): String = {
-
         def predictIter(root: Node): String = {
             if (root.isEmpty) root.value.toString
             else root.condition match {
@@ -401,6 +359,140 @@ object RegressionTree extends Serializable {
         if (tree.isEmpty) "Please build tree first"
         else predictIter(tree)
     }
+
+    
+    /**
+     * Evaluate the accuracy of regression tree
+     * @input: an input record (uses the same delimiter with trained data set)
+     */
+    def evaluate(input: RDD[String], delimiter : Char = ',') {
+        if (!tree.isEmpty){
+            val numTest = input.count
+            val inputdata = input.map(x => x.split(delimiter))
+            val diff = inputdata.map(x => (predict(x).toDouble, x(yIndex.value).toDouble)).map(x => (x._2 - x._1, (x._2 - x._1)*(x._2-x._1)))
+
+            val sums = diff.reduce((x,y) => (x._1 + y._1, x._2 + y._2))
+
+            val meanDiff = sums._1/numTest
+            val meanDiffPower2 = sums._2/numTest
+            val deviation = math.sqrt(meanDiffPower2 - meanDiff*meanDiff)
+            val SE = deviation/numTest
+            
+            println("Mean of different:%f\nDeviation of different:%f\nSE of different:%f".format(meanDiff, deviation, SE) )
+        }else {
+            "Please build tree first"
+        }
+    }
+    
+    def writeTreeToFile(path: String) = {
+        /*
+        val out = new FileOutputStream(path)
+        val featureSetBytes = Marshal.dump(featureSet.value.data)
+        out.write(Marshal.dump(featureSetBytes.length))
+
+        println("Length of feature set bytes:" + featureSetBytes.length)
+        val xs: Array[Byte] = new Array[Byte](4)
+        (Marshal.dump(featureSetBytes.length)).copyToArray(xs, 0)
+        println("Test:" + xs.length)
+        out.write(featureSetBytes)
+        
+        val treeBytes = Marshal.dump(tree)
+        out.write(treeBytes.length)
+        out.write(treeBytes)
+        
+        val yIndexBytes = Marshal.dump(yIndex.value)
+        out.write(yIndexBytes.length)
+        out.write(yIndexBytes)
+        
+        out.close
+        
+        */
+        
+        val js = new JavaSerializer(null, null)
+        val os = new DataOutputStream(new FileOutputStream(path))
+        
+        js.writeObject(os, featureSet.value.data)
+        js.writeObject(os, tree)
+        js.writeObject(os, yIndex.value : Integer)
+        
+        os.close
+    }
+    
+    def loadTreeFromFile(path: String) = {
+        /*
+        val in = new FileInputStream(path)
+        
+        // buffer to store an integer
+        var bufferForInt = new Array[Byte](4)
+        
+        // read size of feature set
+        in.read(bufferForInt)
+        //println(bufferForInt.toI)
+        println("Load size of featureSet:" + Marshal.load[Int](bufferForInt))
+        // prepare buffer for featureSet
+        var featureSetBytes = new Array[Byte](Marshal.load[Int](bufferForInt))
+        
+        // read array[byte] of featureSet
+        in.read(featureSetBytes)
+        // load featureSet
+        val featureSet = Marshal.load[List[FeatureInfo]](featureSetBytes)
+        
+        val fSet = new FeatureSet(contextBroadcast.value.makeRDD(List[String]()))
+        fSet.rawData = featureSet
+        this.featureSet = contextBroadcast.value.broadcast(fSet)
+        
+        
+        //val bytes = Stream.continually(in.read).takeWhile(-1 !=).map(_.toByte).toArray
+        //tree = Marshal.load[Node](bytes)
+        // read size of tree
+        in.read(bufferForInt)
+        // prepare buffer for tree
+        var treeBytes = new Array[Byte](Marshal.load[Int](bufferForInt))
+        // read tree
+        in.read(treeBytes)
+        // load tree
+        tree = Marshal.load[Node](treeBytes)
+        
+        // read size of yIndex
+        in.read(bufferForInt)
+        // prepare buffer for yIndex
+        val bufferForyIndex = new Array[Byte](Marshal.load[Int](bufferForInt))
+        // read yIndex
+        in.read(bufferForyIndex)
+        // load yIndex
+        yIndex = contextBroadcast.value.broadcast(Marshal.load[Int](bufferForyIndex))
+        
+        xIndexs = contextBroadcast.value.broadcast((0 until this.featureSet.value.data.length).filter(yIndex.value !=).toSet)
+        
+        in.close
+        */
+        
+        val js = new JavaSerializer(null, null)
+    	val is = new DataInputStream(new FileInputStream(path))
+
+        val fSet = new FeatureSet(contextBroadcast.value.makeRDD(List[String]()))
+        fSet.rawData = js.readObject(is).asInstanceOf[List[FeatureInfo]]
+        this.featureSet = contextBroadcast.value.broadcast(fSet)
+        println("FeatureSet after reading:" + featureSet.value);
+        
+        tree = js.readObject(is).asInstanceOf[Node]
+        
+        
+        yIndex = contextBroadcast.value.broadcast(js.readObject(is).asInstanceOf[Int])
+        xIndexs = contextBroadcast.value.broadcast((0 until this.featureSet.value.data.length).filter(yIndex.value !=).toSet)
+
+        is.close
+    }
+     
+}
+
+object RegressionTree extends Serializable {
+    
+    def apply(context: SparkContext, metadataRDD: RDD[String]) = 
+        new RegressionTree(context, metadataRDD)
+    
+    def apply( context: SparkContext) = 
+        new RegressionTree(context, context.makeRDD(List[String]()))
 }
 
 
