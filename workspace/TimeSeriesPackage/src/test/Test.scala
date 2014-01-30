@@ -8,10 +8,8 @@ object Test {
 	def main(args : Array[String]) = {
 	    val context = new SparkContext("local", "SparkContext")
 	    
-	    val dataInputURL = "data/playgolf.csv"
-	
-	    
 	    /*  TEST WITH PLAYGOLF DATASET */
+	    val dataInputURL = "data/playgolf.csv"
 	    val playgolf_data = context.textFile(dataInputURL, 1)
 	    val playgolf_metadata = context.textFile("data/playgolf.tag", 1)
 	
