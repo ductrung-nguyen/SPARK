@@ -25,7 +25,7 @@ object Test {
 	    
 	    //TEST WITH BODYFAT DATASET 
 	    val bodyfat_data = context.textFile("data/bodyfat.csv", 1)
-	    val bodyfat_metadata = context.textFile("data/bodyfat.tag", 1)
+	    val bodyfat_metadata = context.textFile("data/bodyfat.tag", 1) // PM: this file should be small, I would broadcast it
 	    
 	    val tree2 = new RegressionTree2(bodyfat_metadata)
 	    stime = System.nanoTime()
@@ -36,7 +36,7 @@ object Test {
 
 	    
 	    // write model to file
-	    tree2.writeTreeToFile("/home/loveallufev/Documents/tree2.model")
+	    tree2.writeTreeToFile("/Users/michiard/work/research/github/group/tree2.model")
 	    
 	    
 	    /*

@@ -35,6 +35,9 @@ class RegressionTree2(metadataRDD: RDD[String]) extends Serializable {
     // set of feature in dataset
     // pm: this is very generic, and indeed it depends on the input data
     // however, in "production", you wouldn't do this, as you specialize for a particular kind of data
+    // PM: I'm not sure you want to make this an rdd. You should broadcast it, then because it's too small
+    // IMO I would just do the "parsing" in the driver, and send the values to the workers using an additional
+    // input or a broadcast variablex
     var featureSet = new FeatureSet(metadataRDD)
     
     // number of features
@@ -149,11 +152,12 @@ class RegressionTree2(metadataRDD: RDD[String]) extends Serializable {
      * @xFeature: input features
      * @return: root of tree
      */
+    //PM: note that i would call the input rdd trainingData
         def buildTree(trainedData: RDD[String], yFeature: String = featureSet.data(yIndex).Name, xFeatures: Set[String] = Set[String]()): Node = {
         // parse raw data
     	val mydata = trainedData.map(line => line.split(delimiter))
     
-        var fYindex = featureSet.data.findIndexOf(p => p.Name == yFeature)
+        var fYindex = featureSet.data.findIndexOf(p => p.Name == yFeature) // PM: pay attention if you use small RDDs!
 
         // PM: You're sending from the "driver" to all workers the index of the Y feature, the one you're trying to predict
         if (fYindex >= 0) yIndex = featureSet.data(fYindex).index
@@ -281,8 +285,9 @@ class RegressionTree2(metadataRDD: RDD[String]) extends Serializable {
                     new NonEmpty(
                             chosenFeatureInfo,
                             splittingPointFeature.point,
-                            buildIter(leftCondition),
-                            buildIter(rightCondition)
+                            buildIter(leftCondition), // PM: This is the main problem with your code. Since you didn't implement a complete
+                            buildIter(rightCondition) // driver like in the google paper, you are serializing the parallel jobs one node at
+                            						  // the time.
                             )
                 } // end of if index == -1
             }
