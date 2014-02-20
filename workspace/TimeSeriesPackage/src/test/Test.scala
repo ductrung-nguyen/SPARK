@@ -7,7 +7,7 @@ import machinelearning.RegressionTree2
 
 object Test {
 	def main(args : Array[String]) = {
-	    val context = new SparkContext("local", "SparkContext")
+	    val context = new SparkContext("spark://192.168.45.53:7077", "RegressionTree")
 	    var stime : Long = 0
 	    /*
 	    // TEST WITH PLAYGOLF DATASET 
