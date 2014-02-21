@@ -53,7 +53,7 @@ class SplitPoint(val index: Int, val point: Any, val weight: Double) extends Ser
     override def toString = index.toString + "," + point.toString + "," + weight.toString // for debugging
 }
 
-class RegressionTree(metadataRDD: RDD[String]) extends Serializable {
+class RegressionTree(metadata: Array[String]) extends Serializable {
       
     // delimiter of fields in data set
     // pm: this is very generic. You could instead assume your input data is always
@@ -63,17 +63,20 @@ class RegressionTree(metadataRDD: RDD[String]) extends Serializable {
     // set of feature in dataset
     // pm: this is very generic, and indeed it depends on the input data
     // however, in "production", you wouldn't do this, as you specialize for a particular kind of data
-    var featureSet = new FeatureSet(metadataRDD)
-    
-    // number of features
-    // pm: this is "useless" as workers can derive it, since you're broadcasting featureSet to everybody
-    val number_of_features = featureSet.data.length
+    // this variable is a part of instance of RegessionTree class, which will be dispatched to 
+    // every worker also. So, should we broadcast something always transfered to the workers ?
+    var featureSet = new FeatureSet(metadata)
     
     // coefficient of variation
     var threshold : Double = 0.1
 
-    // Index of Y feature
-    var yIndex = number_of_features - 1
+    // Default index of Y feature
+    var yIndex = featureSet.numberOfFeature - 1	// = number_of_feature - 1
+    
+    // Default indices/indexes of X feature
+    // this variable can be infered from featureSet and yIndex
+    // but because it will be used in functions processLine, and buidingTree
+    // so we don't want to calculate it multiple time
     var xIndexs = featureSet.data.map(x => x.index).filter(x => (x != yIndex)).toSet[Int]
 
     // Tree model
@@ -185,9 +188,9 @@ class RegressionTree(metadataRDD: RDD[String]) extends Serializable {
      * @xFeature: input features
      * @return: root of tree
      */
-    def buildTree(trainedData: RDD[String], yFeature: String = featureSet.data(yIndex).Name, xFeatures: Set[String] = Set[String]()): Node = {
+    def buildTree(trainingData: RDD[String], yFeature: String = featureSet.data(yIndex).Name, xFeatures: Set[String] = Set[String]()): Node = {
         // parse raw data
-    	val mydata = trainedData.map(line => line.split(delimiter))
+    	val mydata = trainingData.map(line => line.split(delimiter))
     
         //def buildIter(rawdata: RDD[Array[FeatureAggregateInfo]]): Node = {
         def buildIter(rawdata: RDD[Array[FeatureValueAggregate]]): Node = {
@@ -198,7 +201,7 @@ class RegressionTree(metadataRDD: RDD[String]) extends Serializable {
             if (stopExpand) {
                 new Empty(eY.toString)
             } else {
-                println ("Number of recs:" + numRecs)
+
                 val groupFeatureByIndexAndValue = 
                     data.groupBy(x => (x.index, x.xValue)) // PM: this operates on an RDD => in parallel
 
@@ -324,15 +327,12 @@ class RegressionTree(metadataRDD: RDD[String]) extends Serializable {
         // PM: You're sending from the "driver" to all workers the index of the Y feature, the one you're trying to predict
         if (fYindex >= 0) yIndex = featureSet.data(fYindex).index
 
-        xIndexs =         // PM: why do you need to broadcast xIndexes?? Workers can compute it
+        xIndexs =
             if (xFeatures.isEmpty) // if user didn't specify xFeature, we will process on all feature, include Y feature (to check stop criterion)
                 featureSet.data.map(x => x.index).toSet[Int]
             else xFeatures.map(x => featureSet.getIndex(x)) + yIndex
 
-        println("Number observations:" + mydata.count) // PM: This is done on the "driver", it's not parallel
-        println("Total number of features:" + number_of_features) // PM: same as before
-
-        val new_data = mydata.map(x =>  processLine(x, number_of_features, featureSet))
+        val new_data = mydata.map(x =>  processLine(x, featureSet.numberOfFeature, featureSet))
         // problem with cache --> change RDD
         
         tree = buildIter(new_data)
@@ -427,8 +427,8 @@ class RegressionTree(metadataRDD: RDD[String]) extends Serializable {
 
 object RegressionTree extends Serializable {
     
-    def apply(metadataRDD: RDD[String]) = 
-        new RegressionTree(metadataRDD)
+    def apply(metadata: Array[String]) = 
+        new RegressionTree(metadata)
     def loadTreeFromFile(path: String) = {
         val js = new JavaSerializer(null, null)
     	val is = new DataInputStream(new FileInputStream(path))

@@ -5,7 +5,7 @@ import org.apache.spark.SparkContext._
 import org.apache.spark.rdd._
 
 // This class will load Feature Set from a file
-class FeatureSet(metadataRDD: RDD[String]) extends Serializable {
+class FeatureSet(metadataRDD: Array[String]) extends Serializable {
 
     private var mapNameToIndex: Map[String, Int] = Map[String, Int]() //withDefaultValue -1
     // we can not use withDefaulValue here. It will raise a NotSerializableExecptiopn

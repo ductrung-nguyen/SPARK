@@ -25,7 +25,7 @@ class Condition(val splitPoint : SplitPoint, val positive: Boolean = true) exten
     }
 }
 
-class RegressionTree2(metadataRDD: RDD[String]) extends Serializable {
+class RegressionTree2(metadata: Array[String]) extends Serializable {
       
     // delimiter of fields in data set
     // pm: this is very generic. You could instead assume your input data is always
@@ -38,17 +38,13 @@ class RegressionTree2(metadataRDD: RDD[String]) extends Serializable {
     // PM: I'm not sure you want to make this an rdd. You should broadcast it, then because it's too small
     // IMO I would just do the "parsing" in the driver, and send the values to the workers using an additional
     // input or a broadcast variablex
-    var featureSet = new FeatureSet(metadataRDD)
-    
-    // number of features
-    // pm: this is "useless" as workers can derive it, since you're broadcasting featureSet to everybody
-    val number_of_features = featureSet.data.length
+    var featureSet = new FeatureSet(metadata)
     
     // coefficient of variation
     var threshold : Double = 0.1
 
     // Index of Y feature
-    var yIndex = number_of_features - 1
+    var yIndex = featureSet.numberOfFeature - 1
     var xIndexs = featureSet.data.map(x => x.index).filter(x => (x != yIndex)).toSet[Int]
 
     // Tree model
@@ -153,9 +149,9 @@ class RegressionTree2(metadataRDD: RDD[String]) extends Serializable {
      * @return: root of tree
      */
     //PM: note that i would call the input rdd trainingData
-        def buildTree(trainedData: RDD[String], yFeature: String = featureSet.data(yIndex).Name, xFeatures: Set[String] = Set[String]()): Node = {
+        def buildTree(trainingData: RDD[String], yFeature: String = featureSet.data(yIndex).Name, xFeatures: Set[String] = Set[String]()): Node = {
         // parse raw data
-    	val mydata = trainedData.map(line => line.split(delimiter))
+    	val mydata = trainingData.map(line => line.split(delimiter))
     
         var fYindex = featureSet.data.findIndexOf(p => p.Name == yFeature) // PM: pay attention if you use small RDDs!
 
@@ -167,10 +163,7 @@ class RegressionTree2(metadataRDD: RDD[String]) extends Serializable {
                 featureSet.data.map(x => x.index).toSet[Int]
             else xFeatures.map(x => featureSet.getIndex(x)) + yIndex
 
-        println("Number observations:" + mydata.count) // PM: This is done on the "driver", it's not parallel
-        println("Total number of features:" + number_of_features) // PM: same as before
-
-        val new_data = mydata.map(x =>  processLine(x, number_of_features, featureSet)).cache
+        val new_data = mydata.map(x =>  processLine(x, featureSet.numberOfFeature, featureSet)).cache
         
         
         // build tree
@@ -366,8 +359,8 @@ class RegressionTree2(metadataRDD: RDD[String]) extends Serializable {
 
 object RegressionTree2 extends Serializable {
     
-    def apply(metadataRDD: RDD[String]) = 
-        new RegressionTree2(metadataRDD)
+    def apply(metadata: Array[String]) = 
+        new RegressionTree2(metadata)
     /*
     def apply( context: SparkContext) = 
         new RegressionTree(context, context.makeRDD(List[String]()))
