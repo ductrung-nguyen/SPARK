@@ -8,8 +8,8 @@ import rtreelib.RegressionTree2
 
 object Test {
 	def main(args : Array[String]) = {
-//		val inputFile = "hdfs://spark-master-001:8020/user/ubuntu/input/bus.txt"
-//		val outputDir = "hdfs://spark-master-001:8020/user/ubuntu/output/testing"
+		val inputFile = "hdfs://spark-master-001:8020/user/ubuntu/input/bus.txt"
+		val outputDir = "hdfs://spark-master-001:8020/user/ubuntu/output/testing"
 	    
 		val context = new SparkContext("spark://spark-master-001:7077", "rtree example", "/opt/spark/", List("target/scala-2.9.3/rtree-example_2.9.3-1.0.jar"))
 	    
