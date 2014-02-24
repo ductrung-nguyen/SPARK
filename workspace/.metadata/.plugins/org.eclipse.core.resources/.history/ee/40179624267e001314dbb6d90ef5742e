@@ -1,8 +1,0 @@
-package spark
-
-object Test extends Serializable {
-	def main(args : Array[String]) = {
-		var tree = new RegressionTree()
-	}
-	
-}

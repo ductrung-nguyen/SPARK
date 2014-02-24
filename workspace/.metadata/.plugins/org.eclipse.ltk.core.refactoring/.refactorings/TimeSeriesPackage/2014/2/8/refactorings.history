@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<session version="1.0">
-<refactoring accessors="true" comment="Delete element from project &apos;TimeSeriesPackage&apos;&#x0A;- Original project: &apos;TimeSeriesPackage&apos;&#x0A;- Original element: &apos;TimeSeriesPackage/src/learnscala&apos;" description="Delete element" element1="/src&lt;learnscala" elements="1" flags="589830" id="org.eclipse.jdt.ui.delete" resources="0" stamp="1392702072729" subPackages="false" version="1.0"/>
-</session>
