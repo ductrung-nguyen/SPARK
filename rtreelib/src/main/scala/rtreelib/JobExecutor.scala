@@ -7,13 +7,14 @@ import org.apache.spark.rdd._
 class JobInfo(id: BigInt, xConditions: List[Condition]) extends Serializable {
     var ID = id;
     var conditions_of_input_dataset = xConditions;
+    var errorMessage = ""
 
     var splitPoint = new SplitPoint(-9, 0, 0);
 
     def this() = this(0, List[Condition]())
     
     override def toString() = ("Job ID=" + ID.toString + " condition = " + xConditions.toString
-            + " continue to expand: " + "splitpoint:" + splitPoint.toString)
+            + " splitpoint:" + splitPoint.toString +  "\n")
 }
 
 class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]], caller: RegressionTree3)
@@ -180,7 +181,11 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]], ca
         
       }
       catch{
-        case e: Exception => caller.addJobToFinishedQueue(job)
+        case e: Exception => {
+          job.errorMessage = e.getMessage()
+          caller.addJobToFinishedQueue(job)
+          
+        }
       }
 
     }

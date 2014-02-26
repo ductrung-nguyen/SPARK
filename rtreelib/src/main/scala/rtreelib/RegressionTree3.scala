@@ -14,6 +14,7 @@ class RegressionTree3(metadata: Array[String]) extends BaseRegressionTree(metada
 
   var expandingJobs: Queue[JobInfo] = Queue[JobInfo]();
   var finishedJobs: Queue[JobInfo] = Queue[JobInfo]();
+  var errorJobs : Queue[JobInfo] = Queue[JobInfo]();
   var numberOfRunningJobs = 0
   
   private val ERROR_SPLITPOINT_VALUE = ",,,@,,," 
@@ -44,8 +45,11 @@ class RegressionTree3(metadata: Array[String]) extends BaseRegressionTree(metada
         }
       })
 
-    if (newnode.value == this.ERROR_SPLITPOINT_VALUE)
+    if (newnode.value == this.ERROR_SPLITPOINT_VALUE){
+      println ("ERROR: Node id=" + finishJob.ID + " failed\n" + finishJob.errorMessage)
+      errorJobs = errorJobs :+ finishJob
       return
+    }
       
     // If tree has zero node, create a root node
     if (tree.isEmpty) {
@@ -58,7 +62,7 @@ class RegressionTree3(metadata: Array[String]) extends BaseRegressionTree(metada
       var i: Int = level - 1
       var parent = tree; // start adding from root node
       while (i > 0) {
-
+        
         if ((finishJob.ID / (2 << i - 1)) % 2 == 0) {
           // go to the left
           parent = parent.left
@@ -181,7 +185,10 @@ class RegressionTree3(metadata: Array[String]) extends BaseRegressionTree(metada
 
     /* END OF ALGORITHM */
 
-    println("DONE")
+    if (errorJobs.isEmpty)
+    	println("DONE")
+    else
+    	println("FINISH with some failed jobs:\n" + errorJobs.toString + "\n")
 
     tree
   }

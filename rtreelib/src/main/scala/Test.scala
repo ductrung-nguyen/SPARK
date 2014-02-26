@@ -25,6 +25,7 @@ object Test {
 	    val dataInputURL = "data/playgolf.csv"
 	    val playgolf_data = context.textFile(dataInputURL, 1)
 	    val playgolf_metadata = context.textFile("data/playgolf.tag", 1)
+	    
 	    /*
 	    val tree = new RegressionTree2(playgolf_metadata)
 	    tree.setMinSplit(1)
