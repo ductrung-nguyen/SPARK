@@ -8,6 +8,8 @@ trait Node extends Serializable {
     def right: Node
     def isEmpty: Boolean
     def toStringWithLevel(level: Int): String
+    def setLeft(node : Node): Unit
+    def setRight(node: Node) : Unit
     override def toString: String = "\n" + toStringWithLevel(1)
 }
 
@@ -21,6 +23,8 @@ class Empty(xValue: String = "Empty") extends Node {
     def condition: Nothing = throw new NoSuchElementException("empty.condition")
     def left: Nothing = throw new NoSuchElementException("empty.left")
     def right: Nothing = throw new NoSuchElementException("empty.right")
+    def setLeft(node : Node)= {}
+    def setRight(node: Node)= {}
     var feature: FeatureInfo = _ //FeatureInfo("Empty", "d", 0)
     def toStringWithLevel(level: Int) = xValue
 }
@@ -28,12 +32,16 @@ class Empty(xValue: String = "Empty") extends Node {
 /**
  * An internal node
  */
-class NonEmpty(xFeature: FeatureInfo, xCondition: Any, xLeft: Node, xRight: Node) extends Node{
+class NonEmpty(xFeature: FeatureInfo, xCondition: Any, var xLeft: Node, var xRight: Node) extends Node{
     def value = xFeature.Name
     def isEmpty = false
     def condition = xCondition match { case s: Set[String] => s; case d: Double => d }
     def left = xLeft
     def right = xRight
+    
+    def setLeft(node: Node) = {xLeft = node;}
+    def setRight(node: Node) = {xRight = node;}
+    
     var feature: FeatureInfo = xFeature
     val (conditionLeft, conditionRight) = xCondition match {
         case s: Set[String] => (s.toString, "Not in " + s.toString )
