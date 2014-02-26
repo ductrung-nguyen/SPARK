@@ -49,6 +49,7 @@ object Test {
 	    
 	    val tree = new RegressionTree3(bodyfat_metadata.collect())
 	    tree.setMinSplit(10)
+	    tree.setMaximumParallelJobs(10)
 	    println(tree.buildTree(bodyfat_data, "DEXfat", Set("age", "waistcirc","hipcirc","elbowbreadth","kneebreadth")))
 	    println("Predict:" + tree.predict("53,56,29.83,81,103,6.9,8.9,4.14,4.52,4.31,5.69".split(",")))
 	    tree.evaluate(bodyfat_data)

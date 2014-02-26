@@ -9,20 +9,27 @@ import java.util.Date
 import scala.concurrent._
 import scala.concurrent.duration.Duration
 import rtreelib._
-import rtreelib.FeatureValueAggregate
 
 class RegressionTree3(metadata: Array[String]) extends BaseRegressionTree(metadata) {
 
   var expandingJobs: Queue[JobInfo] = Queue[JobInfo]();
   var finishedJobs: Queue[JobInfo] = Queue[JobInfo]();
   var numberOfRunningJobs = 0
+  
+  private val ERROR_SPLITPOINT_VALUE = ",,,@,,," 
+  private var MAXIMUM_PARALLEL_JOBS = 9999
+  
+  def setMaximumParallelJobs(value : Int) = { MAXIMUM_PARALLEL_JOBS = value }
 
   private def updateModel(finishJob: JobInfo) {
-
+	  
     println("Update model with finished job:" + finishJob)
     val newnode = (
       if (finishJob.splitPoint.index < 0) {
-        new Empty(finishJob.splitPoint.point.toString)
+        if (finishJob.splitPoint.index == -1)	// stop node
+          new Empty(finishJob.splitPoint.point.toString)
+        else	// error case
+          new Empty(ERROR_SPLITPOINT_VALUE)
       } else {
         val chosenFeatureInfoCandidate = featureSet.data.find(f => f.index == finishJob.splitPoint.index)
 
@@ -33,9 +40,13 @@ class RegressionTree3(metadata: Array[String]) extends BaseRegressionTree(metada
               new Empty("empty.left"),
               new Empty("empty.right"));
           }
+          case None => { new Empty(this.ERROR_SPLITPOINT_VALUE)}
         }
       })
 
+    if (newnode.value == this.ERROR_SPLITPOINT_VALUE)
+      return
+      
     // If tree has zero node, create a root node
     if (tree.isEmpty) {
       tree = newnode;
@@ -151,7 +162,7 @@ class RegressionTree3(metadata: Array[String]) extends BaseRegressionTree(metada
 
       //get jobs from expandingJobs and launch them
       this.synchronized {
-        while (!expandingJobs.isEmpty) {
+        while (!expandingJobs.isEmpty && numberOfRunningJobs < MAXIMUM_PARALLEL_JOBS) {
           expandingJobs.dequeue match {
             case (j, xs) => {
               println("Dequeue expanding jobs id=" + j.ID)

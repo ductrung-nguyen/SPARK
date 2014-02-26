@@ -8,7 +8,7 @@ class JobInfo(id: BigInt, xConditions: List[Condition]) extends Serializable {
     var ID = id;
     var conditions_of_input_dataset = xConditions;
 
-    var splitPoint = new SplitPoint(-1, 0, 0);
+    var splitPoint = new SplitPoint(-9, 0, 0);
 
     def this() = this(0, List[Condition]())
     
@@ -53,6 +53,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]], ca
 
     @Override
     def run() {
+      try{
         var data = inputData.filter(
             x => job.conditions_of_input_dataset.forall(
                 sp => {
@@ -159,7 +160,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]], ca
                 job.splitPoint = splittingPointFeature
                 caller.addJobToFinishedQueue(job)
             } else {
-                val chosenFeatureInfo = caller.featureSet.data.filter(f => f.index == splittingPointFeature.index).take(0)
+                //val chosenFeatureInfo = caller.featureSet.data.filter(f => f.index == splittingPointFeature.index).take(0)
 
                 val leftCondition = job.conditions_of_input_dataset :+ new Condition(splittingPointFeature, true)
                 val rightCondition = job.conditions_of_input_dataset :+ new Condition(splittingPointFeature, false)
@@ -177,7 +178,10 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]], ca
             } // end of if index == -1
         }
         
-        
+      }
+      catch{
+        case e: Exception => caller.addJobToFinishedQueue(job)
+      }
 
     }
 
