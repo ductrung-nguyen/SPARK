@@ -39,9 +39,9 @@ object Test {
 	    println("Predict:" + tree.predict("53,56,29.83,81,103,6.9,8.9,4.14,4.52,4.31,5.69".split(",")))
 	    tree.writeModelToFile("/tmp/test.tree")
 	    
-	    val tree2 = new RegressionTree();
-	    tree2.loadModelFromFile("/tmp/test.tree")
-	    tree2.evaluate(bodyfat_data)
+	    //val tree2 = new RegressionTree();
+	    //tree2.loadModelFromFile("/tmp/test.tree")
+	    //tree2.evaluate(bodyfat_data)
 	    
 	}
 }

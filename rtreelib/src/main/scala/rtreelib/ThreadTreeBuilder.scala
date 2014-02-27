@@ -14,15 +14,22 @@ class ThreadTreeBuilder(featureSet: FeatureSet)
 	extends TreeBuilder(featureSet) {
 
   private def updateModel(finishJob: JobInfo) {
-	  
+
     println("Update model with finished job:" + finishJob)
-    val newnode = (
-      if (finishJob.splitPoint.index < 0) {
-        if (finishJob.splitPoint.index == -1)	// stop node
-          new Empty(finishJob.splitPoint.point.toString)
-        else	// error case
-          new Empty(ERROR_SPLITPOINT_VALUE)
-      } else {
+    
+    // if this job failed, add it to errorQueue and ignore it
+    if (!finishJob.isSuccess) {
+        errorJobs = errorJobs :+ finishJob
+        println ("ERROR: Node id=" + finishJob.ID + " failed\n" + finishJob.errorMessage)
+        return
+    } 
+    
+    // if this job succeeded
+    val newnode = (     
+      if (finishJob.isStopNode) {	// left node
+        new Empty(finishJob.splitPoint.point.toString)
+      } 
+      else { 
         val chosenFeatureInfoCandidate = featureSet.data.find(f => f.index == finishJob.splitPoint.index)
 
         chosenFeatureInfoCandidate match {
@@ -32,15 +39,9 @@ class ThreadTreeBuilder(featureSet: FeatureSet)
               new Empty("empty.left"),
               new Empty("empty.right"));
           }
-          case None => { new Empty(this.ERROR_SPLITPOINT_VALUE)}
+          case None => { new Empty(this.ERROR_SPLITPOINT_VALUE) }
         }
-      })
-
-    if (newnode.value == this.ERROR_SPLITPOINT_VALUE){
-      println ("ERROR: Node id=" + finishJob.ID + " failed\n" + finishJob.errorMessage)
-      errorJobs = errorJobs :+ finishJob
-      return
-    }
+      })	// end of assign value for newnode
       
     // If tree has zero node, create a root node
     if (treeModel.tree.isEmpty) {
@@ -121,8 +122,7 @@ class ThreadTreeBuilder(featureSet: FeatureSet)
       else
         xFeatures.map(x => featureSet.getIndex(x)) + yIndex
 
-    val transformedData = mydata.map(x => processLine(x, featureSet.numberOfFeature, featureSet))
-    // if I cache the RDD here, the algorithm turns out wrong result
+    val transformedData = mydata.map(x => processLine(x, featureSet.numberOfFeature, featureSet)).cache
 
     treeModel.tree = new Empty("None")
     treeModel.featureSet = featureSet;

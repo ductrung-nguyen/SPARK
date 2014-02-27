@@ -10,9 +10,14 @@ package rtreelib
 class FeatureValueAggregate(val index: Int, var xValue: Any, var yValue: Double, var frequency: Int) extends Serializable {
     def addFrequency(acc: Int): FeatureValueAggregate = { FeatureValueAggregate.this.frequency = FeatureValueAggregate.this.frequency + acc; FeatureValueAggregate.this }
     def +(that: FeatureValueAggregate) = {
-        FeatureValueAggregate.this.frequency = FeatureValueAggregate.this.frequency + that.frequency
-        FeatureValueAggregate.this.yValue = FeatureValueAggregate.this.yValue + that.yValue
-        FeatureValueAggregate.this
+    	new FeatureValueAggregate(this.index, this.xValue, 
+    	    this.yValue + that.yValue, 
+    	    this.frequency + that.frequency)
+        
+    	// if we implement this function like bellow, the application will have problem with cache !
+    	//FeatureValueAggregate.this.frequency = FeatureValueAggregate.this.frequency + that.frequency
+        //FeatureValueAggregate.this.yValue = FeatureValueAggregate.this.yValue + that.yValue
+        //FeatureValueAggregate.this
     }
     override def toString() = "Feature(index:" + index + " | xValue:" + xValue +
         " | yValue" + yValue + " | frequency:" + frequency + ")";

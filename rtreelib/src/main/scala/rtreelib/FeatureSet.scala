@@ -38,4 +38,8 @@ class FeatureSet(metadataRDD: Array[String]) extends Serializable {
             s1.substring(1, len - 1)
         else s1
     }      
+    
+    override def toString() = {
+      data.mkString(",\n")
+    }
 }

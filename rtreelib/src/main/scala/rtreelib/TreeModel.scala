@@ -32,7 +32,7 @@ class TreeModel extends Serializable {
             }
 
         }
-        if (tree.isEmpty) "Please build tree first"
+        if (tree.isEmpty) throw new Exception("Please build tree first")
         else predictIter(tree)
     }
 	
@@ -40,7 +40,7 @@ class TreeModel extends Serializable {
      * Evaluate the accuracy of regression tree
      * @input: an input record (uses the same delimiter with trained data set)
      */
-    def evaluate(input: RDD[String], delimiter : Char = ',') {
+    def evaluate(input: RDD[String], delimiter : Char = ',') =  {
         if (!tree.isEmpty){
             val numTest = input.count
             val inputdata = input.map(x => x.split(delimiter))
@@ -55,16 +55,16 @@ class TreeModel extends Serializable {
             
             println("Mean of different:%f\nDeviation of different:%f\nSE of different:%f".format(meanDiff, deviation, SE) )
         }else {
-            "Please build tree first"
+            throw new Exception("Please build tree first")
         }
     }
     
     override def toString() = {
       (
-    		  "FeatureSet:" + featureSet.toString + "\n"
-    		  + "xIndexes:" + xIndexes + "\n"
-    		  + "yIndexes" + yIndex + "\n"
-    		  + "Tree:\n" + "\n"
+    		  "* FeatureSet:" + featureSet.toString + "\n"
+    		  + "* xIndexes:" + xIndexes + "\n"
+    		  + "* yIndex (target index):" + yIndex + "\n"
+    		  + "* Tree:\n"
     		  + tree
       )
     }

@@ -15,7 +15,8 @@ import collection.immutable.TreeMap
 // xType: type of feature: 0 (Continuous) or 1 (Category)
 abstract class FeatureInfo(val Name: String, val Type: String, val index: Int) extends Serializable {
 
-    override def toString() = "Index:" + index + " | Name: " + Name + " | Type: " + Type;
+    override def toString() = " (Index:" + index + " | Name: " + Name + 
+    		" | Type: " + (if (Type == "c") "continuous" else "discrete") + ") ";
 
 }
 

@@ -11,12 +11,19 @@ class JobInfo(id: BigInt, xConditions: List[Condition]) extends Serializable {
     
     // condition of input dataset for this job
     var conditions_of_input_dataset = xConditions;
+
+    // the node which associate to this job can not expand more ?
+    var isStopNode = true;
+    
+    // success or error
+    var isSuccess = false;
     
     // error message if job fail
     var errorMessage = ""
 
     // best splitpoint (result of this job)
-    var splitPoint = new SplitPoint(-9, 0, 0);
+    var splitPoint = new SplitPoint(-9, 0, 0);	// -9 is only a mock value
+							
 
     def this() = this(0, List[Condition]())
     
@@ -78,6 +85,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
 
             var splittingPointFeature = new SplitPoint(-1, eY, 1)	// splitpoint for left node
                 job.splitPoint = splittingPointFeature
+            	job.isSuccess =  true;
                 caller.addJobToFinishedQueue(job)
         } else {
             val groupFeatureByIndexAndValue =
@@ -171,6 +179,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                 //new Empty(eY.toString)
                 splittingPointFeature.point = eY
                 job.splitPoint = splittingPointFeature
+                job.isSuccess = true
                 caller.addJobToFinishedQueue(job)
             } else {
                 //val chosenFeatureInfo = caller.featureSet.data.filter(f => f.index == splittingPointFeature.index).take(0)
@@ -182,6 +191,8 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                 
                 
                 job.splitPoint = splittingPointFeature
+                job.isStopNode = false
+                job.isSuccess = true
                 caller.addJobToFinishedQueue(job)
                 
                 caller.addJobToExpandingQueue(leftJob)
@@ -195,6 +206,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
       catch{
         case e: Exception => {
           job.errorMessage = e.getMessage()
+          job.isSuccess = false;
           caller.addJobToFinishedQueue(job)
           
         }
