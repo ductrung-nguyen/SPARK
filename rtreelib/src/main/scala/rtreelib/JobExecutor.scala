@@ -5,10 +5,17 @@ import org.apache.spark.SparkContext._
 import org.apache.spark.rdd._
 
 class JobInfo(id: BigInt, xConditions: List[Condition]) extends Serializable {
-    var ID = id;
+    
+	// unique ID of this job
+	var ID = id;
+    
+    // condition of input dataset for this job
     var conditions_of_input_dataset = xConditions;
+    
+    // error message if job fail
     var errorMessage = ""
 
+    // best splitpoint (result of this job)
     var splitPoint = new SplitPoint(-9, 0, 0);
 
     def this() = this(0, List[Condition]())
@@ -17,7 +24,12 @@ class JobInfo(id: BigInt, xConditions: List[Condition]) extends Serializable {
             + " splitpoint:" + splitPoint.toString +  "\n")
 }
 
-class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]], caller: RegressionTree3)
+/***
+ * This class will try to find the best attribute and the best split point for this attribute
+ * and submit new job to continue to expand node (if any)
+ */
+class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]], 
+    caller: ThreadTreeBuilder)
     extends Serializable with Runnable {
 
     /**

@@ -10,17 +10,8 @@ import scala.concurrent._
 import scala.concurrent.duration.Duration
 import rtreelib._
 
-class RegressionTree3(metadata: Array[String]) extends BaseRegressionTree(metadata) {
-
-  var expandingJobs: Queue[JobInfo] = Queue[JobInfo]();
-  var finishedJobs: Queue[JobInfo] = Queue[JobInfo]();
-  var errorJobs : Queue[JobInfo] = Queue[JobInfo]();
-  var numberOfRunningJobs = 0
-  
-  private val ERROR_SPLITPOINT_VALUE = ",,,@,,," 
-  private var MAXIMUM_PARALLEL_JOBS = 9999
-  
-  def setMaximumParallelJobs(value : Int) = { MAXIMUM_PARALLEL_JOBS = value }
+class ThreadTreeBuilder(featureSet: FeatureSet) 
+	extends TreeBuilder(featureSet) {
 
   private def updateModel(finishJob: JobInfo) {
 	  
@@ -52,15 +43,15 @@ class RegressionTree3(metadata: Array[String]) extends BaseRegressionTree(metada
     }
       
     // If tree has zero node, create a root node
-    if (tree.isEmpty) {
-      tree = newnode;
+    if (treeModel.tree.isEmpty) {
+      treeModel.tree = newnode;
 
     } else //  add new node to current model
     {
 
       val level = (Math.log(finishJob.ID.toDouble) / Math.log(2)).toInt
       var i: Int = level - 1
-      var parent = tree; // start adding from root node
+      var parent = treeModel.tree; // start adding from root node
       while (i > 0) {
         
         if ((finishJob.ID / (2 << i - 1)) % 2 == 0) {
@@ -101,16 +92,16 @@ class RegressionTree3(metadata: Array[String]) extends BaseRegressionTree(metada
 
     }
   }
-
-  /**
+  
+   /**
    * Building tree bases on:
    * @yFeature: predicted feature
    * @xFeature: input features
    * @return: root of tree
    */
-  def buildTree(trainingData: RDD[String],
+  override def buildTree(trainingData: RDD[String],
     yFeature: String = featureSet.data(yIndex).Name,
-    xFeatures: Set[String] = Set[String]()): Node = {
+    xFeatures: Set[String] = Set[String]()): TreeModel = {
 
     /* INITIALIZE */
 
@@ -124,7 +115,7 @@ class RegressionTree3(metadata: Array[String]) extends BaseRegressionTree(metada
     // PM: You're sending from the "driver" to all workers the index of the Y feature, the one you're trying to predict
     if (fYindex >= 0) yIndex = featureSet.data(fYindex).index
 
-    xIndexs =
+    xIndexes =
       if (xFeatures.isEmpty) // if user didn't specify xFeature, we will process on all feature, include Y feature (to check stop criterion)
         featureSet.data.map(x => x.index).toSet[Int]
       else
@@ -133,8 +124,11 @@ class RegressionTree3(metadata: Array[String]) extends BaseRegressionTree(metada
     val transformedData = mydata.map(x => processLine(x, featureSet.numberOfFeature, featureSet))
     // if I cache the RDD here, the algorithm turns out wrong result
 
-    println("YIndex:" + yIndex + " xIndexes:" + xIndexs)
-    tree = new Empty("None")
+    treeModel.tree = new Empty("None")
+    treeModel.featureSet = featureSet;
+    treeModel.xIndexes = xIndexes;
+    treeModel.yIndex = yIndex;
+    
     val firstJob = new JobInfo(1, List[Condition]())
 
     this.addJobToExpandingQueue(firstJob)
@@ -190,7 +184,6 @@ class RegressionTree3(metadata: Array[String]) extends BaseRegressionTree(metada
     else
     	println("FINISH with some failed jobs:\n" + errorJobs.toString + "\n")
 
-    tree
+    treeModel
   }
-
 }

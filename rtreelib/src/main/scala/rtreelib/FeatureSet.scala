@@ -20,8 +20,6 @@ class FeatureSet(metadataRDD: Array[String]) extends Serializable {
         val data = (((0 until tags.length / 2) map (index => (tags(index), tags(index + tags.length / 2)))) zip (0 until tags.length))
             .map(x => FeatureInfo(x._1._1, x._1._2, x._2)).toList
         data.foreach(x => { mapNameToIndex = mapNameToIndex + (normalizeString(x.Name) -> x.index) })
-        println("Name to index:")
-        mapNameToIndex.foreach(println)
         data
     }
 
