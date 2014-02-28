@@ -12,6 +12,19 @@ import rtreelib._
 
 class ThreadTreeBuilder(featureSet: FeatureSet) 
 	extends TreeBuilder(featureSet) {
+    
+    // queue of waiting jobs
+	var expandingJobs: Queue[JobInfo] = Queue[JobInfo]();
+	
+	// queue of finished jobs
+  	var finishedJobs: Queue[JobInfo] = Queue[JobInfo]();
+  	
+  	// queue of error jobs
+  	var errorJobs : Queue[JobInfo] = Queue[JobInfo]();
+  
+  	// the number of currently running jobs
+  	var numberOfRunningJobs = 0
+  	
 
   private def updateModel(finishJob: JobInfo) {
 
