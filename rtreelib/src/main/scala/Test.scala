@@ -37,7 +37,8 @@ object Test {
 	    //tree.setAttributeNames(",age,DEXfat,waistcirc,hipcirc,elbowbreadth,kneebreadth,anthro3a,anthro3b,anthro3c,anthro4")
 	    tree.treeBuilder.setMinSplit(10)
 	    tree.treeBuilder.setMaximumParallelJobs(10)
-	    println(tree.buildTree("DEXfat", Set("age", "waistcirc","hipcirc","elbowbreadth","kneebreadth")))
+	    //println(tree.buildTree(DEXfat", Set("age", "waistcirc","hipcirc","elbowbreadth","kneebreadth")))
+	    println(tree.buildTree())
 	    println("Predict:" + tree.predict("53,56,29.83,81,103,6.9,8.9,4.14,4.52,4.31,5.69".split(",")))
 	    tree.writeModelToFile("/tmp/test.tree")
 	    
