@@ -115,6 +115,7 @@ class ThreadTreeBuilder(featureSet: FeatureSet)
 
     // PM: You're sending from the "driver" to all workers the index of the Y feature, the one you're trying to predict
     if (fYindex >= 0) yIndex = featureSet.data(fYindex).index
+    else throw new Exception("ERROR: Can not find attribute `" + yFeature + "` in (" + featureSet.data.map(f => f.Name).mkString(",") + ")")
 
     xIndexes =
       if (xFeatures.isEmpty) // if user didn't specify xFeature, we will process on all feature, include Y feature (to check stop criterion)
@@ -122,7 +123,8 @@ class ThreadTreeBuilder(featureSet: FeatureSet)
       else
         xFeatures.map(x => featureSet.getIndex(x)) + yIndex
 
-    val transformedData = mydata.map(x => processLine(x, featureSet.numberOfFeature, featureSet)).cache
+    var transformedData = mydata.map(x => processLine(x, featureSet.numberOfFeature, featureSet))
+    transformedData = transformedData.filter(x => (x.length > 0)).cache
 
     treeModel.tree = new Empty("None")
     treeModel.featureSet = featureSet;

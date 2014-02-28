@@ -89,6 +89,7 @@ abstract class TreeBuilder(val featureSet: FeatureSet) extends Serializable {
         var i = -1;
          Utility.parseDouble(line(yIndex)) match {
             case Some(yValue) => { // check type of Y : if isn't continuous type, return nothing
+              try{
                 line.map(f => { // this map is not parallel, it is executed by each worker on their part of the input RDD
                     i = (i + 1) % length
                     if (xIndexes.contains(i)) {
@@ -97,15 +98,19 @@ abstract class TreeBuilder(val featureSet: FeatureSet) extends Serializable {
                                 val v = Utility.parseDouble(f);
                                 v match {
                                     case Some(d) => new FeatureValueAggregate(i, d, yValue, 1)
-                                    case None => new FeatureValueAggregate(-1, f, 0, 0)
+                                    case None =>  throw new Exception("Value of feature " + i + " is not double. Require DOUBLE")//new FeatureValueAggregate(-9, f, 0, 0)
                                 }
                             }
                             // if this is a categorical feature => return a FeatureAggregateInfo
                             case cFeature : CategoricalFeature => new FeatureValueAggregate(i, f, yValue, 1)
                         } // end match fType(i)
                     } // end if
-                    else new FeatureValueAggregate(-1, f, 0, 0)
+                    else new FeatureValueAggregate(-9, f, 0, -1)	// with frequency = -1 and value 0, we will remove unused features
                 }) // end map
+              }
+              catch {
+                case e : Exception => { println("Record has some invalid values");  Array[FeatureValueAggregate]() }
+              }
             } // end case Some(yvalue)
             case None => { println("Y value is invalid:(%s)".format(line(yIndex))); Array[FeatureValueAggregate]() }
         } // end match Y value
