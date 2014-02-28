@@ -37,6 +37,7 @@ class ThreadTreeBuilder(featureSet: FeatureSet)
         return
     } 
     
+    
     // if this job succeeded
     val newnode = (     
       if (finishJob.isStopNode) {	// left node
