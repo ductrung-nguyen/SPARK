@@ -5,6 +5,7 @@ import org.apache.spark.SparkContext._
 import org.apache.spark.rdd._
 import rtreelib._
 import rtreelib.core.RegressionTree
+import rtreelib.evaluation.Evaluation
 
 object Test {
 	def main(args : Array[String]) = {
@@ -40,6 +41,9 @@ object Test {
 	    //println(tree.buildTree())
 	    //println("Predict:" + tree.predict("53,56,29.83,81,103,6.9,8.9,4.14,4.52,4.31,5.69".split(",")))
 	    //tree.writeModelToFile("/tmp/test.tree")
+	    val predictRDD = tree.predict(bodyfat_data)
+	    val actualValueRDD = bodyfat_data.map(line => line.split(',')(2))
+	    Evaluation.evaluate(predictRDD, actualValueRDD)
 	    
 	    
 	    /* TEST RECOVER MODE

@@ -54,7 +54,8 @@ class TreeModel extends Serializable {
 	    
         def predictIter(currentNode: Node): String = {
             if (currentNode.isEmpty) currentNode.value.toString
-            else currentNode.splitpoint match {
+            else
+                currentNode.splitpoint match {
                 case s: Set[String] => {
                     if (s.contains(record(currentNode.feature.index))) predictIter(currentNode.left)
                     else predictIter(currentNode.right)

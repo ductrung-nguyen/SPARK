@@ -96,9 +96,15 @@ class RegressionTree() extends Serializable {
      * Predict value of the target feature base on the values of input features
      * 
      * @param record	an array, which its each element is a value of each input feature
+     * @return predicted value or '???' if input record is invalid
      */
     def predict(record: Array[String]): String = {
-        treeModel.predict(record)
+        try{
+            treeModel.predict(record)
+        }
+        catch{
+            case e: Exception => "???"
+        }
     }
 
     /**
@@ -107,17 +113,20 @@ class RegressionTree() extends Serializable {
      * @param testingData	the RDD of testing data
      * @return a RDD contain predicted values
      */
-    def predict(testingData: RDD[String]) : RDD[String] = {
-        testingData.map(line => this.predict(line.split(this.treeBuilder.delimiter)))
+    def predict(testingData: RDD[String], delimiter : String = ",") : RDD[String] = {
+        /*
+        val firstLine = testingData.first()
+        try{
+            this.predict(firstLine.split(this.treeBuilder.delimiter))
+        }
+        catch {
+            case e:Exception => throw new Exception("Make sure testing data doesn't contain header")
+            //case e : Exception => throw e
+        }
+        */
+        testingData.map(line => this.predict(line.split(delimiter)))
     }
-    /**
-     * Evaluate the accuracy of regression tree
-     * 
-     * @param input an input record (uses the same delimiter with trained data set)
-     */
-    def evaluate(input: RDD[String], delimiter: Char = ',') {
-        treeModel.evaluate(input, delimiter);
-    }
+
 
     /**
      * Write the current tree model to file
