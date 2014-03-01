@@ -1,46 +1,44 @@
-package rtreelib
+package rtreelib.core
 
-import collection.immutable.TreeMap
 
 /**
  * This class is representative for features
  * We have two feature categories : Numerical and Categorical
  * which are presented by NumericalFeature and CategoricalFeature, respectively
- * @Name: name of feature
- * @Type: type of feature: "d" is discrete feature( categorical feature); "c" is continuous feature (numerical feature)
- * @index: index of this feature in the whole data set, based zero
+ *
+ * @param Name 	Name of feature
+ * @param Type 	Type of feature: "d" is discrete feature( categorical feature); "c" is continuous feature (numerical feature)
+ * @param index Index of this feature in the whole data set, based zero
  */
 
-// xName: Name of feature, such as temperature, weather...
-// xType: type of feature: 0 (Continuous) or 1 (Category)
+/**
+ * The information of a feature
+ *
+ * @param Name	Name of feature, such as temperature, weather...
+ * @param Type	Type of feature: 0 (Continuous) or 1 (Category)
+ */
 abstract class FeatureInfo(val Name: String, val Type: String, val index: Int) extends Serializable {
 
-    override def toString() = " (Index:" + index + " | Name: " + Name + 
-    		" | Type: " + (if (Type == "c") "continuous" else "discrete") + ") ";
+    override def toString() = " (Index:" + index + " | Name: " + Name +
+        " | Type: " + (if (Type == "c") "continuous" else "discrete") + ") ";
 
 }
 
+/**
+ * Object instance FeatureInfo. It can be considered as a feature factory
+ */
 object FeatureInfo extends Serializable {
     //lazy val numericalTag : String = "c"
     //lazy val categoricalTag : String = "d"
 
     def apply(Name: String, Type: String, idx: Int) = {
         var nType = Type.trim
-        var nName = normalizeString(Name)
+        var nName = Utility.normalizeString(Name)
         nType match {
             case "c" => new NumericalFeature(nName, nType, idx) // continuous feature
             case "d" => new CategoricalFeature(nName, nType, idx) // discrete feature
         }
     }
-
-    private def normalizeString(s: String) = {
-        var s1 = s.trim
-        val len = s1.length
-        if (len <= 2 || s1 == "\"\"") s1
-        else if (s1(0) == '\"' && s1(len - 1) == '\"')
-            s1.substring(1, len - 1)
-        else s1
-    }      
 }
 
 /**
@@ -55,5 +53,4 @@ case class NumericalFeature(fName: String, fType: String, fIndex: Int) extends F
  */
 case class CategoricalFeature(fName: String, fType: String, fIndex: Int) extends FeatureInfo(fName, fType, fIndex) {
 
- 
 }

@@ -1,4 +1,4 @@
-package rtreelib
+package rtreelib.core
 
 import org.apache.spark._
 import org.apache.spark.SparkContext._
@@ -7,11 +7,15 @@ import org.apache.spark.rdd._
 // This class will load Feature Set from a file
 class FeatureSet(metadata: Array[String]) extends Serializable {
 
+    // map a name of feature to its index
     private var mapNameToIndex: Map[String, Int] = Map[String, Int]() //withDefaultValue -1
     // we can not use withDefaulValue here. It will raise a NotSerializableExecptiopn
     // because of a bug in scala 2.9x. This bug is solved in 2.10
 
-    private def loadFromFile() = {
+    /**
+     * Construct set of features information based on metadata
+     */
+    private def loadMetadata() = {
 
         if (metadata.length >= 2){
 	        var tags = metadata.take(2).flatMap(line => line.split(",")).toSeq.toList
@@ -28,11 +32,24 @@ class FeatureSet(metadata: Array[String]) extends Serializable {
         }
     }
 
+    /**
+     * Get index of a feature based on its name
+     */
     def getIndex(name: String): Int = try { mapNameToIndex(name)}  catch { case _ => -1 }
     
-    var rawData = List[FeatureInfo]()
-    val data = loadFromFile()
+    /**
+     * List of feature info, we can see it like a map from index to name
+     */
+    private var rawData = List[FeatureInfo]()
     
+    /**
+     * Features information
+     */
+    val data = loadMetadata()
+    
+    /**
+     * Number of features
+     */
     lazy val numberOfFeature = data.length     
     
     override def toString() = {

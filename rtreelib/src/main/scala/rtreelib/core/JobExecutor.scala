@@ -1,39 +1,65 @@
-package rtreelib
+package rtreelib.core
 
 import org.apache.spark._
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd._
 
+/**
+ * The information of a job, which will find the best feature and the best split point of this feature to split
+ * @param id The unique id of jobs
+ * @param xConditions The list of condition , which will be used to get the 'right dataset' from the whole dataset
+ */
 class JobInfo(id: BigInt, xConditions: List[Condition]) extends Serializable {
     
-	// unique ID of this job
+	/**
+	 *  unique ID of this job
+	 */ 
 	var ID = id;
     
-    // condition of input dataset for this job
+    /**
+     *  condition of input dataset for this job
+     */ 
     var conditions_of_input_dataset = xConditions;
 
-    // the node which associate to this job can not expand more ?
+    /**
+     *  the node which associate to this job can not expand more ?
+     */ 
     var isStopNode = true;
     
-    // success or error
+    /**
+     *  success or error
+     */ 
     var isSuccess = false;
     
-    // error message if job fail
+    /**
+     *  error message if job fail
+     */ 
     var errorMessage = ""
 
-    // best splitpoint (result of this job)
+    /**
+     *  best splitpoint (result of this job)
+     */ 
     var splitPoint = new SplitPoint(-9, 0, 0);	// -9 is only a mock value
 							
-
+    /**
+     * Constructor
+     */
     def this() = this(0, List[Condition]())
     
+    /**
+     * Convert this instance into string
+     */
     override def toString() = ("Job ID=" + ID.toString + " condition = " + xConditions.toString
             + " splitpoint:" + splitPoint.toString +  "\n")
 }
 
-/***
- * This class will try to find the best attribute and the best split point for this attribute
+/**
+ * This class will launch a job and try to find the best attribute and the best split point for this attribute
  * and submit new job to continue to expand node (if any)
+ * 
+ * @param job The information of job which will be launched
+ * @param inputdata The whole data set
+ * @param caller The ThreadTreeBuilder instance, which called instance of this class
  */
 class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]], 
     caller: ThreadTreeBuilder)
@@ -41,8 +67,9 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
 
     /**
      * Check a sub data set has meet stop criterion or not
-     * @data: data set
-     * @return: true/false and average of Y
+     * 
+     * @param data data set
+     * @return <code>true</code>/<code>false</code> and the average of value of target feature
      */
     def checkStopCriterion(data: RDD[FeatureValueAggregate]): (Boolean, Double) = { //PM: since it operates on RDD it is parallel
         val yFeature = data.filter(x => x.index == caller.yIndex)
@@ -71,9 +98,13 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
 
     }
 
+    /**
+     * This function will be call when the parent thread start
+     */
     @Override
     def run() {
       try{
+          
         var data = inputData.filter(
             x => job.conditions_of_input_dataset.forall(
                 sp => {
@@ -173,13 +204,13 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                 maxBy(_.weight) // select best feature to split
             // PM: collect here means you're sending back all the data to a single machine (the driver).
 
-            if (splittingPointFeature.index == -1) { // the chosen feature has only one value
-                //val commonValueY = yFeature.reduce((x, y) => if (x._2.length > y._2.length) x else y)._1
-                //new Empty(commonValueY.toString)
-                //new Empty(eY.toString)
+            if (splittingPointFeature.index < 0) { 
                 splittingPointFeature.point = eY
                 job.splitPoint = splittingPointFeature
                 job.isSuccess = true
+                if (splittingPointFeature.index == -9)	// this is unused feature, so ignore it when updating model
+                    job.isStopNode = false
+                    
                 caller.addJobToFinishedQueue(job)
             } else {
                 //val chosenFeatureInfo = caller.featureSet.data.filter(f => f.index == splittingPointFeature.index).take(0)
