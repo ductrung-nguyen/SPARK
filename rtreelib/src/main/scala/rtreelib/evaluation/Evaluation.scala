@@ -6,27 +6,51 @@ import org.apache.spark.rdd._
  * Use to evaluate a prediction
  */
 object Evaluation {
+    
+    /**
+     * The metric which we want to use
+     */
+    var metric : BaseEvaluation = new SDEvaluationMetric()
+    
+    /**
+     * Choose the strategy to determine the accuracy metric
+     */
+    def apply(strategy : String = "standard-deviation") = {
+        println("Evaluation Method:" + strategy)
+    	strategy match {
+    	    case whatever => { metric = new SDEvaluationMetric() }
+    	}
+        this
+    }
+    
     /**
      * Evaluate the accuracy of regression tree
      *
-     * @param input an input record (uses the same delimiter with trained data set)
+     * @param 	predictedResult predicted values
+     * @param 	actualResult actual values, and may be some more related values
      */
     def evaluate(predictedResult: RDD[String], actualResult: RDD[String]) = {
-        var newRDD = predictedResult zip actualResult
-        newRDD = newRDD.filter(v => v._1 != "???") // filter invalid record, v._1 is predicted value
-
-        val numTest = newRDD.count
-
-        val diff = newRDD.map(x => (x._1.toDouble, x._2.toDouble)).map(x => (x._2 - x._1, (x._2 - x._1) * (x._2 - x._1)))
-
-        val sums = diff.reduce((x, y) => (x._1 + y._1, x._2 + y._2))
-
-        val meanDiff = sums._1 / numTest
-        val meanDiffPower2 = sums._2 / numTest
-        val deviation = math.sqrt(meanDiffPower2 - meanDiff * meanDiff)
-        val SE = deviation / numTest
-
-        println("Mean of different:%f\nDeviation of different:%f\nSE of different:%f".format(meanDiff, deviation, SE))
-
+        if (metric != null){
+            metric.Evaluate(predictedResult, actualResult)
+        }else{
+            println("metric is null")
+        }
     }
+    
+    /**
+     * Evaluate the accuracy of regression tree with the custom function
+     *
+     * @param 	predictedResult predicted values
+     * @param 	actualResult actual values, and may be some more related values
+     * @f		the custom function
+     */
+    def evaluateWith(predictedResult: RDD[String], actualResult: RDD[String])(f : (RDD[String], RDD[String]) => Any) = {
+        try{
+        	f(predictedResult, actualResult)
+        }catch{
+            case e: Exception =>
+            	println("ERROR:Something wrong:" + e.getMessage())
+        }
+    }
+    
 }
