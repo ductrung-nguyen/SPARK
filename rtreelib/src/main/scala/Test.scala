@@ -43,8 +43,7 @@ object Test {
 	    //tree.writeModelToFile("/tmp/test.tree")
 	    val predictRDD = tree.predict(bodyfat_data)
 	    val actualValueRDD = bodyfat_data.map(line => line.split(',')(2))
-	    Evaluation.evaluate(predictRDD, actualValueRDD)
-	    
+	    Evaluation.evaluate(predictRDD, actualValueRDD)    
 	    
 	    /* TEST RECOVER MODE
 	    val recoverTree = new RegressionTree()
