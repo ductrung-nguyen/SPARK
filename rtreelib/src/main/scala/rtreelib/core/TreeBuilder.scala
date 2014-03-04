@@ -135,6 +135,7 @@ abstract class TreeBuilder(var featureSet: FeatureSet) extends Serializable {
         
         initBuildingTree(trainingData, yFeature, xFeatures)
         startBuildTree(trainingData)
+        treeModel
     }
     
     /**
@@ -181,11 +182,13 @@ abstract class TreeBuilder(var featureSet: FeatureSet) extends Serializable {
      * @return TreeModel the root node of tree
      * @see TreeModel
      */
-    protected def startBuildTree(trainingData: RDD[String]) : TreeModel
+    protected def startBuildTree(trainingData: RDD[String])
     
     /**
      * Recover, repair and continue build tree from the last state
      */
-    def continueFromIncompleteModel(trainingData: RDD[String]) : TreeModel
+    def continueFromIncompleteModel(trainingData: RDD[String])
+    
+    def createNewInstance(featureSet: FeatureSet) : TreeBuilder
 
 }

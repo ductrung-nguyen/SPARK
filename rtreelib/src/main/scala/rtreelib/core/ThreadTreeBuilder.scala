@@ -161,9 +161,9 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
      *
      * @return: <code>TreeModel</code> : root of the tree
      */
-    override def startBuildTree(trainingData : RDD[String]) : TreeModel = {
+    override def startBuildTree(trainingData : RDD[String]) = {
 
-                // parse raw data
+        // parse raw data
         val mydata = trainingData.map(line => line.split(delimiter))
         
         // encapsulate each value of each feature in each line into a object
@@ -248,9 +248,6 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
             println("Temporaty Tree model is stored at " + this.temporaryModelFile + "\n")
         }
         
-        
-
-        treeModel
     }
     
      /**
@@ -258,7 +255,7 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
      * 
      * @throw Exception if the tree is never built before
      */
-    override def continueFromIncompleteModel(trainingData: RDD[String]) : TreeModel = {
+    override def continueFromIncompleteModel(trainingData: RDD[String]) = {
         if (treeModel == null){
             throw new Exception("The tree model is empty because of no building. Please build it first")
         }
@@ -287,8 +284,6 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
 	        // start build tree
 	        startBuildTree(trainingData)
         }
-        
-        treeModel
     }
     
     /**
@@ -325,4 +320,6 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
         jobList.foreach(job => this.addJobToExpandingQueue(job))
         
     }
+    
+    override def createNewInstance(featureSet : FeatureSet) = new ThreadTreeBuilder(featureSet)
 }

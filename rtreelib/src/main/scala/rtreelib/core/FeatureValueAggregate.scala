@@ -7,7 +7,7 @@ package rtreelib.core
  * @param yValue Value of the Y feature associated (target, predicted feature)
  * @param frequency Frequency of this value
  */
-class FeatureValueAggregate(val index: Int, var xValue: Any, var yValue: Double, var frequency: Int) extends Serializable {
+class FeatureValueAggregate(var index: Int, var xValue: Any, var yValue: Double, var frequency: Int) extends Serializable {
 
     /**
      * Increase the frequency of this feature

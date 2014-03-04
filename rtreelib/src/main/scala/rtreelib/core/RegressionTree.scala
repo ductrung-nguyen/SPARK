@@ -274,7 +274,8 @@ class RegressionTree() extends Serializable {
     private def updateFeatureSet() = {
         	featureSet = new FeatureSet(this.metadata)
             yIndexDefault = featureSet.numberOfFeature - 1
-            treeBuilder = new ThreadTreeBuilder(featureSet);
+            //treeBuilder = new ThreadTreeBuilder(featureSet);
+            treeBuilder = treeBuilder.createNewInstance(featureSet)
     }
     /* END REGION DATASET AND METADATA */
 }
