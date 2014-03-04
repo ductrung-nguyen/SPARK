@@ -16,7 +16,14 @@ object Test {
 	    val IS_LOCAL = true
 	    
 	    
-	    val inputFile = (
+	    val inputTrainingFile = (
+	        if (IS_LOCAL)
+	        	"data/bodyfat.csv"
+	        else
+	            "hdfs://spark-master-001:8020/user/ubuntu/input/bus.txt"
+	    )
+	    
+	    val inputTestingFile = (
 	        if (IS_LOCAL)
 	        	"data/bodyfat.csv"
 	        else
@@ -32,15 +39,15 @@ object Test {
 
 	    var stime : Long = 0
 	    
-	    val trainingData = context.textFile(inputFile, 1)
-	    val testingData = context.textFile(inputFile, 1)
+	    val trainingData = context.textFile(inputTrainingFile, 1)
+	    val testingData = context.textFile(inputTestingFile, 1)
 
 
 	    /* TEST BUILDING TREE */
 	    
 	    val tree = new RegressionTree()
 	    tree.setDataset(trainingData)
-	    tree.treeBuilder = new DataMarkerTreeBuilder(tree.featureSet)
+	    tree.treeBuilder = new DataMarkerTreeBuilder(tree.featureSet)	// change the default tree builder
 	    //tree.setAttributeTypes("c,c,c,c,c,c,c,c,c,c,c")
 	    //tree.setAttributeNames(",age,DEXfat,waistcirc,hipcirc,elbowbreadth,kneebreadth,anthro3a,anthro3b,anthro3c,anthro4")
 	    tree.treeBuilder.setMinSplit(10)
