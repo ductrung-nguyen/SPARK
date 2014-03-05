@@ -13,7 +13,7 @@ object Test {
 	def main(args : Array[String]) = {
 	    
 	    
-	    val IS_LOCAL = true
+	    val IS_LOCAL = false
 	    
 	    
 	    val inputTrainingFile = (
@@ -40,7 +40,7 @@ object Test {
 	        		.setAppName("rtree example")
 	        		.setSparkHome("/opt/spark")
 	        		.setJars(List("target/scala-2.10/rtree-example_2.10-1.0.jar"))
-	        		.setExecutorEnv(Array(("spark.executor.memory", "2g")))
+	        		.set("spark.executor.memory", "2222m")
 	    )
 	    
 	    val context = new SparkContext(conf)

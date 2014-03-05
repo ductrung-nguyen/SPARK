@@ -125,8 +125,10 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
             var featureValueSorted = (
                 //data.groupBy(x => (x.index, x.xValue))
                 groupFeatureByIndexAndValue // PM: this is an RDD hence you do the map and fold in parallel (in MapReduce this would be the "reducer")
-                .map(x => (new FeatureValueAggregate(x._1._1, x._1._2, 0, 0)
+                /*.map(x => (new FeatureValueAggregate(x._1._1, x._1._2, 0, 0)
                     + x._2.foldLeft(new FeatureValueAggregate(x._1._1, x._1._2, 0, 0))(_ + _)))
+                */
+                .map(x => x._2.reduce((f1,f2) => f1 + f2))
                 // sample results
                 //Feature(index:2 | xValue:normal | yValue6.0 | frequency:7)
                 //Feature(index:1 | xValue:sunny | yValue2.0 | frequency:5)
@@ -134,7 +136,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
 
                 .groupBy(x => x.index) // This is again operating on the RDD, and actually is like the continuation of the "reducer" code above
                 .map(x =>
-                    (x._1, x._2.toSeq.sortBy(
+                    (x._1, x._2.sortBy(
                         v => v.xValue match {
                             case d: Double => d // sort by xValue if this is numerical feature
                             case s: String => v.yValue / v.frequency // sort by the average of Y if this is categorical value
@@ -146,8 +148,11 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                         {
                             var acc: Int = 0; // the number records on the left of current feature
                             var currentSumY: Double = 0 // current sum of Y of elements on the left of current feature
-                            val numRecs: Int = x._2.foldLeft(0)(_ + _.frequency) // number of records
-                            val sumY = x._2.foldLeft(0.0)(_ + _.yValue) // total sum of Y
+                            var temp = x._2.reduce((f1, f2) => f1 + f2)
+                            val numRecs = temp.frequency
+                            val sumY = temp.yValue
+                            //val numRecs: Int = x._2.foldLeft(0)(_ + _.frequency) // number of records
+                            //val sumY = x._2.foldLeft(0.0)(_ + _.yValue) // total sum of Y
 
                             var splitPoint: Set[String] = Set[String]()
                             var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0)
@@ -174,9 +179,13 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                     case d: Double => // process with numerical feature
                         {
                             var acc: Int = 0 // number of records on the left of the current element
-                            val numRecs: Int = x._2.foldLeft(0)(_ + _.frequency)
                             var currentSumY: Double = 0
-                            val sumY = x._2.foldLeft(0.0)(_ + _.yValue)
+                            //val numRecs: Int = x._2.foldLeft(0)(_ + _.frequency)
+                            //val sumY = x._2.foldLeft(0.0)(_ + _.yValue)
+                            var temp = x._2.reduce((f1, f2) => f1 + f2)
+                            val numRecs = temp.frequency
+                            val sumY = temp.yValue
+                            
                             var posibleSplitPoint: Double = 0
                             var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0)
                             try {
