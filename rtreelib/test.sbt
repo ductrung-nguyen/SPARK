@@ -1,16 +1,14 @@
 name := "rtree example"
 
-version := "1.0"
+scalaVersion := "2.10.3"
 
-scalaVersion := "2.9.3"
-
-//retrieveManaged := true
-
-libraryDependencies += "org.apache.spark" %% "spark-core" % "0.8.1-incubating"
+libraryDependencies += "org.apache.spark" % "spark-core_2.10" % "0.9.0-incubating"
 
 libraryDependencies += "org.apache.hadoop" % "hadoop-client" % "2.0.0-mr1-cdh4.2.0"
 
 libraryDependencies += "com.esotericsoftware.kryo" % "kryo" % "2.22"
+
+libraryDependencies <+= scalaVersion("org.scala-lang" % "scala-actors" % _)
 
 resolvers ++= Seq(
         "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
@@ -24,6 +22,6 @@ resolvers ++= Seq(
 
 ivyXML :=
 <dependency org="org.eclipse.jetty.orbit" name="javax.servlet" rev="2.5.0.v201103041518">
-	<artifact name="javax.servlet" type="orbit" ext="jar"/>
+<artifact name="javax.servlet" type="orbit" ext="jar"/>
 </dependency>
 

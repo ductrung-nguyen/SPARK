@@ -30,12 +30,20 @@ object Test {
 	            "hdfs://spark-master-001:8020/user/ubuntu/input/bus.txt"
 	    )
 	    
-	    val context = ( 
-	            if (IS_LOCAL)
-	                new SparkContext("local", "rtree example")
-	            else
-	                new SparkContext("spark://spark-master-001:7077", "rtree example", "/opt/spark/", List("target/scala-2.9.3/rtree-example_2.9.3-1.0.jar"))
+	    val conf = (
+	        if (IS_LOCAL)
+	        	new SparkConf()
+	        		.setMaster("local").setAppName("rtree example")
+	        else
+	            new SparkConf()
+	        		.setMaster("spark://spark-master-001:7077")
+	        		.setAppName("rtree example")
+	        		.setSparkHome("/opt/spark")
+	        		.setJars(List("target/scala-2.10/rtree-example_2.10-1.0.jar"))
+	        		.setExecutorEnv(Array(("spark.executor.memory", "2g")))
 	    )
+	    
+	    val context = new SparkContext(conf)
 
 	    var stime : Long = 0
 	    
