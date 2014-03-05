@@ -20,14 +20,14 @@ object Test {
 	        if (IS_LOCAL)
 	        	"data/bodyfat.csv"
 	        else
-	            "hdfs://spark-master-001:8020/user/ubuntu/input/bus.txt"
+	            "hdfs://spark-master-001:8020/user/ubuntu/input/AIRLINES/2006.csv"
 	    )
 	    
 	    val inputTestingFile = (
 	        if (IS_LOCAL)
 	        	"data/bodyfat.csv"
 	        else
-	            "hdfs://spark-master-001:8020/user/ubuntu/input/bus.txt"
+	            "hdfs://spark-master-001:8020/user/ubuntu/input/AIRLINES/2006.csv"
 	    )
 	    
 	    val conf = (
@@ -55,12 +55,17 @@ object Test {
 	    
 	    val tree = new RegressionTree()
 	    tree.setDataset(trainingData)
-	    tree.treeBuilder = new DataMarkerTreeBuilder(tree.featureSet)	// change the default tree builder
-	    //tree.setAttributeTypes("c,c,c,c,c,c,c,c,c,c,c")
-	    //tree.setAttributeNames(",age,DEXfat,waistcirc,hipcirc,elbowbreadth,kneebreadth,anthro3a,anthro3b,anthro3c,anthro4")
-	    tree.treeBuilder.setMinSplit(10)
-	    tree.treeBuilder.setMaximumParallelJobs(10)
-	    println(tree.buildTree("DEXfat", Set("age", "waistcirc","hipcirc","elbowbreadth","kneebreadth")))
+	    //tree.treeBuilder = new DataMarkerTreeBuilder(tree.featureSet) // change the default tree builder
+        //tree.setAttributeTypes("c,c,c,c,c,c,c,c,c,c,c")
+        //tree.setAttributeNames(",age,DEXfat,waistcirc,hipcirc,elbowbreadth,kneebreadth,anthro3a,anthro3b,anthro3c,anthro4")
+        tree.treeBuilder.setMinSplit(10)
+        tree.treeBuilder.setMaximumParallelJobs(10)
+
+        if (IS_LOCAL)
+            println(tree.buildTree("DEXfat", Set("age", "waistcirc", "hipcirc", "elbowbreadth", "kneebreadth")))
+        else
+            println(tree.buildTree("ArrDelay"))
+	    
 	    // build tree with target feature is the last feature
 	    //println(tree.buildTree()) 
 
