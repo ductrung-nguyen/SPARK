@@ -161,7 +161,7 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
      *
      * @return: <code>TreeModel</code> : root of the tree
      */
-    override def startBuildTree(trainingData : RDD[String]) = {
+    override def startBuildTree(trainingData : RDD[String]) : Unit = {
 
         // parse raw data
         val mydata = trainingData.map(line => line.split(delimiter))
@@ -171,6 +171,8 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
 
         // filter the 'line' which contains the invalid or missing data
         transformedData = transformedData.filter(x => (x.length > 0))
+        var t = transformedData.reduce((x, y) => x.++:(y))
+        return
         
         // if we build a completely new tree, the expandingJobs is empty
         // otherwise, if we try to re-build an incomplete tree, the expandingJobs is not empty
