@@ -95,23 +95,25 @@ abstract class TreeBuilder(var featureSet: FeatureSet) extends Serializable {
         Utility.parseDouble(line(yIndex)) match {
             case Some(yValue) => { // check type of Y : if isn't continuous type, return nothing
                 try {
-                    line.map(f => { // this map is not parallel, it is executed by each worker on their part of the input RDD
-                        i = (i + 1) % length
-                        if (xIndexes.contains(i)) {
-                            featureSet.data(i) match {
+                    val lineWithIndex = line zip Array.range(0, line.length)
+                    lineWithIndex.map(value_index => {
+                        val index = value_index._2
+                        val value = value_index._1
+                        if (xIndexes.contains(index)) {
+                            featureSet.data(index) match {
                                 case nFeature: NumericalFeature => { // If this is a numerical feature => parse value from string to double
-                                    val v = Utility.parseDouble(f);
+                                    val v = Utility.parseDouble(value);
                                     v match {
-                                        case Some(d) => new FeatureValueAggregate(i, d, yValue, yValue*yValue, 1)
-                                        case None => throw new Exception("Value of feature " + i + " is not double. Require DOUBLE") //new FeatureValueAggregate(-9, f, 0, 0)
+                                        case Some(d) => new FeatureValueAggregate(index, d, yValue, yValue*yValue, 1)
+                                        case None => throw new Exception("Value of feature " + index + " is not double. Require DOUBLE") //new FeatureValueAggregate(-9, f, 0, 0)
                                     }
                                 }
                                 // if this is a categorical feature => return a FeatureAggregateInfo
-                                case cFeature: CategoricalFeature => new FeatureValueAggregate(i, f, yValue, yValue*yValue, 1)
+                                case cFeature: CategoricalFeature => new FeatureValueAggregate(index, value, yValue, yValue*yValue, 1)
                             } // end match fType(i)
                         } // end if
-                        else new FeatureValueAggregate(-9, f, 0, 0, -1) // with frequency = -1 and value 0, we will remove unused features
-                    }) // end map
+                        else new FeatureValueAggregate(-9, value, 0, 0, -1) // with frequency = -1 and value 0, we will remove unused features
+                    } )	// end map
                 } catch {
                     case e: Exception => { println("Record has some invalid values"); Array[FeatureValueAggregate]() }
                 }
