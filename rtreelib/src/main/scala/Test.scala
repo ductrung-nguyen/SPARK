@@ -13,7 +13,7 @@ object Test {
 	def main(args : Array[String]) = {
 	    
 	    
-	    val IS_LOCAL = false
+	    val IS_LOCAL = true
 	    
 	    
 	    val inputTrainingFile = (
@@ -80,9 +80,9 @@ object Test {
 	    
 	    // predict a single value
 	    //println("Predict:" + tree.predict("53,56,29.83,81,103,6.9,8.9,4.14,4.52,4.31,5.69".split(",")))
-	    val predictRDD = tree.predict(testingData)
-	    val actualValueRDD = testingData.map(line => line.split(',')(2))
-	    Evaluation.evaluate(predictRDD, actualValueRDD)    
+	    //val predictRDD = tree.predict(testingData)
+	    //val actualValueRDD = testingData.map(line => line.split(',')(2))
+	    //Evaluation.evaluate(predictRDD, actualValueRDD)    
 	    
 	    
 	    

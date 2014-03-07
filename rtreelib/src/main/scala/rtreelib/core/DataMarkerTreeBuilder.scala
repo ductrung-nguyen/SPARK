@@ -9,8 +9,8 @@ import org.apache.spark.rdd.RDD
  * @param yValue Value of the Y feature associated (target, predicted feature)
  * @param frequency Frequency of this value
  */
-class FeatureValueLabelAggregate(index: Int, xValue: Any, yValue: Double, frequency: Int, var label: BigInt = 1)
-    extends FeatureValueAggregate(index, xValue, yValue, frequency) {
+class FeatureValueLabelAggregate(index: Int, xValue: Any, yValue: Double, yValuePower2 : Double, frequency: Int, var label: BigInt = 1)
+    extends FeatureValueAggregate(index, xValue, yValue, yValuePower2, frequency) {
 
     /**
      * Sum two FeatureValueAggregates (sum two yValues and two frequencies)
@@ -18,6 +18,7 @@ class FeatureValueLabelAggregate(index: Int, xValue: Any, yValue: Double, freque
     override def +(that: FeatureValueAggregate) = {
         new FeatureValueLabelAggregate(this.index, this.xValue,
             this.yValue + that.yValue,
+            this.yValuePower2 + that.yValuePower2,
             this.frequency + that.frequency,
             this.label)
     }
@@ -63,15 +64,15 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                                 case nFeature: NumericalFeature => { // If this is a numerical feature => parse value from string to double
                                     val v = Utility.parseDouble(f);
                                     v match {
-                                        case Some(d) => new FeatureValueLabelAggregate(i, d, yValue, 1)
+                                        case Some(d) => new FeatureValueLabelAggregate(i, d, yValue, yValue*yValue, 1)
                                         case None => throw new Exception("Value of feature " + i + " is not double. Require DOUBLE") //new FeatureValueAggregate(-9, f, 0, 0)
                                     }
                                 }
                                 // if this is a categorical feature => return a FeatureAggregateInfo
-                                case cFeature: CategoricalFeature => new FeatureValueLabelAggregate(i, f, yValue, 1)
+                                case cFeature: CategoricalFeature => new FeatureValueLabelAggregate(i, f, yValue, yValue*yValue, 1)
                             } // end match fType(i)
                         } // end if
-                        else new FeatureValueLabelAggregate(-9, f, 0, -1) // with frequency = -1 and value 0, we will remove unused features
+                        else new FeatureValueLabelAggregate(-9, f, 0, 0, -1) // with frequency = -1 and value 0, we will remove unused features
                     }) // end map
                 } catch {
                     case e: Exception => { println("Record has some invalid values"); Array[FeatureValueLabelAggregate]() }
@@ -124,8 +125,8 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
         var featureValueSorted = (
             //data.groupBy(x => (x.index, x.xValue))
             groupFeatureByIndexAndValue // PM: this is an RDD hence you do the map and fold in parallel (in MapReduce this would be the "reducer")
-            .map(x => (new FeatureValueAggregate(x._1._1, x._1._2, 0, 0)
-                + x._2.foldLeft(new FeatureValueAggregate(x._1._1, x._1._2, 0, 0))(_ + _)))
+            .map(x => (new FeatureValueAggregate(x._1._1, x._1._2, 0, 0, 0)
+                + x._2.foldLeft(new FeatureValueAggregate(x._1._1, x._1._2, 0, 0, 0))(_ + _)))
             // sample results
             //Feature(index:2 | xValue:normal | yValue6.0 | frequency:7)
             //Feature(index:1 | xValue:sunny | yValue2.0 | frequency:5)
@@ -149,7 +150,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                         val sumY = x._2.foldLeft(0.0)(_ + _.yValue) // total sum of Y
 
                         var splitPoint: Set[String] = Set[String]()
-                        var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0)
+                        var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0, 0)
                         try {
                             x._2.map(f => {
 
@@ -177,7 +178,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                         var currentSumY: Double = 0
                         val sumY = x._2.foldLeft(0.0)(_ + _.yValue)
                         var posibleSplitPoint: Double = 0
-                        var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0)
+                        var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0, 0)
                         try {
                             x._2.map(f => {
 

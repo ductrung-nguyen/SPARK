@@ -72,30 +72,28 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
      * @return <code>true</code>/<code>false</code> and the average of value of target feature
      */
     def checkStopCriterion(data: RDD[FeatureValueAggregate]): (Boolean, Double) = { //PM: since it operates on RDD it is parallel
+
         val yFeature = data.filter(x => x.index == caller.yIndex)
 
         //yFeature.collect.foreach(println)
-
-        val numTotalRecs = yFeature.reduce(_ + _).frequency
-
-        val yValues = yFeature.groupBy(_.yValue)
-
-        val yAggregate = yFeature.map(x => (x.yValue, x.yValue * x.yValue))
-
-        val ySumValue = yAggregate.reduce((x, y) => (x._1 + y._1, x._2 + y._2))
-
-        val EY = ySumValue._1 / numTotalRecs
-        val EY2 = ySumValue._2 / numTotalRecs
-
-        val standardDeviation = math.sqrt(EY2 - EY * EY)
-
+        
+        val sum = yFeature.reduce(_ + _)
+        
+        val numTotalRecs = sum.frequency
+        val sumOfYValue = sum.yValue
+        val sumOfYValuePower2 = sum.yValuePower2
+        
+        val meanY = sumOfYValue / numTotalRecs
+        val meanOfYPower2 = sumOfYValuePower2 / numTotalRecs
+        val standardDeviation = math.sqrt(meanOfYPower2 - meanY*meanY)
+        
+        // return tuple (isStop, meanY)
         (( // the first component of tuple
             (numTotalRecs <= caller.minsplit) // or the number of records is less than minimum
-            || (((standardDeviation < caller.threshold) && (EY == 0)) || (standardDeviation / EY < caller.threshold)) // or standard devariance of values of Y feature is small enough
+            || (((standardDeviation < caller.threshold) && (meanY == 0)) || (standardDeviation / meanY < caller.threshold)) // or standard devariance of values of Y feature is small enough
             ),
-            EY // the second component of tuple
+            meanY // the second component of tuple
             )
-
     }
 
     /**
@@ -155,7 +153,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                             //val sumY = x._2.foldLeft(0.0)(_ + _.yValue) // total sum of Y
 
                             var splitPoint: Set[String] = Set[String]()
-                            var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0)
+                            var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0, 0)
                             try {
                                 x._2.map(f => {
 
@@ -187,7 +185,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                             val sumY = temp.yValue
                             
                             var posibleSplitPoint: Double = 0
-                            var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0)
+                            var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0, 0)
                             try {
                                 x._2.map(f => {
 
@@ -248,7 +246,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
           job.errorMessage = e.getMessage()
           job.isSuccess = false;
           caller.addJobToFinishedQueue(job)
-          
+          e.printStackTrace()
         }
       }
 

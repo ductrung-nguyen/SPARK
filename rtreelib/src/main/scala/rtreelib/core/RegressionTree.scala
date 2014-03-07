@@ -51,6 +51,21 @@ class RegressionTree() extends Serializable {
      */
     var trainingData: RDD[String] = null;
 
+    private def getXIndexesAndYIndexByNames(xNames : Set[String], yName : String) : (Set[Int], Int) = {
+        var yindex = featureSet.getIndex(yName)
+        if (yindex < 0)
+            throw new Exception("ERROR: Can not find attribute `" + yName + "` in (" + featureSet.data.map(f => f.Name).mkString(",") + ")")
+        // index of features, which will be used to predict the target feature
+        var xindexes =
+            if (xNames.isEmpty) // if user didn't specify xFeature, we will process on all feature, include Y feature (to check stop criterion)
+                featureSet.data.map(x => x.index).toSet[Int]
+            else
+                xNames.map(x => featureSet.getIndex(x)) + yindex
+                
+        (xindexes, yindex)
+        
+    }
+    
     /**
      * This function is used to build the tree
      * 
@@ -60,10 +75,10 @@ class RegressionTree() extends Serializable {
      * @see TreeModel
      */
     private def buildTree(trainingData: RDD[String],
-        yFeature: String,
-        xFeatures: Set[String]): TreeModel = {
+        xIndexes: Set[Int],
+        yIndex: Int): TreeModel = {
 
-        treeModel = treeBuilder.buildTree(trainingData, yFeature, xFeatures);
+        treeModel = treeBuilder.buildTree(trainingData, xIndexes, yIndex);
         treeModel
     }
     
@@ -86,10 +101,8 @@ class RegressionTree() extends Serializable {
             throw new Exception("ERROR:Dataset is invalid or invalid feature names")
         }
 
-        if (yFeature == "")
-            this.buildTree(this.trainingData, featureSet.data(yIndexDefault).Name, xFeatures)
-        else
-            this.buildTree(this.trainingData, yFeature, xFeatures)
+        val (xIndexes, yIndex) = this.getXIndexesAndYIndexByNames(xFeatures, yFeature)
+        this.buildTree(this.trainingData, xIndexes, yIndex)
     }
 
     /**

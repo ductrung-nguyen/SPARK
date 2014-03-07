@@ -170,7 +170,7 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
         var transformedData = mydata.map(x => processLine(x, featureSet.numberOfFeature, featureSet))
 
         // filter the 'line' which contains the invalid or missing data
-        transformedData = transformedData.filter(x => (x.length > 0)).cache
+        transformedData = transformedData.filter(x => (x.length > 0))
         
         // if we build a completely new tree, the expandingJobs is empty
         // otherwise, if we try to re-build an incomplete tree, the expandingJobs is not empty

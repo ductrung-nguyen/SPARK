@@ -102,15 +102,15 @@ abstract class TreeBuilder(var featureSet: FeatureSet) extends Serializable {
                                 case nFeature: NumericalFeature => { // If this is a numerical feature => parse value from string to double
                                     val v = Utility.parseDouble(f);
                                     v match {
-                                        case Some(d) => new FeatureValueAggregate(i, d, yValue, 1)
+                                        case Some(d) => new FeatureValueAggregate(i, d, yValue, yValue*yValue, 1)
                                         case None => throw new Exception("Value of feature " + i + " is not double. Require DOUBLE") //new FeatureValueAggregate(-9, f, 0, 0)
                                     }
                                 }
                                 // if this is a categorical feature => return a FeatureAggregateInfo
-                                case cFeature: CategoricalFeature => new FeatureValueAggregate(i, f, yValue, 1)
+                                case cFeature: CategoricalFeature => new FeatureValueAggregate(i, f, yValue, yValue*yValue, 1)
                             } // end match fType(i)
                         } // end if
-                        else new FeatureValueAggregate(-9, f, 0, -1) // with frequency = -1 and value 0, we will remove unused features
+                        else new FeatureValueAggregate(-9, f, 0, 0, -1) // with frequency = -1 and value 0, we will remove unused features
                     }) // end map
                 } catch {
                     case e: Exception => { println("Record has some invalid values"); Array[FeatureValueAggregate]() }
@@ -130,10 +130,10 @@ abstract class TreeBuilder(var featureSet: FeatureSet) extends Serializable {
      * @return: <code>TreeModel</code> : root of the tree
      */
     def buildTree(trainingData: RDD[String],
-        yFeature: String = featureSet.data(yIndex).Name,
-        xFeatures: Set[String] = Set[String]()): TreeModel = {
+        xIndexes: Set[Int],
+        yIndex: Int): TreeModel = {
         
-        initBuildingTree(trainingData, yFeature, xFeatures)
+        initBuildingTree(trainingData, xIndexes, yIndex)
         startBuildTree(trainingData)
         treeModel
     }
@@ -149,30 +149,17 @@ abstract class TreeBuilder(var featureSet: FeatureSet) extends Serializable {
      * @throw Exception if can not map the name of target feature into index (invalid name)
      */
     protected def initBuildingTree(trainingData: RDD[String],
-        yFeature: String = featureSet.data(yIndex).Name,
-        xFeatures: Set[String] = Set[String]()) = {
-        /* INITIALIZE */
-
-        // scala 2.9
-        //var fYindex = featureSet.data.findIndexOf(p => p.Name == yFeature)
-        var fYindex = featureSet.data.indexWhere(p => p.Name == yFeature)
-
-        // PM: You're sending from the "driver" to all workers the index of the Y feature, the one you're trying to predict
-        // find the index of target feature (if any)
-        if (fYindex >= 0) yIndex = featureSet.data(fYindex).index
-        else throw new Exception("ERROR: Can not find attribute `" + yFeature + "` in (" + featureSet.data.map(f => f.Name).mkString(",") + ")")
-
-        // index of features, which will be used to predict the target feature
-        xIndexes =
-            if (xFeatures.isEmpty) // if user didn't specify xFeature, we will process on all feature, include Y feature (to check stop criterion)
-                featureSet.data.map(x => x.index).toSet[Int]
-            else
-                xFeatures.map(x => featureSet.getIndex(x)) + yIndex
-
+        xIndexes : Set[Int],
+        yIndex : Int) = {
+        
+        this.xIndexes = xIndexes
+        this.yIndex = yIndex
+        
+    	/* Save necessary information for recovery in failure cases */
         treeModel.tree = new Empty("None")
-        treeModel.featureSet = featureSet;
-        treeModel.xIndexes = xIndexes;
-        treeModel.yIndex = yIndex;
+        treeModel.featureSet = featureSet
+        treeModel.xIndexes = xIndexes
+        treeModel.yIndex = yIndex
     }
     
     /**
