@@ -6,6 +6,10 @@ import org.apache.spark.rdd._
 import scala.collection.immutable.Queue
 import scala.concurrent._
 
+object FeatureType extends Enumeration {
+  val Categorical, Numerical = Value
+}
+
 /**
  * This class will put each job into a separated thread.
  * Each job will try to find the best feature and the best split point of this feature
@@ -123,8 +127,11 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
      * @param job		the expanding job
      * @param inputdata	the whole input data of job which will be launch
      */
-    private def launchJob(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]]) {
-        var thread = new Thread(new JobExecutor(job, inputData, this))
+    private def launchJob(job: JobInfo, 
+            //inputData : RDD[scala.collection.SeqView[FeatureValueAggregate, Array[FeatureValueAggregate]]]
+            inputData: RDD[Array[FeatureValueAggregate]]
+    ) {
+        var thread = new Thread(new JobExecutor(job, inputData.asInstanceOf[RDD[Array[FeatureValueAggregate]]], this))
         thread.start()
     }
 
@@ -153,6 +160,15 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
         }
     }
 
+    
+    def encapsulateValueIntoObject(index : Int, value : String, yValue : Double, featureType : FeatureType.Value) 
+    : FeatureValueAggregate  = {
+        featureType match {
+            case FeatureType.Categorical => new FeatureValueAggregate(index, value, yValue, yValue*yValue, 1)
+            case FeatureType.Numerical => new FeatureValueAggregate(index, value.toDouble, yValue, yValue*yValue, 1)
+        }
+    }
+    
     /**
      * Building tree, bases on:
      *
@@ -163,16 +179,66 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
      */
     override def startBuildTree(trainingData : RDD[String]) : Unit = {
 
+        def validateArrayString(d : Array[String]) : (Boolean, Array[String]) = {
+            try{
+                var i = -1
+                d.map(
+                    element => {
+                        
+                        i = (i + 1) % featureSet.numberOfFeature
+                        featureSet.data(i) match {
+                                        case c: CategoricalFeature => element
+                                        case n: NumericalFeature => element.toDouble
+                                    }
+                        element
+                    
+                        }
+                    )
+                    (true, d)
+            }
+            catch {
+                case _ => (false, d)
+            }
+        }
         // parse raw data
         val mydata = trainingData.map(line => line.split(delimiter))
-        
+
         // encapsulate each value of each feature in each line into a object
-        var transformedData = mydata.map(x => processLine(x, featureSet.numberOfFeature, featureSet))
+        var i = -1;
+        
+        var checkedData = mydata.map( array => {
+            validateArrayString(array)
+        } )
+        
+        var cleanedData = checkedData.filter(x => x._1).map(x => x._2)
+        
+        i = -1
+        var transformedData = cleanedData.map(
+            arrayValues => {
+                var yValue = arrayValues(yIndex).toDouble
+                //Utility.parseDouble(arrayValues(yIndex)) match {
+                //    case Some(yValue) => { // check type of Y : if isn't continuous type, return nothing
+                        arrayValues.map {
+                            element =>
+                                {
+                                    i = (i + 1) % featureSet.numberOfFeature
+                                    featureSet.data(i) match {
+                                        case c: CategoricalFeature => encapsulateValueIntoObject(i, element, yValue, FeatureType.Categorical)
+                                        case n: NumericalFeature => encapsulateValueIntoObject(i, element, yValue, FeatureType.Numerical)
+                                    }
+                                }
+                        }
+            }
+            
+                    //case None => Array[FeatureValueAggregate]()
+                //}
+            //}
+            )
 
         // filter the 'line' which contains the invalid or missing data
         transformedData = transformedData.filter(x => (x.length > 0))
-        var t = transformedData.reduce((x, y) => x.++:(y))
-        return
+        //var t = transformedData.reduce((x, y) => x.++:(y))
+        //return
         
         // if we build a completely new tree, the expandingJobs is empty
         // otherwise, if we try to re-build an incomplete tree, the expandingJobs is not empty
