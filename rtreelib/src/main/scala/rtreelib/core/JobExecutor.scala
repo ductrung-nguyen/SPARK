@@ -118,7 +118,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                 caller.addJobToFinishedQueue(job)
         } else {
             val groupFeatureByIndexAndValue =
-                data.groupBy(x => (x.index, x.xValue)) // PM: this operates on an RDD => in parallel
+                data.groupBy((x : FeatureValueAggregate) => (x.index, x.xValue), 20) // PM: this operates on an RDD => in parallel
 
             var featureValueSorted = (
                 //data.groupBy(x => (x.index, x.xValue))
@@ -132,7 +132,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                 //Feature(index:1 | xValue:sunny | yValue2.0 | frequency:5)
                 //Feature(index:2 | xValue:high | yValue3.0 | frequency:7)
 
-                .groupBy(x => x.index) // This is again operating on the RDD, and actually is like the continuation of the "reducer" code above
+                .groupBy((x : FeatureValueAggregate) => x.index, 20) // This is again operating on the RDD, and actually is like the continuation of the "reducer" code above
                 .map(x =>
                     (x._1, x._2.sortBy(
                         v => v.xValue match {
