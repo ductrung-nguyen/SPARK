@@ -160,21 +160,27 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
 	                            var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0, 0)
 	                            var acc: Int = 0
 	                            println("before mapping to get all possible splitpoints")
-	                            var bestSplitPoint = x._2.map(f => {
+	                            var bestSplitPoint = new SplitPoint(x._1, splitPointIndex, 0)
+                                var maxWeight = Double.MinValue
+                                var currentWeight : Double = 0
+                                
+                                x._2.foreach(f => {
 
                                     if (lastFeatureValue.index == -1) {
                                         lastFeatureValue = f
-                                        new SplitPoint(x._1, Set(), 0.0)
                                     } else {
                                         currentSumY = currentSumY + lastFeatureValue.yValue
                                         splitPointIndex = splitPointIndex + 1
                                         acc = acc + lastFeatureValue.frequency
-                                        val weight = currentSumY * currentSumY / acc + (sumY - currentSumY) * (sumY - currentSumY) / (numRecs - acc)
+                                        currentWeight = currentSumY * currentSumY / acc + (sumY - currentSumY) * (sumY - currentSumY) / (numRecs - acc)
                                         lastFeatureValue = f
-                                        new SplitPoint(x._1, splitPointIndex, weight)
+                                        if (currentWeight > maxWeight){
+                                            bestSplitPoint.point = splitPointIndex
+                                            bestSplitPoint.weight = currentWeight
+                                            maxWeight = currentWeight
+                                        }
                                     }
-                                }).drop(1).maxBy(_.weight) // select the best split // PM: please explain this trick with an example
-                                // we drop 1 element because with Set{A,B,C} , the best split point only be {A} or {A,B}
+                                })
                                 
                                 var splitPointValue = x._2.map(f => f.xValue).take(splitPointIndex).toSet
                                 bestSplitPoint.point = splitPointValue
@@ -214,26 +220,35 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                             
                             var posibleSplitPoint: Double = 0
                             var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0, 0)
+                            
+                            var bestSplitPoint = new SplitPoint(x._1, posibleSplitPoint, 0)
+                            var maxWeight = Double.MinValue
+                            var currentWeight : Double = 0
+                            
                             println("before mapping to get all possible splitpoints")
                             var allValues = x._2
                             if (allValues.length == 1){
                                 new SplitPoint(-1, 0.0, 0.0)	// sign of stop node
                             }
                             else {
-                                x._2.map(f => {
+                                x._2.foreach(f => {
 
                                     if (lastFeatureValue.index == -1) {
                                         lastFeatureValue = f
-                                        new SplitPoint(x._1, 0.0, 0.0)
                                     } else {
                                         posibleSplitPoint = (f.xValue.asInstanceOf[Double] + lastFeatureValue.xValue.asInstanceOf[Double]) / 2;
                                         currentSumY = currentSumY + lastFeatureValue.yValue
                                         acc = acc + lastFeatureValue.frequency
-                                        val weight = currentSumY * currentSumY / acc + (sumY - currentSumY) * (sumY - currentSumY) / (numRecs - acc)
+                                        currentWeight = currentSumY * currentSumY / acc + (sumY - currentSumY) * (sumY - currentSumY) / (numRecs - acc)
                                         lastFeatureValue = f
-                                        new SplitPoint(x._1, posibleSplitPoint, weight)
+                                        if (currentWeight > maxWeight){
+                                            bestSplitPoint.point = posibleSplitPoint
+                                            bestSplitPoint.weight = currentWeight
+                                            maxWeight = currentWeight
+                                        }
                                     }
-                                }).drop(1).maxBy(_.weight) // select the best split
+                                })
+                                bestSplitPoint
                             }
                         } // end of matching double
                 } // end of matching xValue
