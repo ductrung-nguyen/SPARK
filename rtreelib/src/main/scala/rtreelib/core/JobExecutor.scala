@@ -102,13 +102,14 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
     @Override
     def run() {
       try{
-          
+        println("job executor starts")
         var data = inputData.filter(
             x => job.conditions_of_input_dataset.forall(
                 sp => {
                     sp.check(x(sp.splitPoint.index).xValue)
                 })).flatMap(x => x.toSeq)
 
+        println("after checking stop condition")        
         val (stopExpand, eY) = checkStopCriterion(data)
         if (stopExpand) {
 
@@ -120,6 +121,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
             val groupFeatureByIndexAndValue =
                 data.groupBy((x : FeatureValueAggregate) => (x.index, x.xValue), 20) // PM: this operates on an RDD => in parallel
 
+            println("after group feature by index and value")
             var featureValueSorted = (
                 //data.groupBy(x => (x.index, x.xValue))
                 groupFeatureByIndexAndValue // PM: this is an RDD hence you do the map and fold in parallel (in MapReduce this would be the "reducer")
@@ -140,6 +142,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                             case s: String => v.yValue / v.frequency // sort by the average of Y if this is categorical value
                         }))))
 
+            println("after sort feature by some criterions")
             var splittingPointFeature = featureValueSorted.map(x => // operates on an RDD, so this is in parallel
                 x._2(0).xValue match {
                     case s: String => // process with categorical feature
@@ -211,6 +214,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                 maxBy(_.weight) // select best feature to split
             // PM: collect here means you're sending back all the data to a single machine (the driver).
 
+            println("after finding best split point")
             if (splittingPointFeature.index < 0) { 
                 splittingPointFeature.point = eY
                 job.splitPoint = splittingPointFeature
