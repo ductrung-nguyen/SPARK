@@ -203,8 +203,8 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
         // parse raw data
         val mydata = trainingData.map(line => line.split(delimiter))
 
-        // encapsulate each value of each feature in each line into a object
-        var i = -1;
+        
+
         
         var checkedData = mydata.map( array => {
             validateArrayString(array)
@@ -213,12 +213,15 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
         
         
         var cleanedData = checkedData.filter(x => x._1).map(x => x._2)
+        println("after cleaning data")
         cleanedData.foreach(x => println(x.mkString(",")))
+        println("after writing data")
         
-        i = -1
+        // encapsulate each value of each feature in each line into a object
         var transformedData = cleanedData.map(
             arrayValues => {
                 var yValue = arrayValues(yIndex).toDouble
+                var i = -1
                 //Utility.parseDouble(arrayValues(yIndex)) match {
                 //    case Some(yValue) => { // check type of Y : if isn't continuous type, return nothing
                         arrayValues.map {
@@ -238,7 +241,6 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
                                 }
                         }
             }
-            
                     //case None => Array[FeatureValueAggregate]()
                 //}
             //}
@@ -246,6 +248,8 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
 
         // filter the 'line' which contains the invalid or missing data
         transformedData = transformedData.filter(x => (x.length > 0))
+        
+        println("transform data to objects and filter the invalid data")
         //var t = transformedData.reduce((x, y) => x.++:(y))
         return 
         
