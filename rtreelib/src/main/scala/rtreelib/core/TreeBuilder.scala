@@ -110,6 +110,7 @@ abstract class TreeBuilder(var featureSet: FeatureSet) extends Serializable {
                                 }
                                 // if this is a categorical feature => return a FeatureAggregateInfo
                                 case cFeature: CategoricalFeature => new FeatureValueAggregate(index, value, yValue, yValue*yValue, 1)
+                                case cFeature: NumericalFeature => new FeatureValueAggregate(index, value, yValue,  yValue*yValue, 1)
                             } // end match fType(i)
                         } // end if
                         else new FeatureValueAggregate(-9, value, 0, 0, -1) // with frequency = -1 and value 0, we will remove unused features
