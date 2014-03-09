@@ -249,7 +249,7 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
         
         println("transform data to objects and filter the invalid data")
         //var t = transformedData.reduce((x, y) => x.++:(y))
-        return 
+        
         
         
         // if we build a completely new tree, the expandingJobs is empty
