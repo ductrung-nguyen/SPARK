@@ -145,8 +145,9 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                 x._2(0).xValue match {
                     case s: String => // process with categorical feature
                         {
+                            println ("matching case string")
                             var allValues = x._2
-                            if (allValues.length == 0){
+                            if (allValues.length == 1){
                                 new SplitPoint(-1, 0.0, 0.0)	// sign of stop node
                             }
                             else {
@@ -158,6 +159,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
 	                            var splitPointIndex: Int = 0
 	                            var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0, 0)
 	                            var acc: Int = 0
+	                            println("before mapping to get all possible splitpoints")
 	                            var bestSplitPoint = x._2.map(f => {
 
                                     if (lastFeatureValue.index == -1) {
@@ -173,7 +175,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                                     }
                                 }).drop(1).maxBy(_.weight) // select the best split // PM: please explain this trick with an example
                                 // we drop 1 element because with Set{A,B,C} , the best split point only be {A} or {A,B}
-
+                                
                                 var splitPointValue = x._2.map(f => f.xValue).take(splitPointIndex).toSet
                                 bestSplitPoint.point = splitPointValue
                                 bestSplitPoint
@@ -201,6 +203,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                         }
                     case d: Double => // process with numerical feature
                         {
+                            println ("matching case double")
                             var acc: Int = 0 // number of records on the left of the current element
                             var currentSumY: Double = 0
                             //val numRecs: Int = x._2.foldLeft(0)(_ + _.frequency)
@@ -211,7 +214,12 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                             
                             var posibleSplitPoint: Double = 0
                             var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0, 0)
-                            try {
+                            println("before mapping to get all possible splitpoints")
+                            var allValues = x._2
+                            if (allValues.length == 1){
+                                new SplitPoint(-1, 0.0, 0.0)	// sign of stop node
+                            }
+                            else {
                                 x._2.map(f => {
 
                                     if (lastFeatureValue.index == -1) {
@@ -226,8 +234,6 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                                         new SplitPoint(x._1, posibleSplitPoint, weight)
                                     }
                                 }).drop(1).maxBy(_.weight) // select the best split
-                            } catch {
-                                case e: UnsupportedOperationException => new SplitPoint(-1, 0.0, 0.0)
                             }
                         } // end of matching double
                 } // end of matching xValue
