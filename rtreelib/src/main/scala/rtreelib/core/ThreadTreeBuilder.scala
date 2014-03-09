@@ -214,8 +214,6 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
         
         var cleanedData = checkedData.filter(x => x._1).map(x => x._2)
         println("after cleaning data")
-        cleanedData.foreach(x => println(x.mkString(",")))
-        println("after writing data")
         
         // encapsulate each value of each feature in each line into a object
         var transformedData = cleanedData.map(
