@@ -118,9 +118,8 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                 job.isSuccess = true;
                 caller.addJobToFinishedQueue(job)
             } else {
-                data = data.filter(f => f.index >= 0)
-                val groupFeatureByIndexAndValue =
-                    data.groupBy((x: FeatureValueAggregate) => (x.index, x.xValue), 20) // PM: this operates on an RDD => in parallel
+                val groupFeatureByIndexAndValue = data.filter(f => f.index >= 0).keyBy(f => (f.index, f.xValue))
+                		.groupByKey(20) // PM: this operates on an RDD => in parallel
 
                 println("after group feature by index and value")
                 var featureValueSorted = (
@@ -132,8 +131,8 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                     //Feature(index:2 | xValue:normal | yValue6.0 | frequency:7)
                     //Feature(index:1 | xValue:sunny | yValue2.0 | frequency:5)
                     //Feature(index:2 | xValue:high | yValue3.0 | frequency:7)
-
-                    .groupBy((x: FeatureValueAggregate) => x.index, 20) // This is again operating on the RDD, and actually is like the continuation of the "reducer" code above
+                    .keyBy(x => x.index)
+                    .groupByKey(20) // This is again operating on the RDD, and actually is like the continuation of the "reducer" code above
                     .map(x =>
                         (x._1, x._2.sortBy(
                             v => v.xValue match {
