@@ -125,9 +125,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
             var featureValueSorted = (
                 //data.groupBy(x => (x.index, x.xValue))
                 groupFeatureByIndexAndValue // PM: this is an RDD hence you do the map and fold in parallel (in MapReduce this would be the "reducer")
-                /*.map(x => (new FeatureValueAggregate(x._1._1, x._1._2, 0, 0)
-                    + x._2.foldLeft(new FeatureValueAggregate(x._1._1, x._1._2, 0, 0))(_ + _)))
-                */
+
                 .map(x => x._2.reduce((f1,f2) => f1 + f2))
                 // sample results
                 //Feature(index:2 | xValue:normal | yValue6.0 | frequency:7)
@@ -147,35 +145,59 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                 x._2(0).xValue match {
                     case s: String => // process with categorical feature
                         {
-                            var acc: Int = 0; // the number records on the left of current feature
-                            var currentSumY: Double = 0 // current sum of Y of elements on the left of current feature
-                            var temp = x._2.reduce((f1, f2) => f1 + f2)
-                            val numRecs = temp.frequency
-                            val sumY = temp.yValue
-                            //val numRecs: Int = x._2.foldLeft(0)(_ + _.frequency) // number of records
-                            //val sumY = x._2.foldLeft(0.0)(_ + _.yValue) // total sum of Y
-
-                            var splitPoint: Set[String] = Set[String]()
-                            var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0, 0)
-                            try {
-                                x._2.map(f => {
+                            var allValues = x._2
+                            if (allValues.length == 0){
+                                new SplitPoint(-1, 0.0, 0.0)	// sign of stop node
+                            }
+                            else {
+                                
+                                var currentSumY: Double = 0 // current sum of Y of elements on the left of current feature
+	                            var temp = allValues.reduce((f1, f2) => f1 + f2)
+	                            val numRecs = temp.frequency
+	                            val sumY = temp.yValue
+	                            var splitPointIndex: Int = 0
+	                            var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0, 0)
+	                            var acc: Int = 0
+	                            var bestSplitPoint = x._2.map(f => {
 
                                     if (lastFeatureValue.index == -1) {
                                         lastFeatureValue = f
                                         new SplitPoint(x._1, Set(), 0.0)
                                     } else {
                                         currentSumY = currentSumY + lastFeatureValue.yValue
-                                        splitPoint = splitPoint + lastFeatureValue.xValue.asInstanceOf[String]
+                                        splitPointIndex = splitPointIndex + 1
                                         acc = acc + lastFeatureValue.frequency
                                         val weight = currentSumY * currentSumY / acc + (sumY - currentSumY) * (sumY - currentSumY) / (numRecs - acc)
                                         lastFeatureValue = f
-                                        new SplitPoint(x._1, splitPoint, weight)
+                                        new SplitPoint(x._1, splitPointIndex, weight)
                                     }
                                 }).drop(1).maxBy(_.weight) // select the best split // PM: please explain this trick with an example
                                 // we drop 1 element because with Set{A,B,C} , the best split point only be {A} or {A,B}
-                            } catch {
-                                case e: UnsupportedOperationException => new SplitPoint(-1, 0.0, 0.0)
+
+                                var splitPointValue = x._2.map(f => f.xValue).take(splitPointIndex).toSet
+                                bestSplitPoint.point = splitPointValue
+                                bestSplitPoint
+                            /*
+                            	val allValues2 = allValues.drop(1)
+                            	allValues = allValues.dropRight(1)
+                            	val pairsOfValues = allValues zip allValues2
+                            	
+                            	var splitPointIndex: Int = 0
+                            	var acc: Int = 0
+                            	
+                            	var bestSplitPoint = pairsOfValues.map( pair => { 
+                            	    splitPointIndex = splitPointIndex + 1
+                            	    currentSumY = currentSumY + pair._1.yValue
+                                    acc = acc + pair._1.frequency
+                                    val weight = currentSumY * currentSumY / acc + (sumY - currentSumY) * (sumY - currentSumY) / (numRecs - acc)
+                                    new SplitPoint(x._1, splitPointIndex, weight)
+                            	}).maxBy(_.weight)
+                            	
+                            	var splitPointValue =  
+                            	*/
                             }
+                            
+                            
                         }
                     case d: Double => // process with numerical feature
                         {
