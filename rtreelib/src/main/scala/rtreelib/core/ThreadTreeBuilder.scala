@@ -210,7 +210,10 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
             validateArrayString(array)
         } )
         
+        
+        
         var cleanedData = checkedData.filter(x => x._1).map(x => x._2)
+        cleanedData.foreach(x => println(x.mkString(",")))
         
         i = -1
         var transformedData = cleanedData.map(
@@ -221,7 +224,13 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
                         arrayValues.map {
                             element =>
                                 {
+                                    
                                     i = (i + 1) % featureSet.numberOfFeature
+                                    if (!this.xIndexes.contains(i)){
+                                        var f = encapsulateValueIntoObject(-i, "0", 0, FeatureType.Numerical)
+                                        f.frequency = -1
+                                        f
+                                    }else
                                     featureSet.data(i) match {
                                         case c: CategoricalFeature => encapsulateValueIntoObject(i, element, yValue, FeatureType.Categorical)
                                         case n: NumericalFeature => encapsulateValueIntoObject(i, element, yValue, FeatureType.Numerical)
@@ -238,6 +247,8 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
         // filter the 'line' which contains the invalid or missing data
         transformedData = transformedData.filter(x => (x.length > 0))
         //var t = transformedData.reduce((x, y) => x.++:(y))
+        return 
+        
         
         // if we build a completely new tree, the expandingJobs is empty
         // otherwise, if we try to re-build an incomplete tree, the expandingJobs is not empty
