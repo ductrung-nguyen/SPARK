@@ -109,7 +109,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                         sp.check(x(sp.splitPoint.index).xValue)
                     })).flatMap(x => x.toSeq)
 
-            data = data.filter(f => f.index >= 0).cache
+            data = data.filter(f => f.index >= 0)
 
             println("after checking stop condition")
             val (stopExpand, eY) = checkStopCriterion(data)
@@ -120,6 +120,8 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                 job.isSuccess = true;
                 caller.addJobToFinishedQueue(job)
             } else {
+                val ndata = data.map(x => (x.index, x)).reduceByKey((x,y) => x + y)
+                ndata.foreach(println)
                 println("Result of checking stop condition:(" + stopExpand + " - " + eY + ")")
                 val groupFeatureByIndexAndValue = data.keyBy(f => (f.index, f.xValue))
                     .groupByKey(20) // PM: this operates on an RDD => in parallel
