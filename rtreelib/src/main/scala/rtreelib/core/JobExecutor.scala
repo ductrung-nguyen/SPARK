@@ -120,6 +120,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                 job.isSuccess = true;
                 caller.addJobToFinishedQueue(job)
             } else {
+                println("Result of checking stop condition:(" + stopExpand + " - " + eY + ")")
                 val groupFeatureByIndexAndValue = data.keyBy(f => (f.index, f.xValue))
                     .groupByKey(20) // PM: this operates on an RDD => in parallel
 
