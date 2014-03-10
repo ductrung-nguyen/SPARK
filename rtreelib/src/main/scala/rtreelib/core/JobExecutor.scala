@@ -123,7 +123,8 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                 val ndata = data.map(x => (x.index, x)).reduceByKey((x,y) => x + y)
                 ndata.foreach(println)
                 println("Result of checking stop condition:(" + stopExpand + " - " + eY + ")")
-                val groupFeatureByIndexAndValue = data.keyBy(f => (f.index, f.xValue))
+                val groupFeatureByIndexAndValue = ndata.map(f => ((f._1, f._2.xValue), f._2))
+                //val groupFeatureByIndexAndValue = data.keyBy(f => (f.index, f.xValue))
                     .groupByKey(20) // PM: this operates on an RDD => in parallel
 
                 println("after group feature by index and value" + groupFeatureByIndexAndValue.count)
