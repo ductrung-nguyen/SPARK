@@ -102,11 +102,11 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
 
         val sample = data.first
         println("sample:" + sample)
-        val yFeature = data.filter(_._1._1 == sample._1._1).map(x => x._2)
+        val firstFeature = data.filter(_._1._1 == sample._1._1).map(x => x._2)
 
         //yFeature.collect.foreach(println)
 
-        val sum = yFeature.reduce(_ + _)
+        val sum = firstFeature.reduce(_ + _)
 
         val numTotalRecs = sum.frequency
         val sumOfYValue = sum.yValue
@@ -178,7 +178,6 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                         }
                     }
                 })	// find best split point of all features
-                //.filter(_.index != caller.yIndex)	// select only features which we use to predict
                 .collect.maxBy(_.weight))	// select the best split point of set feature
                 
                 println("after finding best split point:" + splittingPointFeature)
@@ -240,7 +239,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
       if (allValues.length == 1) {
           new SplitPoint(-1, 0.0, 0.0) // sign of stop node
       } else {
-          allValues.view.foreach(f => {
+          allValues.foreach(f => {
 
               if (lastFeatureValue.index == -1) {
                   lastFeatureValue = f
@@ -278,7 +277,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
           var maxWeight = Double.MinValue
           var currentWeight: Double = 0
 
-          allValues.view.foreach(f => {
+          allValues.foreach(f => {
 
               if (lastFeatureValue.index == -1) {
                   lastFeatureValue = f
