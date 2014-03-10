@@ -132,15 +132,15 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                     .map(x => x._2.reduce((f1, f2) => f1 + f2)))
 
                 var splitPointOfEachFeature = caller.xIndexes.toList.map(index => {
-                    var feature = featureValueSorted.filter(_.index == index)
+                    var valuesOfFeature = featureValueSorted.filter(_.index == index)
 
                     caller.featureSet.data(index) match {
                         case n: NumericalFeature => {
-                          findBestSplitPointForNumericalFeature(index, feature)
+                          findBestSplitPointForNumericalFeature(index, valuesOfFeature)
                         }
 
                         case c: CategoricalFeature => {
-                          findBestSplitPointForCategoricalFeature(index, feature)
+                          findBestSplitPointForCategoricalFeature(index, valuesOfFeature)
                         }
                     }
                 })
