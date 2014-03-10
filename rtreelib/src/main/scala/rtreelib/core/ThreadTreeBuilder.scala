@@ -224,11 +224,10 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
                 //    case Some(yValue) => { // check type of Y : if isn't continuous type, return nothing
                         arrayValues.map {
                             element =>
-                                {
-                                    
+                                {   
                                     i = (i + 1) % featureSet.numberOfFeature
                                     if (!this.xIndexes.contains(i)){
-                                        var f = encapsulateValueIntoObject(-i, "0", 0, FeatureType.Numerical)
+                                        var f = encapsulateValueIntoObject(-i -1, "0", 0, FeatureType.Numerical)
                                         f.frequency = -1
                                         f
                                     }else

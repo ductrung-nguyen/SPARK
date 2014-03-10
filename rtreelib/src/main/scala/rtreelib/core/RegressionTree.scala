@@ -57,10 +57,10 @@ class RegressionTree() extends Serializable {
             throw new Exception("ERROR: Can not find attribute `" + yName + "` in (" + featureSet.data.map(f => f.Name).mkString(",") + ")")
         // index of features, which will be used to predict the target feature
         var xindexes =
-            if (xNames.isEmpty) // if user didn't specify xFeature, we will process on all feature, include Y feature (to check stop criterion)
-                featureSet.data.map(x => x.index).toSet[Int]
+            if (xNames.isEmpty) // if user didn't specify xFeature, we will process on all feature, exclude Y feature (to check stop criterion)
+                featureSet.data.filter(_.index != yindex).map(x => x.index).toSet[Int]
             else
-                xNames.map(x => featureSet.getIndex(x)) + yindex
+                xNames.map(x => featureSet.getIndex(x)) //+ yindex
                 
         (xindexes, yindex)
         

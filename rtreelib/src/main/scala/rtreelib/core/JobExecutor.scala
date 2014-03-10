@@ -71,6 +71,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
      * @param data data set
      * @return <code>true</code>/<code>false</code> and the average of value of target feature
      */
+ /*
     def checkStopCriterion(data: RDD[FeatureValueAggregate]): (Boolean, Double) = { //PM: since it operates on RDD it is parallel
 
         val yFeature = data.filter(x => x.index == caller.yIndex)
@@ -95,7 +96,35 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
             meanY // the second component of tuple
             )
     }
+*/
+    
+    def checkStopCriterion(data: RDD[((Int, Any), FeatureValueAggregate)]): (Boolean, Double) = { //PM: since it operates on RDD it is parallel
 
+        val sample = data.first
+        println("sample:" + sample)
+        val yFeature = data.filter(_._1._1 == sample._1._1).map(x => x._2)
+
+        //yFeature.collect.foreach(println)
+
+        val sum = yFeature.reduce(_ + _)
+
+        val numTotalRecs = sum.frequency
+        val sumOfYValue = sum.yValue
+        val sumOfYValuePower2 = sum.yValuePower2
+
+        val meanY = sumOfYValue / numTotalRecs
+        val meanOfYPower2 = sumOfYValuePower2 / numTotalRecs
+        val standardDeviation = math.sqrt(meanOfYPower2 - meanY * meanY)
+
+        // return tuple (isStop, meanY)
+        (( // the first component of tuple
+            (numTotalRecs <= caller.minsplit) // or the number of records is less than minimum
+            || (((standardDeviation < caller.threshold) && (meanY == 0)) || (standardDeviation / meanY < caller.threshold)) // or standard devariance of values of Y feature is small enough
+            ),
+            meanY // the second component of tuple
+            )
+    }
+    
     /**
      * This function will be call when the parent thread start
      */
@@ -110,9 +139,11 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                     })).flatMap(x => x.toSeq)
 
             data = data.filter(f => f.index >= 0)
+            val featureValueAggregate = data.map(x => ((x.index, x.xValue), x)).reduceByKey((x,y) => x + y)
 
             println("after checking stop condition")
-            val (stopExpand, eY) = checkStopCriterion(data)
+            //val (stopExpand, eY) = checkStopCriterion(data)
+            val (stopExpand, eY) = checkStopCriterion(featureValueAggregate)
             if (stopExpand) {
 
                 var splittingPointFeature = new SplitPoint(-1, eY, 1) // splitpoint for left node
@@ -120,10 +151,12 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                 job.isSuccess = true;
                 caller.addJobToFinishedQueue(job)
             } else {
-                val featureValueAggregate = data.map(x => ((x.index, x.xValue), x)).reduceByKey((x,y) => x + y)
+                // calculate the frequency of each value of each feature
+                //val featureValueAggregate = data.map(x => ((x.index, x.xValue), x)).reduceByKey((x,y) => x + y)
                 
+                // group by index of feature and sort values in features
                 val sortedFeatureValueAggregate = (featureValueAggregate.map(x => (x._1._1, x._2)) // index, x
-                		.groupByKey(20)
+                		.groupByKey()
                 		map(x =>
                 		(x._1, x._2.sortBy(
                         v => v.xValue match {
@@ -132,96 +165,22 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                         })))
                 )
                 
-                println("after sort feature by some criterions")
-            var splittingPointFeature = sortedFeatureValueAggregate.map(x => // operates on an RDD, so this is in parallel
-                x._2(0).xValue match {
-                    case s: String => // process with categorical feature
-                        {
-                            var acc: Int = 0; // the number records on the left of current feature
-                            var currentSumY: Double = 0 // current sum of Y of elements on the left of current feature
-                            var temp = x._2.reduce((f1, f2) => f1 + f2)
-                            val numRecs = temp.frequency
-                            val sumY = temp.yValue
-                            //val numRecs: Int = x._2.foldLeft(0)(_ + _.frequency) // number of records
-                            //val sumY = x._2.foldLeft(0.0)(_ + _.yValue) // total sum of Y
-
-                            var splitPoint: Set[String] = Set[String]()
-                            var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0, 0)
-                            try {
-                                x._2.map(f => {
-
-                                    if (lastFeatureValue.index == -1) {
-                                        lastFeatureValue = f
-                                        new SplitPoint(x._1, Set(), 0.0)
-                                    } else {
-                                        currentSumY = currentSumY + lastFeatureValue.yValue
-                                        splitPoint = splitPoint + lastFeatureValue.xValue.asInstanceOf[String]
-                                        acc = acc + lastFeatureValue.frequency
-                                        val weight = currentSumY * currentSumY / acc + (sumY - currentSumY) * (sumY - currentSumY) / (numRecs - acc)
-                                        lastFeatureValue = f
-                                        new SplitPoint(x._1, splitPoint, weight)
-                                    }
-                                }).drop(1).maxBy(_.weight) // select the best split // PM: please explain this trick with an example
-                                // we drop 1 element because with Set{A,B,C} , the best split point only be {A} or {A,B}
-                            } catch {
-                                case e: UnsupportedOperationException => new SplitPoint(-1, 0.0, 0.0)
-                            }
-                        }
-                    case d: Double => // process with numerical feature
-                        {
-                            var acc: Int = 0 // number of records on the left of the current element
-                            var currentSumY: Double = 0
-                            //val numRecs: Int = x._2.foldLeft(0)(_ + _.frequency)
-                            //val sumY = x._2.foldLeft(0.0)(_ + _.yValue)
-                            var temp = x._2.reduce((f1, f2) => f1 + f2)
-                            val numRecs = temp.frequency
-                            val sumY = temp.yValue
-                            
-                            var posibleSplitPoint: Double = 0
-                            var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0, 0)
-                            try {
-                                x._2.map(f => {
-
-                                    if (lastFeatureValue.index == -1) {
-                                        lastFeatureValue = f
-                                        new SplitPoint(x._1, 0.0, 0.0)
-                                    } else {
-                                        posibleSplitPoint = (f.xValue.asInstanceOf[Double] + lastFeatureValue.xValue.asInstanceOf[Double]) / 2;
-                                        currentSumY = currentSumY + lastFeatureValue.yValue
-                                        acc = acc + lastFeatureValue.frequency
-                                        val weight = currentSumY * currentSumY / acc + (sumY - currentSumY) * (sumY - currentSumY) / (numRecs - acc)
-                                        lastFeatureValue = f
-                                        new SplitPoint(x._1, posibleSplitPoint, weight)
-                                    }
-                                }).drop(1).maxBy(_.weight) // select the best split
-                            } catch {
-                                case e: UnsupportedOperationException => new SplitPoint(-1, 0.0, 0.0)
-                            }
-                        } // end of matching double
-                } // end of matching xValue
-                ).
-                filter(_.index != caller.yIndex).collect.
-                maxBy(_.weight) // select best feature to split
-            // PM: collect here means you're sending back all the data to a single machine (the driver).
-                
-               /*     
-                var splitPointOfEachFeature = caller.xIndexes.toList.map(index => {
-                    var valuesOfFeature = featureValueSorted.filter(_.index == index)
-
+                var splittingPointFeature = 
+                    (sortedFeatureValueAggregate.map(x => {
+                    val index = x._1
                     caller.featureSet.data(index) match {
                         case n: NumericalFeature => {
-                          findBestSplitPointForNumericalFeature(index, valuesOfFeature)
+                          findBestSplitPointForNumericalFeature(index, x._2)
                         }
 
                         case c: CategoricalFeature => {
-                          findBestSplitPointForCategoricalFeature(index, valuesOfFeature)
+                          findBestSplitPointForCategoricalFeature(index, x._2)
                         }
                     }
-                })
+                })	// find best split point of all features
+                //.filter(_.index != caller.yIndex)	// select only features which we use to predict
+                .collect.maxBy(_.weight))	// select the best split point of set feature
                 
-                println("find the best splitpoint for each feature:" + splitPointOfEachFeature)
-                val splittingPointFeature = splitPointOfEachFeature.filter(_.index != caller.yIndex).maxBy(_.weight)
-                */
                 println("after finding best split point:" + splittingPointFeature)
                 if (splittingPointFeature.index < 0) {
                     splittingPointFeature.point = eY
@@ -261,9 +220,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
 
     }
   
-  private def findBestSplitPointForNumericalFeature(index: Int, feature: org.apache.spark.rdd.RDD[rtreelib.core.FeatureValueAggregate]): rtreelib.core.SplitPoint = {
-      val sortedValueFeature = feature.keyBy(v => v.xValue.asInstanceOf[Double]).sortByKey(true, 20)
-      var allValues = sortedValueFeature.map(x => x._2).collect
+  private def findBestSplitPointForNumericalFeature(index: Int, allValues : Seq[FeatureValueAggregate]): rtreelib.core.SplitPoint = {
       var acc: Int = 0 // number of records on the left of the current element
       var currentSumY: Double = 0
       //val numRecs: Int = x._2.foldLeft(0)(_ + _.frequency)
@@ -304,9 +261,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
       }
     }
   
-  private def findBestSplitPointForCategoricalFeature(index: Int, feature: org.apache.spark.rdd.RDD[rtreelib.core.FeatureValueAggregate]): rtreelib.core.SplitPoint = {
-      val sortedValueFeature = feature.keyBy(v => v.yValue / v.frequency).sortByKey(true, 20)
-      val allValues = sortedValueFeature.map(x => x._2).collect
+  private def findBestSplitPointForCategoricalFeature(index: Int, allValues : Seq[FeatureValueAggregate]): rtreelib.core.SplitPoint = {
       if (allValues.length == 1) {
           new SplitPoint(-1, 0.0, 0.0) // sign of stop node
       } else {
