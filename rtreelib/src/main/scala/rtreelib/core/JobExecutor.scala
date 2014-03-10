@@ -61,7 +61,7 @@ class JobInfo(id: BigInt, xConditions: List[Condition]) extends Serializable {
  * @param inputdata The whole data set
  * @param caller The ThreadTreeBuilder instance, which called instance of this class
  */
-class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
+class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]], 
     caller: ThreadTreeBuilder)
     extends Serializable with Runnable {
 
@@ -109,6 +109,8 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                         sp.check(x(sp.splitPoint.index).xValue)
                     })).flatMap(x => x.toSeq)
 
+            data = data.filter(f => f.index >= 0)
+
             println("after checking stop condition")
             val (stopExpand, eY) = checkStopCriterion(data)
             if (stopExpand) {
@@ -118,129 +120,31 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                 job.isSuccess = true;
                 caller.addJobToFinishedQueue(job)
             } else {
-                val groupFeatureByIndexAndValue = data.filter(f => f.index >= 0).keyBy(f => (f.index, f.xValue))
-                		.groupByKey(20) // PM: this operates on an RDD => in parallel
+                val groupFeatureByIndexAndValue = data.keyBy(f => (f.index, f.xValue))
+                    .groupByKey(20) // PM: this operates on an RDD => in parallel
 
                 println("after group feature by index and value")
                 var featureValueSorted = (
                     //data.groupBy(x => (x.index, x.xValue))
                     groupFeatureByIndexAndValue // PM: this is an RDD hence you do the map and fold in parallel (in MapReduce this would be the "reducer")
 
-                    .map(x => x._2.reduce((f1, f2) => f1 + f2))
-                    // sample results
-                    //Feature(index:2 | xValue:normal | yValue6.0 | frequency:7)
-                    //Feature(index:1 | xValue:sunny | yValue2.0 | frequency:5)
-                    //Feature(index:2 | xValue:high | yValue3.0 | frequency:7)
-                    .keyBy(x => x.index)
-                    .groupByKey(20) // This is again operating on the RDD, and actually is like the continuation of the "reducer" code above
-                    .map(x =>
-                        (x._1, x._2.sortBy(
-                            v => v.xValue match {
-                                case d: Double => d // sort by xValue if this is numerical feature
-                                case s: String => v.yValue / v.frequency // sort by the average of Y if this is categorical value
-                            }))))
+                    .map(x => x._2.reduce((f1, f2) => f1 + f2)))
 
-                println("after sort feature by some criterions")
-                var splittingPointFeature = featureValueSorted.map(x => // operates on an RDD, so this is in parallel
-                    {
-                                        
-                        caller.featureSet.data(x._1) match {
-                            //x._2(0).xValue match {
-                            //case s: String => // process with categorical feature
-                            case c: CategoricalFeature =>
-                                {
-                                    println("matching case string")
-                                    var allValues = x._2
-                                    if (allValues.length == 1) {
-                                        new SplitPoint(-1, 0.0, 0.0) // sign of stop node
-                                    } else {
+                var splitPointOfEachFeature = caller.xIndexes.toList.map(index => {
+                    var feature = featureValueSorted.filter(_.index == index)
 
-                                        var currentSumY: Double = 0 // current sum of Y of elements on the left of current feature
-                                        var temp = allValues.reduce((f1, f2) => f1 + f2)
-                                        val numRecs = temp.frequency
-                                        val sumY = temp.yValue
-                                        var splitPointIndex: Int = 0
-                                        var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0, 0)
-                                        var acc: Int = 0
-                                        println("before mapping to get all possible splitpoints")
-                                        var bestSplitPoint = new SplitPoint(x._1, splitPointIndex, 0)
-                                        var maxWeight = Double.MinValue
-                                        var currentWeight: Double = 0
+                    caller.featureSet.data(index) match {
+                        case n: NumericalFeature => {
+                          findBestSplitPointForNumericalFeature(index, feature)
+                        }
 
-                                        x._2.view.foreach(f => {
+                        case c: CategoricalFeature => {
+                          findBestSplitPointForCategoricalFeature(index, feature)
+                        }
+                    }
+                })
 
-                                            if (lastFeatureValue.index == -1) {
-                                                lastFeatureValue = f
-                                            } else {
-                                                currentSumY = currentSumY + lastFeatureValue.yValue
-                                                splitPointIndex = splitPointIndex + 1
-                                                acc = acc + lastFeatureValue.frequency
-                                                currentWeight = currentSumY * currentSumY / acc + (sumY - currentSumY) * (sumY - currentSumY) / (numRecs - acc)
-                                                lastFeatureValue = f
-                                                if (currentWeight > maxWeight) {
-                                                    bestSplitPoint.point = splitPointIndex
-                                                    bestSplitPoint.weight = currentWeight
-                                                    maxWeight = currentWeight
-                                                }
-                                            }
-                                        })
-
-                                        var splitPointValue = x._2.map(f => f.xValue).take(splitPointIndex).toSet
-                                        bestSplitPoint.point = splitPointValue
-                                        bestSplitPoint
-                                    }
-
-                                }
-                            //case d: Double => // process with numerical feature
-                            case n: NumericalFeature =>
-                                {
-                                    println("matching case double")
-                                    var acc: Int = 0 // number of records on the left of the current element
-                                    var currentSumY: Double = 0
-                                    //val numRecs: Int = x._2.foldLeft(0)(_ + _.frequency)
-                                    //val sumY = x._2.foldLeft(0.0)(_ + _.yValue)
-                                    var temp = x._2.reduce((f1, f2) => f1 + f2)
-                                    val numRecs = temp.frequency
-                                    val sumY = temp.yValue
-
-                                    var posibleSplitPoint: Double = 0
-                                    var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0, 0)
-
-                                    var bestSplitPoint = new SplitPoint(x._1, posibleSplitPoint, 0)
-                                    var maxWeight = Double.MinValue
-                                    var currentWeight: Double = 0
-
-                                    println("before mapping to get all possible splitpoints")
-                                    var allValues = x._2
-                                    if (allValues.length == 1) {
-                                        new SplitPoint(-1, 0.0, 0.0) // sign of stop node
-                                    } else {
-                                        x._2.view.foreach(f => {
-
-                                            if (lastFeatureValue.index == -1) {
-                                                lastFeatureValue = f
-                                            } else {
-                                                posibleSplitPoint = (f.xValue.asInstanceOf[Double] + lastFeatureValue.xValue.asInstanceOf[Double]) / 2;
-                                                currentSumY = currentSumY + lastFeatureValue.yValue
-                                                acc = acc + lastFeatureValue.frequency
-                                                currentWeight = currentSumY * currentSumY / acc + (sumY - currentSumY) * (sumY - currentSumY) / (numRecs - acc)
-                                                lastFeatureValue = f
-                                                if (currentWeight > maxWeight) {
-                                                    bestSplitPoint.point = posibleSplitPoint
-                                                    bestSplitPoint.weight = currentWeight
-                                                    maxWeight = currentWeight
-                                                }
-                                            }
-                                        })
-                                        bestSplitPoint
-                                    }
-                                } // end of matching double
-                        } // end of matching type of feature
-                    }).
-                    filter(_.index != caller.yIndex).collect.
-                    maxBy(_.weight) // select best feature to split
-                // PM: collect here means you're sending back all the data to a single machine (the driver).
-
+                val splittingPointFeature = splitPointOfEachFeature.filter(_.index != caller.yIndex).maxBy(_.weight)
                 println("after finding best split point")
                 if (splittingPointFeature.index < 0) {
                     splittingPointFeature.point = eY
@@ -278,6 +182,92 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
             }
         }
 
+    }
+  
+  private def findBestSplitPointForNumericalFeature(index: Int, feature: org.apache.spark.rdd.RDD[rtreelib.core.FeatureValueAggregate]): rtreelib.core.SplitPoint = {
+      val sortedValueFeature = feature.keyBy(v => v.xValue.asInstanceOf[Double]).sortByKey(true, 20)
+      var allValues = sortedValueFeature.map(x => x._2).collect
+      var acc: Int = 0 // number of records on the left of the current element
+      var currentSumY: Double = 0
+      //val numRecs: Int = x._2.foldLeft(0)(_ + _.frequency)
+      //val sumY = x._2.foldLeft(0.0)(_ + _.yValue)
+      var temp = allValues.reduce((f1, f2) => f1 + f2)
+      val numRecs = temp.frequency
+      val sumY = temp.yValue
+
+      var posibleSplitPoint: Double = 0
+      var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0, 0)
+
+      var bestSplitPoint = new SplitPoint(index, posibleSplitPoint, 0)
+      var maxWeight = Double.MinValue
+      var currentWeight: Double = 0
+
+      println("before mapping to get all possible splitpoints")
+      if (allValues.length == 1) {
+          new SplitPoint(-1, 0.0, 0.0) // sign of stop node
+      } else {
+          allValues.view.foreach(f => {
+
+              if (lastFeatureValue.index == -1) {
+                  lastFeatureValue = f
+              } else {
+                  posibleSplitPoint = (f.xValue.asInstanceOf[Double] + lastFeatureValue.xValue.asInstanceOf[Double]) / 2;
+                  currentSumY = currentSumY + lastFeatureValue.yValue
+                  acc = acc + lastFeatureValue.frequency
+                  currentWeight = currentSumY * currentSumY / acc + (sumY - currentSumY) * (sumY - currentSumY) / (numRecs - acc)
+                  lastFeatureValue = f
+                  if (currentWeight > maxWeight) {
+                      bestSplitPoint.point = posibleSplitPoint
+                      bestSplitPoint.weight = currentWeight
+                      maxWeight = currentWeight
+                  }
+              }
+          })
+          bestSplitPoint
+      }
+    }
+  
+  private def findBestSplitPointForCategoricalFeature(index: Int, feature: org.apache.spark.rdd.RDD[rtreelib.core.FeatureValueAggregate]): rtreelib.core.SplitPoint = {
+      val sortedValueFeature = feature.keyBy(v => v.yValue / v.frequency).sortByKey(true, 20)
+      val allValues = sortedValueFeature.map(x => x._2).collect
+      if (allValues.length == 1) {
+          new SplitPoint(-1, 0.0, 0.0) // sign of stop node
+      } else {
+
+          var currentSumY: Double = 0 // current sum of Y of elements on the left of current feature
+          var temp = allValues.reduce((f1, f2) => f1 + f2)
+          val numRecs = temp.frequency
+          val sumY = temp.yValue
+          var splitPointIndex: Int = 0
+          var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0, 0)
+          var acc: Int = 0
+          println("before mapping to get all possible splitpoints")
+          var bestSplitPoint = new SplitPoint(index, splitPointIndex, 0)
+          var maxWeight = Double.MinValue
+          var currentWeight: Double = 0
+
+          allValues.view.foreach(f => {
+
+              if (lastFeatureValue.index == -1) {
+                  lastFeatureValue = f
+              } else {
+                  currentSumY = currentSumY + lastFeatureValue.yValue
+                  splitPointIndex = splitPointIndex + 1
+                  acc = acc + lastFeatureValue.frequency
+                  currentWeight = currentSumY * currentSumY / acc + (sumY - currentSumY) * (sumY - currentSumY) / (numRecs - acc)
+                  lastFeatureValue = f
+                  if (currentWeight > maxWeight) {
+                      bestSplitPoint.point = splitPointIndex
+                      bestSplitPoint.weight = currentWeight
+                      maxWeight = currentWeight
+                  }
+              }
+          })
+
+          var splitPointValue = allValues.map(f => f.xValue).take(splitPointIndex).toSet
+          bestSplitPoint.point = splitPointValue
+          bestSplitPoint
+      }
     }
 
 }
