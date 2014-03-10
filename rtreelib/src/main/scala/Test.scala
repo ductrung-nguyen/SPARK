@@ -13,7 +13,7 @@ object Test {
 	def main(args : Array[String]) = {
 	    
 	    
-	    val IS_LOCAL = false
+	    val IS_LOCAL = true
 	    
 	    
 	    val inputTrainingFile = (

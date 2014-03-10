@@ -109,7 +109,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                         sp.check(x(sp.splitPoint.index).xValue)
                     })).flatMap(x => x.toSeq)
 
-            data = data.filter(f => f.index >= 0)
+            data = data.filter(f => f.index >= 0).cache
 
             println("after checking stop condition")
             val (stopExpand, eY) = checkStopCriterion(data)
