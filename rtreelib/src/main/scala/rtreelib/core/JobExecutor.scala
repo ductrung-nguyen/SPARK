@@ -124,7 +124,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                 val groupFeatureByIndexAndValue = data.keyBy(f => (f.index, f.xValue))
                     .groupByKey(20) // PM: this operates on an RDD => in parallel
 
-                println("after group feature by index and value")
+                println("after group feature by index and value" + groupFeatureByIndexAndValue.count)
                 var featureValueSorted = (
                     //data.groupBy(x => (x.index, x.xValue))
                     groupFeatureByIndexAndValue // PM: this is an RDD hence you do the map and fold in parallel (in MapReduce this would be the "reducer")
