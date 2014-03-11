@@ -91,16 +91,13 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
      * @return <code>true</code>/<code>false</code> and the average of value of target feature
      */
     def checkStopCriterion(data: RDD[((BigInt, Int, Any), FeatureValueLabelAggregate)]): Array[(BigInt, Boolean, Double)] = {
-        //println("Checkstop:\n")
-        //data.foreach(println)
-        val sample = data.first
         // select only 1 feature of each region
         val firstFeature = data.filter(_._1._2 == this.xIndexes.head).map(x => (x._1._1, x._2)) // (label, feature)
 
         //yFeature.collect.foreach(println)
 
         val aggregateFeatures = firstFeature.reduceByKey(_ + _) // sum by label
-        aggregateFeatures.collect.foreach(println)
+
         val standardDeviations = aggregateFeatures.collect.map(f => {
             val feature = f._2
             val meanY = feature.yValue / feature.frequency
@@ -349,7 +346,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                     })
 
                 //println("expandingNodeIndexes:" + expandingNodeIndexes)
-                println("map_label_to_splitpoint:" + map_label_to_splitpoint)
+                println("map_label_to_splitpoint:" + map_label_to_splitpoint +"\n\n")
                 
                 // mark new label for expanding data
                 transformedData = updateLabels(transformedData, map_label_to_splitpoint)
