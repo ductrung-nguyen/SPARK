@@ -3,6 +3,8 @@ package rtreelib.core
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.PairRDDFunctions
+import rtreelib.core._
+
 
 /**
  * This class is representative for each value of each feature in the data set
@@ -250,18 +252,21 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
 
         // NOTE: label == x, means, this is data used for building node id=x
 
-        var map_label_to_splitpoint = Map[BigInt, SplitPoint]()
+        //var map_label_to_splitpoint = Map[BigInt, SplitPoint]()
         var isError = false;
 
         var iter = 0;
+        //expandingNodeIndexes = Set[BigInt]()
+        var map_label_to_splitpoint = Map[BigInt, SplitPoint]() withDefaultValue new SplitPoint(-9, 0, 0)
 
         do {
             iter = iter + 1
+            
             try {
-                if (iter == 10)
-                    throw new Exception("Break for debugging")
+                //if (iter == 5)
+                //    throw new Exception("Break for debugging")
 
-                println("NEW ITERATION---------------------")
+                println("NEW ITERATION---------------------" + iter)
 
                 // save current model before growing tree
                 this.treeModel.writeToFile(this.temporaryModelFile)
@@ -269,11 +274,11 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                 transformedData.foreach(x => println(x.mkString(",")))
                 
                 var data = transformedData.flatMap(x => x.toSeq).filter(x => (x.index >= 0))
-
-                val featureValueAggregate = data.map(x => ((x.label, x.index, x.xValue), x)).reduceByKey((x, y) => x + y)
-
+                
+                var featureValueAggregate = data.map(x => ((x.label, x.index, x.xValue), x)).reduceByKey((x, y) => x + y)
+                
                 val checkedStopExpanding = checkStopCriterion(featureValueAggregate)
-
+                
                 // select stopped group
                 val stopExpandingGroups = checkedStopExpanding.filter(v => v._2).
                     map(x => (x._1, new SplitPoint(-1, x._3, 0)))
@@ -285,13 +290,13 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
 
                 // select indexes/labels of expanding groups
                 val expandingLabels = checkedStopExpanding.filter(v => !v._2).map(x => x._1).toSet
-
+                
                 featureValueAggregate.filter(f => expandingLabels.contains(f._1._1))
-
+                
                 val sortedFeatureValueAggregates = (
                     featureValueAggregate.map(x => ((x._1._1, x._1._2), x._2)) // ((label,index), feature)
                     .groupByKey()
-                    map (x =>
+                    .map (x =>
                         (x._1, x._2.sortBy(
                             v => v.xValue match {
                                 case d: Double => d // sort by xValue if this is numerical feature
@@ -317,9 +322,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                         .map(f => f._2.maxBy(region_sp => region_sp._2.weight))
                     )
 
-                expandingNodeIndexes = Set[BigInt]()
-                map_label_to_splitpoint = Map[BigInt, SplitPoint]() withDefaultValue new SplitPoint(-9, 0, 0)
-
+                
                 // process split points
                 var validSplitPoint = splittingPointFeatureOfEachRegion.filter(_._2.index != -9)
 
@@ -337,6 +340,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                         expandingNodeIndexes = expandingNodeIndexes + (point._1)
                         map_label_to_splitpoint = map_label_to_splitpoint + (point._1 -> point._2) // label -> splitpoint
                     })
+                    
 
                 println("expandingNodeIndexes:" + expandingNodeIndexes)
                 println("map_label_to_splitpoint:" + map_label_to_splitpoint)
@@ -348,10 +352,10 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                 var newDa = transformedData.map(array => {
                     //println("Array:" + array.mkString(";"))
                     var currentLabel = array(0).label
-                    //println("current Label:" + currentLabel)
+                    println("current Label:" + currentLabel)
                     		
                     var splitPoint = map_label_to_splitpoint.getOrElse(currentLabel, new SplitPoint(-9, 0, 0))
-
+   
                     if (splitPoint.index < 0) { // this is stop node
                         //println("split point index:" + splitPoint.index)
                         array.foreach(element => { element.index = -9 })
