@@ -95,11 +95,12 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
         //data.foreach(println)
         val sample = data.first
         // select only 1 feature of each region
-        val firstFeature = data.filter(_._1._1 == sample._1._1).map(x => (x._1._1, x._2)) // (label, feature)
+        val firstFeature = data.filter(_._1._2 == this.xIndexes.head).map(x => (x._1._1, x._2)) // (label, feature)
 
         //yFeature.collect.foreach(println)
 
         val aggregateFeatures = firstFeature.reduceByKey(_ + _) // sum by label
+        aggregateFeatures.collect.foreach(println)
         val standardDeviations = aggregateFeatures.collect.map(f => {
             val feature = f._2
             val meanY = feature.yValue / feature.frequency
@@ -214,10 +215,14 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
     override def startBuildTree(trainingData: RDD[String]) = {
 
         var rootID = 1
+        
         var expandingNodeIndexes = Set[BigInt]()
+        
+        var map_label_to_splitpoint = Map[BigInt, SplitPoint]()
 
         def finish() = {
             expandingNodeIndexes.isEmpty
+            //map_label_to_splitpoint.isEmpty
         }
 
         // parse raw data
@@ -256,8 +261,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
         var isError = false;
 
         var iter = 0;
-        //expandingNodeIndexes = Set[BigInt]()
-        var map_label_to_splitpoint = Map[BigInt, SplitPoint]() withDefaultValue new SplitPoint(-9, 0, 0)
+
 
         do {
             iter = iter + 1
@@ -268,16 +272,16 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
 
                 println("NEW ITERATION---------------------" + iter)
 
+                
                 // save current model before growing tree
                 this.treeModel.writeToFile(this.temporaryModelFile)
-                println("data before processing:")
-                transformedData.foreach(x => println(x.mkString(",")))
                 
                 var data = transformedData.flatMap(x => x.toSeq).filter(x => (x.index >= 0))
                 
                 var featureValueAggregate = data.map(x => ((x.label, x.index, x.xValue), x)).reduceByKey((x, y) => x + y)
                 
                 val checkedStopExpanding = checkStopCriterion(featureValueAggregate)
+                println("checked stop expanding:" + checkedStopExpanding.mkString(","))
                 
                 // select stopped group
                 val stopExpandingGroups = checkedStopExpanding.filter(v => v._2).
@@ -291,7 +295,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                 // select indexes/labels of expanding groups
                 val expandingLabels = checkedStopExpanding.filter(v => !v._2).map(x => x._1).toSet
                 
-                featureValueAggregate.filter(f => expandingLabels.contains(f._1._1))
+                featureValueAggregate = featureValueAggregate.filter(f => expandingLabels.contains(f._1._1))
                 
                 val sortedFeatureValueAggregates = (
                     featureValueAggregate.map(x => ((x._1._1, x._1._2), x._2)) // ((label,index), feature)
@@ -326,7 +330,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                 // process split points
                 var validSplitPoint = splittingPointFeatureOfEachRegion.filter(_._2.index != -9)
 
-                // select split point of region with has only one feature
+                // select split point of region with has only one feature --> it is a leaf node
                 var stoppedSplitPoints = validSplitPoint.filter(_._2.index == -1)
 
                 var nonstoppedSplitPoints = validSplitPoint.filter(_._2.index != -1)
@@ -334,25 +338,49 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                 updateModel(stoppedSplitPoints, true)
                 updateModel(nonstoppedSplitPoints, false)
 
+                
+                expandingNodeIndexes = Set[BigInt]()
+                
                 nonstoppedSplitPoints.foreach(point =>
                     // add expanding Indexes into set
                     {
                         expandingNodeIndexes = expandingNodeIndexes + (point._1)
                         map_label_to_splitpoint = map_label_to_splitpoint + (point._1 -> point._2) // label -> splitpoint
                     })
-                    
 
-                println("expandingNodeIndexes:" + expandingNodeIndexes)
+                //println("expandingNodeIndexes:" + expandingNodeIndexes)
                 println("map_label_to_splitpoint:" + map_label_to_splitpoint)
                 
-                println("\n\ndata before changing label:")
-                transformedData.foreach(x => println(x.mkString(",")))
-                
                 // mark new label for expanding data
-                var newDa = transformedData.map(array => {
-                    //println("Array:" + array.mkString(";"))
+                transformedData = updateLabels(transformedData, map_label_to_splitpoint)
+                
+            } catch {
+                case e: Exception => {
+                    isError = true;
+                    expandingNodeIndexes = Set[BigInt]()
+                }
+            }
+        } while (!finish)
+
+        treeModel.isComplete = !isError;
+
+        /* FINALIZE THE ALGORITHM */
+        if (!isError) {
+            this.treeModel.isComplete = true
+            println("\n------------------DONE WITHOUT ERROR------------------\n")
+        } else {
+            this.treeModel.isComplete = false
+            println("\n--------FINISH with some failed jobs at iteration " + iter + " ----------\n")
+            println("Temporaty Tree model is stored at " + this.temporaryModelFile + "\n")
+        }
+    }
+
+    private def updateLabels(data : RDD[Array[FeatureValueLabelAggregate]],
+            map_label_to_splitpoint: Map[BigInt, SplitPoint]) 
+    = {
+        data.map(array => {
+
                     var currentLabel = array(0).label
-                    println("current Label:" + currentLabel)
                     		
                     var splitPoint = map_label_to_splitpoint.getOrElse(currentLabel, new SplitPoint(-9, 0, 0))
    
@@ -384,31 +412,8 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                     }
                     array
                 })
-                
-                transformedData = newDa
-                
-            } catch {
-                case e: Exception => {
-                    isError = true;
-                    println("Current Tree:\n" + this.treeModel.tree)
-                    throw e
-                }
-            }
-        } while (!finish)
-
-        treeModel.isComplete = !isError;
-
-        /* FINALIZE THE ALGORITHM */
-        if (!isError) {
-            this.treeModel.isComplete = true
-            println("\n------------------DONE WITHOUT ERROR------------------\n")
-        } else {
-            this.treeModel.isComplete = false
-            println("\n--------FINISH with some failed jobs at iteration " + iter + " ----------\n")
-            println("Temporaty Tree model is stored at " + this.temporaryModelFile + "\n")
-        }
     }
-
+    
     private def findBestSplitPointForNumericalFeature(label: BigInt, index: Int, allValues: Seq[FeatureValueLabelAggregate]): rtreelib.core.SplitPoint = {
         var acc: Int = 0 // number of records on the left of the current element
         var currentSumY: Double = 0
