@@ -71,32 +71,6 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
      * @param data data set
      * @return <code>true</code>/<code>false</code> and the average of value of target feature
      */
- /*
-    def checkStopCriterion(data: RDD[FeatureValueAggregate]): (Boolean, Double) = { //PM: since it operates on RDD it is parallel
-
-        val yFeature = data.filter(x => x.index == caller.yIndex)
-
-        //yFeature.collect.foreach(println)
-
-        val sum = yFeature.reduce(_ + _)
-
-        val numTotalRecs = sum.frequency
-        val sumOfYValue = sum.yValue
-        val sumOfYValuePower2 = sum.yValuePower2
-
-        val meanY = sumOfYValue / numTotalRecs
-        val meanOfYPower2 = sumOfYValuePower2 / numTotalRecs
-        val standardDeviation = math.sqrt(meanOfYPower2 - meanY * meanY)
-
-        // return tuple (isStop, meanY)
-        (( // the first component of tuple
-            (numTotalRecs <= caller.minsplit) // or the number of records is less than minimum
-            || (((standardDeviation < caller.threshold) && (meanY == 0)) || (standardDeviation / meanY < caller.threshold)) // or standard devariance of values of Y feature is small enough
-            ),
-            meanY // the second component of tuple
-            )
-    }
-*/
     
     def checkStopCriterion(data: RDD[((Int, Any), FeatureValueAggregate)]): (Boolean, Double) = { //PM: since it operates on RDD it is parallel
 
@@ -108,17 +82,13 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
 
         val sum = firstFeature.reduce(_ + _)
 
-        val numTotalRecs = sum.frequency
-        val sumOfYValue = sum.yValue
-        val sumOfYValuePower2 = sum.yValuePower2
-
-        val meanY = sumOfYValue / numTotalRecs
-        val meanOfYPower2 = sumOfYValuePower2 / numTotalRecs
+        val meanY = sum.yValue / sum.frequency
+        val meanOfYPower2 = sum.yValuePower2 / sum.frequency
         val standardDeviation = math.sqrt(meanOfYPower2 - meanY * meanY)
 
         // return tuple (isStop, meanY)
         (( // the first component of tuple
-            (numTotalRecs <= caller.minsplit) // or the number of records is less than minimum
+            (sum.frequency <= caller.minsplit) // or the number of records is less than minimum
             || (((standardDeviation < caller.threshold) && (meanY == 0)) || (standardDeviation / meanY < caller.threshold)) // or standard devariance of values of Y feature is small enough
             ),
             meanY // the second component of tuple
@@ -139,7 +109,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
                     })).flatMap(x => x.toSeq)
 
             data = data.filter(f => f.index >= 0)
-            val featureValueAggregate = data.map(x => ((x.index, x.xValue), x)).reduceByKey((x,y) => x + y)
+            val featureValueAggregate = data.map(x => ((x.index, x.xValue), x)).reduceByKey((x,y) => x + y, 20)
 
             println("after checking stop condition")
             //val (stopExpand, eY) = checkStopCriterion(data)
@@ -239,7 +209,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
       if (allValues.length == 1) {
           new SplitPoint(-1, 0.0, 0.0) // sign of stop node
       } else {
-          allValues.foreach(f => {
+          allValues.view.foreach(f => {
 
               if (lastFeatureValue.index == -1) {
                   lastFeatureValue = f
@@ -277,7 +247,7 @@ class JobExecutor(job: JobInfo, inputData: RDD[Array[FeatureValueAggregate]],
           var maxWeight = Double.MinValue
           var currentWeight: Double = 0
 
-          allValues.foreach(f => {
+          allValues.view.foreach(f => {
 
               if (lastFeatureValue.index == -1) {
                   lastFeatureValue = f

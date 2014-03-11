@@ -169,17 +169,7 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
         }
     }
     
-    /**
-     * Building tree, bases on:
-     *
-     * @parm yFeature 	predicted feature
-     * @param xFeature	input features
-     *
-     * @return: <code>TreeModel</code> : root of the tree
-     */
-    override def startBuildTree(trainingData : RDD[String]) : Unit = {
-
-        def validateArrayString(d : Array[String]) : (Boolean, Array[String]) = {
+    def validateArrayString(d : Array[String]) : (Boolean, Array[String]) = {
             try{
                 var i = -1
                 d.map(
@@ -200,55 +190,41 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
                 case _ => (false, d)
             }
         }
+    
+    /**
+     * Building tree, bases on:
+     *
+     * @parm yFeature 	predicted feature
+     * @param xFeature	input features
+     *
+     * @return: <code>TreeModel</code> : root of the tree
+     */
+    override def startBuildTree(trainingData : RDD[String]) : Unit = {
+     
         // parse raw data
         val mydata = trainingData.map(line => line.split(delimiter))
-
-        
-
-        
+ 
+        /* REGION CLEANING */ 
         var checkedData = mydata.map( array => {
             validateArrayString(array)
         } )
-        
-        
-        
+           
         var cleanedData = checkedData.filter(x => x._1).map(x => x._2)
-        println("after cleaning data")
+        
+        /* END OF REGION CLEANING */ 
+        
+        /* REGION TRANSFORMING */
         
         // encapsulate each value of each feature in each line into a object
         var transformedData = cleanedData.map(
             arrayValues => {
-                var yValue = arrayValues(yIndex).toDouble
-                var i = -1
-                //Utility.parseDouble(arrayValues(yIndex)) match {
-                //    case Some(yValue) => { // check type of Y : if isn't continuous type, return nothing
-                        arrayValues.map {
-                            element =>
-                                {   
-                                    i = (i + 1) % featureSet.numberOfFeature
-                                    if (!this.xIndexes.contains(i)){
-                                        var f = encapsulateValueIntoObject(-i -1, "0", 0, FeatureType.Numerical)
-                                        f.frequency = -1
-                                        f
-                                    }else
-                                    featureSet.data(i) match {
-                                        case c: CategoricalFeature => encapsulateValueIntoObject(i, element, yValue, FeatureType.Categorical)
-                                        case n: NumericalFeature => encapsulateValueIntoObject(i, element, yValue, FeatureType.Numerical)
-                                    }
-                                }
-                        }
-            }
-                    //case None => Array[FeatureValueAggregate]()
-                //}
-            //}
-            )
+              convertArrayValuesToObjects(arrayValues)
+            })
 
         // filter the 'line' which contains the invalid or missing data
         transformedData = transformedData.filter(x => (x.length > 0))
         
-        println("transform data to objects and filter the invalid data")
-        //var t = transformedData.reduce((x, y) => x.++:(y))
-        
+        /* END OF REGION TRANSFORMING */
         
         
         // if we build a completely new tree, the expandingJobs is empty
@@ -288,6 +264,7 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
                             updateModel(j)
                             finishedJobs = xs
                             this.isModelChanged = true
+                            this.treeModel.writeToFile(this.temporaryModelFile)
                         }
                     }
                 }
@@ -308,8 +285,8 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
                 }
             }
             
-            if (this.isModelChanged)
-                this.treeModel.writeToFile(this.temporaryModelFile)
+            //if (this.isModelChanged)
+            //    this.treeModel.writeToFile(this.temporaryModelFile)
 
             //DelayedFuture( 5000L )(println("iter"))
         } while (!finish())
@@ -401,4 +378,26 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
     }
     
     override def createNewInstance(featureSet : FeatureSet) = new ThreadTreeBuilder(featureSet)
+  
+  private def convertArrayValuesToObjects(arrayValues: Array[String]): Array[rtreelib.core.FeatureValueAggregate] = {
+      var yValue = arrayValues(yIndex).toDouble
+      var i = -1
+                //Utility.parseDouble(arrayValues(yIndex)) match {
+                //    case Some(yValue) => { // check type of Y : if isn't continuous type, return nothing
+      arrayValues.map {
+          element =>
+              {   
+                  i = (i + 1) % featureSet.numberOfFeature
+                  if (!this.xIndexes.contains(i)){
+                      var f = encapsulateValueIntoObject(-i -1, "0", 0, FeatureType.Numerical)
+                      f.frequency = -1
+                      f
+                  }else
+                  featureSet.data(i) match {
+                      case c: CategoricalFeature => encapsulateValueIntoObject(i, element, yValue, FeatureType.Categorical)
+                      case n: NumericalFeature => encapsulateValueIntoObject(i, element, yValue, FeatureType.Numerical)
+                  }
+              }
+      }
+    }
 }

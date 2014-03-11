@@ -1,6 +1,8 @@
 package rtreelib.core
 
 import org.apache.spark.rdd.RDD
+import org.apache.spark.SparkContext._
+import org.apache.spark.rdd.PairRDDFunctions
 
 /**
  * This class is representative for each value of each feature in the data set
@@ -9,13 +11,13 @@ import org.apache.spark.rdd.RDD
  * @param yValue Value of the Y feature associated (target, predicted feature)
  * @param frequency Frequency of this value
  */
-class FeatureValueLabelAggregate(index: Int, xValue: Any, yValue: Double, yValuePower2 : Double, frequency: Int, var label: BigInt = 1)
-    extends FeatureValueAggregate(index, xValue, yValue, yValuePower2, frequency) {
+class FeatureValueLabelAggregate(var index: Int, var xValue: Any, var yValue: Double, var yValuePower2: Double, var frequency: Int, var label: BigInt = 1)
+    extends Serializable {
 
     /**
      * Sum two FeatureValueAggregates (sum two yValues and two frequencies)
      */
-    override def +(that: FeatureValueAggregate) = {
+    def +(that: FeatureValueLabelAggregate) = {
         new FeatureValueLabelAggregate(this.index, this.xValue,
             this.yValue + that.yValue,
             this.yValuePower2 + that.yValuePower2,
@@ -39,7 +41,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
      * Temporary model file
      */
     val temporaryModelFile = "/tmp/model.temp"
-        
+
     var regions = List[(BigInt, List[Condition])]()
 
     /**
@@ -51,35 +53,33 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
      * @param fTypes		type of each feature in each line (in ordered)
      * @return an array of FeatureAggregateInfo, each element is a value of each feature on this line
      */
-    protected def processLineWithLabel(line: Array[String], numberFeatures: Int, featureSet: FeatureSet): Array[FeatureValueLabelAggregate] = {
-        val length = numberFeatures
-        var i = -1;
-        Utility.parseDouble(line(yIndex)) match {
-            case Some(yValue) => { // check type of Y : if isn't continuous type, return nothing
-                try {
-                    line.map(f => { // this map is not parallel, it is executed by each worker on their part of the input RDD
-                        i = (i + 1) % length
-                        if (xIndexes.contains(i)) {
-                            featureSet.data(i) match {
-                                case nFeature: NumericalFeature => { // If this is a numerical feature => parse value from string to double
-                                    val v = Utility.parseDouble(f);
-                                    v match {
-                                        case Some(d) => new FeatureValueLabelAggregate(i, d, yValue, yValue*yValue, 1)
-                                        case None => throw new Exception("Value of feature " + i + " is not double. Require DOUBLE") //new FeatureValueAggregate(-9, f, 0, 0)
-                                    }
-                                }
-                                // if this is a categorical feature => return a FeatureAggregateInfo
-                                case cFeature: CategoricalFeature => new FeatureValueLabelAggregate(i, f, yValue, yValue*yValue, 1)
-                            } // end match fType(i)
-                        } // end if
-                        else new FeatureValueLabelAggregate(-9, f, 0, 0, -1) // with frequency = -1 and value 0, we will remove unused features
-                    }) // end map
-                } catch {
-                    case e: Exception => { println("Record has some invalid values"); Array[FeatureValueLabelAggregate]() }
+    private def convertArrayValuesToObjects(arrayValues: Array[String]): Array[rtreelib.core.FeatureValueLabelAggregate] = {
+        var yValue = arrayValues(yIndex).toDouble
+        var i = -1
+        //Utility.parseDouble(arrayValues(yIndex)) match {
+        //    case Some(yValue) => { // check type of Y : if isn't continuous type, return nothing
+        arrayValues.map {
+            element =>
+                {
+                    i = (i + 1) % featureSet.numberOfFeature
+                    if (!this.xIndexes.contains(i)) {
+                        var f = encapsulateValueIntoObject(-i - 1, "0", 0, FeatureType.Numerical)
+                        f.frequency = -1
+                        f
+                    } else
+                        featureSet.data(i) match {
+                            case c: CategoricalFeature => encapsulateValueIntoObject(i, element, yValue, FeatureType.Categorical)
+                            case n: NumericalFeature => encapsulateValueIntoObject(i, element, yValue, FeatureType.Numerical)
+                        }
                 }
-            } // end case Some(yvalue)
-            case None => { println("Y value is invalid:(%s)".format(line(yIndex))); Array[FeatureValueLabelAggregate]() }
-        } // end match Y value
+        }
+    }
+
+    def encapsulateValueIntoObject(index: Int, value: String, yValue: Double, featureType: FeatureType.Value): FeatureValueLabelAggregate = {
+        featureType match {
+            case FeatureType.Categorical => new FeatureValueLabelAggregate(index, value, yValue, yValue * yValue, 1)
+            case FeatureType.Numerical => new FeatureValueLabelAggregate(index, value.toDouble, yValue, yValue * yValue, 1)
+        }
     }
 
     /**
@@ -88,127 +88,36 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
      * @param data data set
      * @return <code>true</code>/<code>false</code> and the average of value of target feature
      */
-    def checkStopCriterion(data: Seq[FeatureValueLabelAggregate]): (Boolean, Double) = {
-
-        val yFeature = data.filter(x => x.index == this.yIndex)
+    def checkStopCriterion(data: RDD[((BigInt, Int, Any), FeatureValueLabelAggregate)]): Array[(BigInt, Boolean, Double)] = {
+        //println("Checkstop:\n")
+        //data.foreach(println)
+        val sample = data.first
+        // select only 1 feature of each region
+        val firstFeature = data.filter(_._1._1 == sample._1._1).map(x => (x._1._1, x._2)) // (label, feature)
 
         //yFeature.collect.foreach(println)
 
-        val numTotalRecs = yFeature.reduce(_ + _).frequency
+        val aggregateFeatures = firstFeature.reduceByKey(_ + _) // sum by label
+        val standardDeviations = aggregateFeatures.collect.map(f => {
+            val feature = f._2
+            val meanY = feature.yValue / feature.frequency
+            val meanOfYPower2 = feature.yValuePower2 / feature.frequency
+            (f._1, math.sqrt(meanOfYPower2 - meanY * meanY), feature.frequency, meanY)
+            // (label, standardDeviation, numberOfRecords, meanY)
+        })
 
-        val yValues = yFeature.groupBy(_.yValue)
+        // Array[(Label, isStop, meanY)]
+        standardDeviations.map(
+            label_sd_fre_mean => {
+                (label_sd_fre_mean._1,
+                    (
+                        (label_sd_fre_mean._3 <= this.minsplit) // or the number of records is less than minimum
+                        || (((label_sd_fre_mean._2 < this.threshold) && (label_sd_fre_mean._4 == 0)) || (label_sd_fre_mean._2 / label_sd_fre_mean._4 < this.threshold)) // or standard devariance of values of Y feature is small enough
+                        ),
+                        label_sd_fre_mean._4 // the second component of tuple
+                        )
+            })
 
-        val yAggregate = yFeature.map(x => (x.yValue, x.yValue * x.yValue))
-
-        val ySumValue = yAggregate.reduce((x, y) => (x._1 + y._1, x._2 + y._2))
-
-        val EY = ySumValue._1 / numTotalRecs
-        val EY2 = ySumValue._2 / numTotalRecs
-
-        val standardDeviation = math.sqrt(EY2 - EY * EY)
-
-        (( // the first component of tuple
-            (numTotalRecs <= this.minsplit) // or the number of records is less than minimum
-            || (((standardDeviation < this.threshold) && (EY == 0)) || (standardDeviation / EY < this.threshold)) // or standard devariance of values of Y feature is small enough
-            ),
-            EY // the second component of tuple
-            )
-
-    }
-
-    private def selectBestSplitPoint(data: Seq[FeatureValueLabelAggregate], eY: Double): (BigInt, SplitPoint) = {
-        val label = data(0).label
-
-        val groupFeatureByIndexAndValue =
-            data.groupBy(x => (x.index, x.xValue)) // PM: this operates on an RDD => in parallel
-
-        var featureValueSorted = (
-            //data.groupBy(x => (x.index, x.xValue))
-            groupFeatureByIndexAndValue // PM: this is an RDD hence you do the map and fold in parallel (in MapReduce this would be the "reducer")
-            .map(x => (new FeatureValueAggregate(x._1._1, x._1._2, 0, 0, 0)
-                + x._2.foldLeft(new FeatureValueAggregate(x._1._1, x._1._2, 0, 0, 0))(_ + _)))
-            // sample results
-            //Feature(index:2 | xValue:normal | yValue6.0 | frequency:7)
-            //Feature(index:1 | xValue:sunny | yValue2.0 | frequency:5)
-            //Feature(index:2 | xValue:high | yValue3.0 | frequency:7)
-
-            .groupBy(x => x.index) // This is again operating on the RDD, and actually is like the continuation of the "reducer" code above
-            .map(x =>
-                (x._1, x._2.toSeq.sortBy(
-                    v => v.xValue match {
-                        case d: Double => d // sort by xValue if this is numerical feature
-                        case s: String => v.yValue / v.frequency // sort by the average of Y if this is categorical value
-                    }))))
-
-        var splittingPointFeature = featureValueSorted.map(x => // operates on an RDD, so this is in parallel
-            x._2(0).xValue match {
-                case s: String => // process with categorical feature
-                    {
-                        var acc: Int = 0; // the number records on the left of current feature
-                        var currentSumY: Double = 0 // current sum of Y of elements on the left of current feature
-                        val numRecs: Int = x._2.foldLeft(0)(_ + _.frequency) // number of records
-                        val sumY = x._2.foldLeft(0.0)(_ + _.yValue) // total sum of Y
-
-                        var splitPoint: Set[String] = Set[String]()
-                        var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0, 0)
-                        try {
-                            x._2.map(f => {
-
-                                if (lastFeatureValue.index == -1) {
-                                    lastFeatureValue = f
-                                    new SplitPoint(x._1, Set(), 0.0)
-                                } else {
-                                    currentSumY = currentSumY + lastFeatureValue.yValue
-                                    splitPoint = splitPoint + lastFeatureValue.xValue.asInstanceOf[String]
-                                    acc = acc + lastFeatureValue.frequency
-                                    val weight = currentSumY * currentSumY / acc + (sumY - currentSumY) * (sumY - currentSumY) / (numRecs - acc)
-                                    lastFeatureValue = f
-                                    new SplitPoint(x._1, splitPoint, weight)
-                                }
-                            }).drop(1).maxBy(_.weight) // select the best split // PM: please explain this trick with an example
-                            // we drop 1 element because with Set{A,B,C} , the best split point only be {A} or {A,B}
-                        } catch {
-                            case e: UnsupportedOperationException => new SplitPoint(-1, 0.0, 0.0)
-                        }
-                    }
-                case d: Double => // process with numerical feature
-                    {
-                        var acc: Int = 0 // number of records on the left of the current element
-                        val numRecs: Int = x._2.foldLeft(0)(_ + _.frequency)
-                        var currentSumY: Double = 0
-                        val sumY = x._2.foldLeft(0.0)(_ + _.yValue)
-                        var posibleSplitPoint: Double = 0
-                        var lastFeatureValue = new FeatureValueAggregate(-1, 0, 0, 0, 0)
-                        try {
-                            x._2.map(f => {
-
-                                if (lastFeatureValue.index == -1) {
-                                    lastFeatureValue = f
-                                    new SplitPoint(x._1, 0.0, 0.0)
-                                } else {
-                                    posibleSplitPoint = (f.xValue.asInstanceOf[Double] + lastFeatureValue.xValue.asInstanceOf[Double]) / 2;
-                                    currentSumY = currentSumY + lastFeatureValue.yValue
-                                    acc = acc + lastFeatureValue.frequency
-                                    val weight = currentSumY * currentSumY / acc + (sumY - currentSumY) * (sumY - currentSumY) / (numRecs - acc)
-                                    lastFeatureValue = f
-                                    new SplitPoint(x._1, posibleSplitPoint, weight)
-                                }
-                            }).drop(1).maxBy(_.weight) // select the best split
-                        } catch {
-                            case e: UnsupportedOperationException => new SplitPoint(-1, 0.0, 0.0)
-                        }
-                    } // end of matching double
-            } // end of matching xValue
-            ).
-            filter(_.index != this.yIndex).
-            maxBy(_.weight) // select best feature to split
-        // PM: collect here means you're sending back all the data to a single machine (the driver).
-
-        if (splittingPointFeature.index < 0) {
-            splittingPointFeature.point = eY
-        }
-
-        (label, splittingPointFeature)
     }
 
     private def updateModel(info: Array[(BigInt, SplitPoint)], isStopNode: Boolean = false) = {
@@ -272,6 +181,26 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
             })
     }
 
+    def validateArrayString(d: Array[String]): (Boolean, Array[String]) = {
+        try {
+            var i = -1
+            d.map(
+                element => {
+
+                    i = (i + 1) % featureSet.numberOfFeature
+                    featureSet.data(i) match {
+                        case c: CategoricalFeature => element
+                        case n: NumericalFeature => element.toDouble
+                    }
+                    element
+
+                })
+            (true, d)
+        } catch {
+            case _ => (false, d)
+        }
+    }
+
     /**
      * Building tree, bases on:
      *
@@ -292,68 +221,107 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
         // parse raw data
         val mydata = trainingData.map(line => line.split(delimiter))
 
+        /* REGION CLEANING */
+        var checkedData = mydata.map(array => {
+            validateArrayString(array)
+        })
+
+        var cleanedData = checkedData.filter(x => x._1).map(x => x._2)
+
+        /* END OF REGION CLEANING */
+
+        /* REGION TRANSFORMING */
+
         // encapsulate each value of each feature in each line into a object
-        var transformedData = mydata.map(x => processLineWithLabel(x, featureSet.numberOfFeature, featureSet))
+        var transformedData2 = cleanedData.map(
+            arrayValues => {
+                convertArrayValuesToObjects(arrayValues)
+            })
 
         // filter the 'line' which contains the invalid or missing data
-        transformedData = transformedData.filter(x => (x.length > 0)).cache
+        transformedData2 = transformedData2.filter(x => (x.length > 0))
+
+        /* END OF REGION TRANSFORMING */
 
         // set label for the first job
         // already set by default constructor of class FeatureValueLabelAggregate , so we don't need to put data to regions
         // if this function is called by ContinueFromIncompleteModel, mark the data by the last labels
-        markDataByLabel(transformedData, regions)
+        var transformedData = markDataByLabel(transformedData2, regions)
 
         // NOTE: label == x, means, this is data used for building node id=x
 
         var map_label_to_splitpoint = Map[BigInt, SplitPoint]()
         var isError = false;
-        
+
         var iter = 0;
 
         do {
             iter = iter + 1
             try {
-                //if (iter == 3)
-                //    throw new Exception("Break for debugging")
-                
-            	println("NEW ITERATION---------------------")
-                
+                if (iter == 10)
+                    throw new Exception("Break for debugging")
+
+                println("NEW ITERATION---------------------")
+
                 // save current model before growing tree
                 this.treeModel.writeToFile(this.temporaryModelFile)
+                println("data before processing:")
+                transformedData.foreach(x => println(x.mkString(",")))
                 
+                var data = transformedData.flatMap(x => x.toSeq).filter(x => (x.index >= 0))
 
-                var data = transformedData.flatMap(x => x.toSeq).filter(_.index >= 0)
+                val featureValueAggregate = data.map(x => ((x.label, x.index, x.xValue), x)).reduceByKey((x, y) => x + y)
 
-                // partitioning data by label
-                var groupByLabel = data.groupBy(_.label) // RDD[(BigInt, Seq[FeatureValueLabelAggregate])]
-
-                var checkedStopGroupByLabel = groupByLabel.map(group => (group._1, checkStopCriterion(group._2), group._2))
-                // become RDD[BigInt, (Boolean, Double), Seq[FeatureValueLabelAggregate]]
-                // == ( label, (isStop, average_of_target_feature), Seq[FeatureValueLabelAggregate])
+                val checkedStopExpanding = checkStopCriterion(featureValueAggregate)
 
                 // select stopped group
-                var stopExpandingGroups = checkedStopGroupByLabel.filter(_._2._1 == true).
-                    map(x => (x._1, new SplitPoint(-1, x._2._2, 0))).collect
+                val stopExpandingGroups = checkedStopExpanding.filter(v => v._2).
+                    map(x => (x._1, new SplitPoint(-1, x._3, 0)))
+
                 // become: Array[(BigInt, SplitPoint)] == Array[(label, SplitPoint)]
 
                 // update model with in-expandable group
                 updateModel(stopExpandingGroups, true)
 
-                // select expanding group
-                var expandingGroups = checkedStopGroupByLabel.filter(_._2._1 == false).map(x => (x._2._2, x._3))
-                // become RDD[(Double,Seq[FeatureValueLabelAggregate])]
-                // = RDD[ (average_targetFeature, Seq[FeatureValueLabelAggregate] ) ]
+                // select indexes/labels of expanding groups
+                val expandingLabels = checkedStopExpanding.filter(v => !v._2).map(x => x._1).toSet
 
-                // select best feature and best split point for this feature on each part of labeled data
-                var selectedSplitPoints = expandingGroups.map(x => selectBestSplitPoint(x._2, x._1)).collect
-                // become Array[(BigInt, SplitPoint)] 
-                // = Array[label, split_point_of_data_with_marked_by_this_label]
+                featureValueAggregate.filter(f => expandingLabels.contains(f._1._1))
+
+                val sortedFeatureValueAggregates = (
+                    featureValueAggregate.map(x => ((x._1._1, x._1._2), x._2)) // ((label,index), feature)
+                    .groupByKey()
+                    map (x =>
+                        (x._1, x._2.sortBy(
+                            v => v.xValue match {
+                                case d: Double => d // sort by xValue if this is numerical feature
+                                case s: String => v.yValue / v.frequency // sort by the average of Y if this is categorical value
+                            }))))
+
+                var splittingPointFeatureOfEachRegion =
+                    (sortedFeatureValueAggregates.map(x => {
+                        val index = x._1._2
+                        val region = x._1._1
+                        this.featureSet.data(index) match {
+                            case n: NumericalFeature => {
+                                (region, findBestSplitPointForNumericalFeature(region, index, x._2))
+                            }
+
+                            case c: CategoricalFeature => {
+                                (region, findBestSplitPointForCategoricalFeature(region, index, x._2))
+                            }
+                        }
+                    }) // find best split point of all features
+                        .groupBy(_._1) // group by region
+                        .collect
+                        .map(f => f._2.maxBy(region_sp => region_sp._2.weight))
+                    )
 
                 expandingNodeIndexes = Set[BigInt]()
                 map_label_to_splitpoint = Map[BigInt, SplitPoint]() withDefaultValue new SplitPoint(-9, 0, 0)
 
                 // process split points
-                var validSplitPoint = selectedSplitPoints.filter(_._2.index != -9)
+                var validSplitPoint = splittingPointFeatureOfEachRegion.filter(_._2.index != -9)
 
                 // select split point of region with has only one feature
                 var stoppedSplitPoints = validSplitPoint.filter(_._2.index == -1)
@@ -371,14 +339,21 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                     })
 
                 println("expandingNodeIndexes:" + expandingNodeIndexes)
-
+                println("map_label_to_splitpoint:" + map_label_to_splitpoint)
+                
+                println("\n\ndata before changing label:")
+                transformedData.foreach(x => println(x.mkString(",")))
+                
                 // mark new label for expanding data
-                transformedData.foreach(array => {
+                var newDa = transformedData.map(array => {
+                    //println("Array:" + array.mkString(";"))
                     var currentLabel = array(0).label
-
+                    //println("current Label:" + currentLabel)
+                    		
                     var splitPoint = map_label_to_splitpoint.getOrElse(currentLabel, new SplitPoint(-9, 0, 0))
 
                     if (splitPoint.index < 0) { // this is stop node
+                        //println("split point index:" + splitPoint.index)
                         array.foreach(element => { element.index = -9 })
                     } else { // this is expanding node => change label of its data
                         splitPoint.point match {
@@ -386,9 +361,9 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                             case d: Double =>
                                 {
                                     if (array(splitPoint.index).xValue.asInstanceOf[Double] < splitPoint.point.asInstanceOf[Double]) {
-                                        array.foreach(element => element.label = element.label *2)
+                                        array.foreach(element => element.label = element.label * 2)
                                     } else {
-                                        array.foreach(element => element.label = element.label *2 + 1)
+                                        array.foreach(element => element.label = element.label * 2 + 1)
                                     }
                                 }
 
@@ -403,10 +378,16 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                                 }
                         }
                     }
+                    array
                 })
+                
+                transformedData = newDa
+                
             } catch {
                 case e: Exception => {
                     isError = true;
+                    println("Current Tree:\n" + this.treeModel.tree)
+                    throw e
                 }
             }
         } while (!finish)
@@ -424,90 +405,167 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
         }
     }
 
+    private def findBestSplitPointForNumericalFeature(label: BigInt, index: Int, allValues: Seq[FeatureValueLabelAggregate]): rtreelib.core.SplitPoint = {
+        var acc: Int = 0 // number of records on the left of the current element
+        var currentSumY: Double = 0
+        //val numRecs: Int = x._2.foldLeft(0)(_ + _.frequency)
+        //val sumY = x._2.foldLeft(0.0)(_ + _.yValue)
+        var temp = allValues.reduce((f1, f2) => f1 + f2)
+        val numRecs = temp.frequency
+        val sumY = temp.yValue
+
+        var posibleSplitPoint: Double = 0
+        var lastFeatureValue = new FeatureValueLabelAggregate(-1, 0, 0, 0, 0, label)
+
+        var bestSplitPoint = new SplitPoint(index, posibleSplitPoint, 0)
+        var maxWeight = Double.MinValue
+        var currentWeight: Double = 0
+
+        if (allValues.length == 1) {
+            new SplitPoint(-1, 0.0, 0.0) // sign of stop node
+        } else {
+            allValues.foreach(f => {
+
+                if (lastFeatureValue.index == -1) {
+                    lastFeatureValue = f
+                } else {
+                    posibleSplitPoint = (f.xValue.asInstanceOf[Double] + lastFeatureValue.xValue.asInstanceOf[Double]) / 2;
+                    currentSumY = currentSumY + lastFeatureValue.yValue
+                    acc = acc + lastFeatureValue.frequency
+                    currentWeight = currentSumY * currentSumY / acc + (sumY - currentSumY) * (sumY - currentSumY) / (numRecs - acc)
+                    lastFeatureValue = f
+                    if (currentWeight > maxWeight) {
+                        bestSplitPoint.point = posibleSplitPoint
+                        bestSplitPoint.weight = currentWeight
+                        maxWeight = currentWeight
+                    }
+                }
+            })
+            bestSplitPoint
+        }
+    }
+
+    private def findBestSplitPointForCategoricalFeature(label: BigInt, index: Int, allValues: Seq[FeatureValueLabelAggregate]): rtreelib.core.SplitPoint = {
+        if (allValues.length == 1) {
+            new SplitPoint(-1, 0.0, 0.0) // sign of stop node
+        } else {
+
+            var currentSumY: Double = 0 // current sum of Y of elements on the left of current feature
+            var temp = allValues.reduce((f1, f2) => f1 + f2)
+            val numRecs = temp.frequency
+            val sumY = temp.yValue
+            var splitPointIndex: Int = 0
+            var lastFeatureValue = new FeatureValueLabelAggregate(-1, 0, 0, 0, 0, label)
+            var acc: Int = 0
+            var bestSplitPoint = new SplitPoint(index, splitPointIndex, 0)
+            var maxWeight = Double.MinValue
+            var currentWeight: Double = 0
+
+            allValues.foreach(f => {
+
+                if (lastFeatureValue.index == -1) {
+                    lastFeatureValue = f
+                } else {
+                    currentSumY = currentSumY + lastFeatureValue.yValue
+                    splitPointIndex = splitPointIndex + 1
+                    acc = acc + lastFeatureValue.frequency
+                    currentWeight = currentSumY * currentSumY / acc + (sumY - currentSumY) * (sumY - currentSumY) / (numRecs - acc)
+                    lastFeatureValue = f
+                    if (currentWeight > maxWeight) {
+                        bestSplitPoint.point = splitPointIndex
+                        bestSplitPoint.weight = currentWeight
+                        maxWeight = currentWeight
+                    }
+                }
+            })
+
+            var splitPointValue = allValues.map(f => f.xValue).take(splitPointIndex).toSet
+            bestSplitPoint.point = splitPointValue
+            bestSplitPoint
+        }
+    }
+
     /**
      * Recover, repair and continue build tree from the last state
      *
      * @throw Exception if the tree is never built before
      */
     override def continueFromIncompleteModel(trainingData: RDD[String]) = {
-        if (treeModel == null){
+        if (treeModel == null) {
             throw new Exception("The tree model is empty because of no building. Please build it first")
         }
-        
-        if (treeModel.isComplete){
+
+        if (treeModel.isComplete) {
             println("This model is already complete")
-        }
-        else {
-            println("Recover from the last state")   
+        } else {
+            println("Recover from the last state")
             /* INITIALIZE */
-	        this.featureSet = treeModel.featureSet
-	        this.xIndexes = treeModel.xIndexes
-	        this.yIndex = treeModel.yIndex
-	        
-	        startBuildTree(trainingData)
-	        
+            this.featureSet = treeModel.featureSet
+            this.xIndexes = treeModel.xIndexes
+            this.yIndex = treeModel.yIndex
+
+            startBuildTree(trainingData)
+
         }
     }
 
-    private def markDataByLabel(data: RDD[Array[FeatureValueLabelAggregate]], regions: List[(BigInt, List[Condition])]) : RDD[Array[FeatureValueLabelAggregate]] = {
-        var newdata = 
+    private def markDataByLabel(data: RDD[Array[FeatureValueLabelAggregate]], regions: List[(BigInt, List[Condition])]): RDD[Array[FeatureValueLabelAggregate]] = {
+        var newdata =
             if (regions.length > 0) {
-            data.map(line => {
-                var labeled = false
+                data.map(line => {
+                    var labeled = false
 
-                // if a line can match one of the Conditions of a region, label it by the ID of this region
-                regions.foreach(region => {
-                    if (region._2.forall(c => c.check(line(c.splitPoint.index).xValue))) {
-                        line.foreach(element => element.label = region._1)
-                        labeled = true
-                    }
+                    // if a line can match one of the Conditions of a region, label it by the ID of this region
+                    regions.foreach(region => {
+                        if (region._2.forall(c => c.check(line(c.splitPoint.index).xValue))) {
+                            line.foreach(element => element.label = region._1)
+                            labeled = true
+                        }
+                    })
+
+                    // if this line wasn't marked, it means this line isn't used for building tree
+                    if (!labeled) line.foreach(element => element.index = -9)
+                    line
                 })
-                
-                // if this line wasn't marked, it means this line isn't used for building tree
-                if (!labeled) line.foreach(element => element.index = -9)
-                line
-            })
-        } 
-        else data
-        
+            } else data
+
         newdata
     }
-    
-     /**
+
+    /**
      * Init the last labels from the leaf nodes
      */
     private def initTheLastLabelsFromLeafNodes() = {
-        
+
         var jobIDList = List[(BigInt, List[Condition])]()
-        
-        def generateJobIter(currentNode : Node, id: BigInt, conditions : List[Condition]) :Unit = {
 
-            if (currentNode.isEmpty && 
-                    (currentNode.value == "empty.left" || currentNode.value == "empty.right")){
-	                jobIDList = jobIDList :+ (id, conditions)
-	            }
-            
-            if (!currentNode.isEmpty){	// it has 2 children
-                    var newConditionsLeft = conditions :+ 
-                    		new Condition(new SplitPoint(currentNode.feature.index, currentNode.splitpoint, 0), true)
-                    generateJobIter(currentNode.left, id*2, newConditionsLeft)
+        def generateJobIter(currentNode: Node, id: BigInt, conditions: List[Condition]): Unit = {
 
-                    var newConditionsRight = conditions :+ 
-                    		new Condition(new SplitPoint(currentNode.feature.index, currentNode.splitpoint, 0), false)
-                    generateJobIter(currentNode.right, id*2 + 1, newConditionsRight)
-            }    
+            if (currentNode.isEmpty &&
+                (currentNode.value == "empty.left" || currentNode.value == "empty.right")) {
+                jobIDList = jobIDList :+ (id, conditions)
+            }
+
+            if (!currentNode.isEmpty) { // it has 2 children
+                var newConditionsLeft = conditions :+
+                    new Condition(new SplitPoint(currentNode.feature.index, currentNode.splitpoint, 0), true)
+                generateJobIter(currentNode.left, id * 2, newConditionsLeft)
+
+                var newConditionsRight = conditions :+
+                    new Condition(new SplitPoint(currentNode.feature.index, currentNode.splitpoint, 0), false)
+                generateJobIter(currentNode.right, id * 2 + 1, newConditionsRight)
+            }
         }
-        
+
         generateJobIter(treeModel.tree, 1, List[Condition]())
-        
-        jobIDList.sortBy(-_._1)	// sort jobs by ID descending
-        
-        var highestLabel = Math.log(jobIDList(0)._1.toDouble)/Math.log(2)
-        jobIDList.filter(x => Math.log(x._1.toDouble)/Math.log(2) == highestLabel)
-        
-        
+
+        jobIDList.sortBy(-_._1) // sort jobs by ID descending
+
+        var highestLabel = Math.log(jobIDList(0)._1.toDouble) / Math.log(2)
+        jobIDList.filter(x => Math.log(x._1.toDouble) / Math.log(2) == highestLabel)
+
         regions = jobIDList
-        
+
     }
 
     override def createNewInstance(featureSet: FeatureSet) = new DataMarkerTreeBuilder(featureSet)

@@ -33,7 +33,9 @@ class RegressionTree() extends Serializable {
      * Default is an instance of ThreadTreeBuilder, which will launch each job in
      * a thread to expand a node in tree
      */ 
-    var treeBuilder: TreeBuilder = new ThreadTreeBuilder(featureSet);
+    var treeBuilder: TreeBuilder =  
+        //new DataMarkerTreeBuilder(featureSet)
+    	new ThreadTreeBuilder(featureSet);
 
     /**
      * Tree model
