@@ -267,7 +267,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                 //if (iter == 5)
                 //    throw new Exception("Break for debugging")
 
-                println("ITERATION---------------------%d-------------".format(iter))
+                println("\n\n\nITERATION---------------------%d-------------".format(iter))
 
                 
                 // save current model before growing tree
