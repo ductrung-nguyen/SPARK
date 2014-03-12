@@ -27,8 +27,12 @@ class FeatureValueLabelAggregate(var index: Int, var xValue: Any, var yValue: Do
             this.label)
     }
 
-    override def toString() = "Feature(index:" + index + " | xValue:" + xValue +
-        " | yValue" + yValue + " | frequency:" + frequency + " | label:" + label + ")";
+    override def toString() = 
+        "Feature(index:%d | xValue:%f | yValue:%f | frequency:%d | label:%d)".format(
+        		index,xValue,yValue,frequency, label
+        )
+        //"Feature(index:" + index + " | xValue:" + xValue +
+        //" | yValue" + yValue + " | frequency:" + frequency + " | label:" + label + ")";
 }
 
 /**
@@ -126,8 +130,13 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
 
                 var label = stoppedRegion._1
                 var splitPoint = stoppedRegion._2
-
-                println("update model with label=" + label + " splitPoint:" + splitPoint)
+                var splitPointString = splitPoint.toString
+                println("update model with label=%d splitPoint:%s".format(
+                    label,
+                    if (splitPointString.length >= 60)
+                        "%s...}".format(splitPointString.substring(0, 60))
+                    else
+                        splitPointString))
 
                 var newnode = (
                     if (isStopNode) {
@@ -256,6 +265,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
 
         //var map_label_to_splitpoint = Map[BigInt, SplitPoint]()
         var isError = false;
+        var errorStack : String = ""
 
         var iter = 0;
 
@@ -278,7 +288,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                 var featureValueAggregate = data.map(x => ((x.label, x.index, x.xValue), x)).reduceByKey((x, y) => x + y)
                 
                 val checkedStopExpanding = checkStopCriterion(featureValueAggregate)
-                println("Checked stop expanding:%s".format(checkedStopExpanding.mkString("\n")))
+                println("Checked stop expanding:\n%s".format(checkedStopExpanding.mkString("\n")))
                 
                 // select stopped group
                 val stopExpandingGroups = checkedStopExpanding.filter(v => v._2).
@@ -354,6 +364,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
             } catch {
                 case e: Exception => {
                     isError = true;
+                    errorStack = e.getStackTraceString
                     expandingNodeIndexes = Set[BigInt]()
                 }
             }
@@ -368,6 +379,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
         } else {
             this.treeModel.isComplete = false
             println("\n--------FINISH with some failed jobs at iteration " + iter + " ----------\n")
+            println("Error Message: \n%s\n".format(errorStack))
             println("Temporaty Tree model is stored at " + this.temporaryModelFile + "\n")
         }
     }
