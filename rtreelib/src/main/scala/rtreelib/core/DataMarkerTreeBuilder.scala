@@ -273,7 +273,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                 //if (iter == 5)
                 //    throw new Exception("Break for debugging")
 
-                println("\n\n\nITERATION---------------------%d-------------".format(iter))
+                println("\n\n\nITERATION---------------------%d------------- expands from %d node\n\n".format(iter, expandingNodeIndexes.count(p => true)))
 
                 
                 // save current model before growing tree
@@ -354,7 +354,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                     })
 
                 //println("expandingNodeIndexes:" + expandingNodeIndexes)
-                println("map_label_to_splitpoint:%s\n\n".format(map_label_to_splitpoint))
+                //println("map_label_to_splitpoint:%s\n\n".format(map_label_to_splitpoint))
                 
                 // mark new label for expanding data
                 transformedData = updateLabels(transformedData, map_label_to_splitpoint)
