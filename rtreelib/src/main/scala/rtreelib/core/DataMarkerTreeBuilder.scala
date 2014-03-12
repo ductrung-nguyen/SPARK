@@ -343,6 +343,8 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
 
                 
                 expandingNodeIndexes = Set[BigInt]()
+                if (iter >= 2)
+                	map_label_to_splitpoint = map_label_to_splitpoint.filter(p => p._1 > (1 << iter))
                 
                 nonstoppedSplitPoints.foreach(point =>
                     // add expanding Indexes into set
@@ -352,7 +354,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                     })
 
                 //println("expandingNodeIndexes:" + expandingNodeIndexes)
-                //println("map_label_to_splitpoint:%s\n\n".format(map_label_to_splitpoint))
+                println("map_label_to_splitpoint:%s\n\n".format(map_label_to_splitpoint))
                 
                 // mark new label for expanding data
                 transformedData = updateLabels(transformedData, map_label_to_splitpoint)
