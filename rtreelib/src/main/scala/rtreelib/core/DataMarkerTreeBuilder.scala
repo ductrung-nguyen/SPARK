@@ -130,13 +130,9 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
 
                 var label = stoppedRegion._1
                 var splitPoint = stoppedRegion._2
-                var splitPointString = splitPoint.toString
                 println("update model with label=%d splitPoint:%s".format(
                     label,
-                    if (splitPointString.length >= 60)
-                        "%s...}".format(splitPointString.substring(0, 60))
-                    else
-                        splitPointString))
+                    splitPoint))
 
                 var newnode = (
                     if (isStopNode) {
