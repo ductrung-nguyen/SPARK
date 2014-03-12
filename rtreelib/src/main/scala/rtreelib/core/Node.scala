@@ -167,18 +167,22 @@ class NonEmpty(xFeature: FeatureInfo, xSplitpoint: Any, var xLeft: Node, var xRi
      * Get the conditions to go to the left and right child
      */
     val (conditionLeft, conditionRight) = xSplitpoint match {
-        case s: Set[String] => (s.toString, "Not in " + s.toString )
+        case s: Set[String] => (s.toString, "Not in %s".format(s.toString) )
         case d : Double => ("%s < %f".format(xFeature.Name, d), "%s >= %f".format(xFeature.Name, d))
     }
 
-    
     def toStringWithLevel(level: Int) =
-        feature.Name + "(%s)\n".format(splitpoint match {
-            case s : Set[String] => Utility.setToString(s)
-            case d : Double => " < %f".format(d)
-        	}) +
-        	("".padTo(level, "|")).mkString("    ") + "-(yes)" + ("".padTo(level, "-")).mkString("") + left.toStringWithLevel(level + 1) + "\n" +
-            ("".padTo(level, "|")).mkString("    ") + "-(no)" + ("".padTo(level, "-")).mkString("") + right.toStringWithLevel(level + 1)
-            
-   
+        "%s(%s)\n%s-(yes)%s%s\n%s-(no)-%s%s".format(
+            feature.Name,
+            splitpoint match {
+                case s: Set[String] => Utility.setToString(s)
+                case d: Double => " < %f".format(d)
+            },
+            ("".padTo(level, "|")).mkString("    "),
+            ("".padTo(level, "-")).mkString(""),
+            left.toStringWithLevel(level + 1),
+            ("".padTo(level, "|")).mkString("    "),
+            ("".padTo(level, "-")).mkString(""),
+            right.toStringWithLevel(level + 1)
+            )
 }

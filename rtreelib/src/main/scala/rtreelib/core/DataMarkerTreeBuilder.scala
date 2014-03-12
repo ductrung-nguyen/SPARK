@@ -267,7 +267,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                 //if (iter == 5)
                 //    throw new Exception("Break for debugging")
 
-                println("NEW ITERATION---------------------" + iter)
+                println("ITERATION---------------------%d-------------".format(iter))
 
                 
                 // save current model before growing tree
@@ -278,7 +278,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                 var featureValueAggregate = data.map(x => ((x.label, x.index, x.xValue), x)).reduceByKey((x, y) => x + y)
                 
                 val checkedStopExpanding = checkStopCriterion(featureValueAggregate)
-                println("checked stop expanding:" + checkedStopExpanding.mkString(","))
+                println("Checked stop expanding:%s".format(checkedStopExpanding.mkString("\n")))
                 
                 // select stopped group
                 val stopExpandingGroups = checkedStopExpanding.filter(v => v._2).
@@ -346,7 +346,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                     })
 
                 //println("expandingNodeIndexes:" + expandingNodeIndexes)
-                println("map_label_to_splitpoint:" + map_label_to_splitpoint +"\n\n")
+                //println("map_label_to_splitpoint:%s\n\n".format(map_label_to_splitpoint))
                 
                 // mark new label for expanding data
                 transformedData = updateLabels(transformedData, map_label_to_splitpoint)
