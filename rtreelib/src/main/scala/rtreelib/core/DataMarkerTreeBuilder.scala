@@ -242,20 +242,20 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
         /* REGION TRANSFORMING */
 
         // encapsulate each value of each feature in each line into a object
-        var transformedData2 = cleanedData.map(
+        var transformedData = cleanedData.map(
             arrayValues => {
                 convertArrayValuesToObjects(arrayValues)
             })
 
         // filter the 'line' which contains the invalid or missing data
-        transformedData2 = transformedData2.filter(x => (x.length > 0))
+        transformedData = transformedData.filter(x => (x.length > 0))
 
         /* END OF REGION TRANSFORMING */
 
         // set label for the first job
         // already set by default constructor of class FeatureValueLabelAggregate , so we don't need to put data to regions
         // if this function is called by ContinueFromIncompleteModel, mark the data by the last labels
-        var transformedData = markDataByLabel(transformedData2, regions)
+        transformedData = markDataByLabel(transformedData, regions)
 
         // NOTE: label == x, means, this is data used for building node id=x
 
@@ -315,7 +315,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                                 case s: String => v.yValue / v.frequency // sort by the average of Y if this is categorical value
                             }))))
 
-                var splittingPointFeatureOfEachRegion =
+                val splittingPointFeatureOfEachRegion =
                     (sortedFeatureValueAggregates.map(x => {
                         val index = x._1._2
                         val region = x._1._1
@@ -336,12 +336,12 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
 
                 
                 // process split points
-                var validSplitPoint = splittingPointFeatureOfEachRegion.filter(_._2.index != -9)
+                val validSplitPoint = splittingPointFeatureOfEachRegion.filter(_._2.index != -9)
 
                 // select split point of region with has only one feature --> it is a leaf node
-                var stoppedSplitPoints = validSplitPoint.filter(_._2.index == -1)
+                val stoppedSplitPoints = validSplitPoint.filter(_._2.index == -1)
 
-                var nonstoppedSplitPoints = validSplitPoint.filter(_._2.index != -1)
+                val nonstoppedSplitPoints = validSplitPoint.filter(_._2.index != -1)
 
                 updateModel(stoppedSplitPoints, true)
                 updateModel(nonstoppedSplitPoints, false)
@@ -392,9 +392,9 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
     = {
         data.map(array => {
 
-                    var currentLabel = array(0).label
+                    val currentLabel = array(0).label
                     		
-                    var splitPoint = map_label_to_splitpoint.getOrElse(currentLabel, new SplitPoint(-9, 0, 0))
+                    val splitPoint = map_label_to_splitpoint.getOrElse(currentLabel, new SplitPoint(-9, 0, 0))
    
                     if (splitPoint.index < 0) { // this is stop node
                         //println("split point index:" + splitPoint.index)
