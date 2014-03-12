@@ -96,11 +96,13 @@ object Test {
         }
         else{
             tree.treeBuilder.setMinSplit(1000)
-            tree.treeBuilder.setThreshold(1)
+            tree.treeBuilder.setThreshold(0.3) // coefficient of variation
             
             /* TEST BUILDING */
             stime = System.nanoTime()
-            println(tree.buildTree("ArrDelay"))
+            println(tree.buildTree("ArrDelay", 
+                    Set("Month", "DayofMonth", "DayOfWeek", "DepTime", "ArrTime", 
+                            "UniqueCarrier", "Origin", "Dest", "Distance")))
             println("\nBuild tree in %f second(s)".format((System.nanoTime() - stime)/1e9))
             
             /* TEST WRITING TREE TO MODEL */
@@ -112,7 +114,10 @@ object Test {
             	treeFromFile.loadModelFromFile(pathOfTreeModel)
             	println("OK: Load tree from '%s' successfully".format(pathOfTreeModel))
             }catch {
-                case e: Throwable => println("ERROR: Couldn't load tree from '%s'".format(pathOfTreeModel))
+                case e: Throwable => {
+                    println("ERROR: Couldn't load tree from '%s'".format(pathOfTreeModel))
+                	e.printStackTrace()
+                }
             }
             
             /* TEST PREDICTING AND EVALUATION */
