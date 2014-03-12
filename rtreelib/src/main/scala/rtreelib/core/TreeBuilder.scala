@@ -16,19 +16,24 @@ abstract class TreeBuilder(var featureSet: FeatureSet) extends Serializable {
     var treeModel = new TreeModel()
     
     /**
-     *  minimum records to do a splitting
+     *  minimum records to do a splitting, default value is 10
      */ 
     var minsplit = 10
 
     /**
-     *  delimiter of fields in data set
+     *  delimiter of fields in data set, default value is ","
      */ 
     var delimiter = ','
 
     /**
-     *  coefficient of variation
+     *  coefficient of variation, default value is 0.1
      */ 
     var threshold: Double = 0.1
+    
+    /**
+     * Max depth of the tree, default value if 30
+     */
+    var maxDepth : Int = 30
 
     /**
      *  index of target feature, 
@@ -79,6 +84,11 @@ abstract class TreeBuilder(var featureSet: FeatureSet) extends Serializable {
      * @param value	the maximum of parallel jobs
      */
     def setMaximumParallelJobs(value: Int) = { MAXIMUM_PARALLEL_JOBS = value }
+    
+    /**
+     * Set the maximum of depth of tree
+     */
+    def setMaxDepth(value: Int) = { this.maxDepth = value }
 
     /**
      * Process a line of data set

@@ -286,6 +286,11 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                 val checkedStopExpanding = checkStopCriterion(featureValueAggregate)
                 println("Checked stop expanding:\n%s".format(checkedStopExpanding.mkString("\n")))
                 
+                
+                // if the tree height enough, mark all node is stop node
+                if (iter >= this.maxDepth)
+                    checkedStopExpanding.foreach(x => (x._1, true, x._3))
+                    
                 // select stopped group
                 val stopExpandingGroups = checkedStopExpanding.filter(v => v._2).
                     map(x => (x._1, new SplitPoint(-1, x._3, 0)))

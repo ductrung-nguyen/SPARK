@@ -27,7 +27,7 @@ object Test {
 	        if (IS_LOCAL)
 	        	"data/bodyfat.csv"
 	        else
-	            "hdfs://spark-master-001:8020/user/ubuntu/input/AIRLINES/2006.csv"
+	            "hdfs://spark-master-001:8020/user/ubuntu/input/AIRLINES/2007.csv"
 	    )
 	    
 	    val conf = (
@@ -49,6 +49,8 @@ object Test {
 	    
 	    val trainingData = context.textFile(inputTrainingFile, 1)
 	    val testingData = context.textFile(inputTestingFile, 1)
+	    
+	    val pathOfTreeModel = "/tmp/tree.model"
 
 
 	    /* TEST BUILDING TREE */
@@ -56,49 +58,76 @@ object Test {
 	    val tree = new RegressionTree()
 	    tree.setDataset(trainingData)
 	    //tree.treeBuilder = new DataMarkerTreeBuilder(tree.featureSet) // change the default tree builder
-        //tree.setAttributeTypes("c,c,c,c,c,c,c,c,c,c,c")
-        //tree.setAttributeNames(",age,DEXfat,waistcirc,hipcirc,elbowbreadth,kneebreadth,anthro3a,anthro3b,anthro3c,anthro4")
-        tree.treeBuilder.setMinSplit(10)
-        tree.treeBuilder.setMaximumParallelJobs(10)
 
-        if (IS_LOCAL)
+        if (IS_LOCAL){
+            //tree.setAttributeTypes("c,c,c,c,c,c,c,c,c,c,c")
+            tree.treeBuilder.setMinSplit(10)
+            tree.treeBuilder.setMaximumParallelJobs(10)
+            
+            stime = System.nanoTime()
             println(tree.buildTree("DEXfat", Set("age", "waistcirc", "hipcirc", "elbowbreadth", "kneebreadth")))
-        else
+            println("\nOK: Build tree in %f second(s)".format((System.nanoTime() - stime)/1e9))
+            
+            /* TEST WRITING TREE TO MODEL */
+            tree.writeModelToFile(pathOfTreeModel)
+            
+            /* TEST LOADING TREE FROM MODEL FILE */
+            val treeFromFile = new RegressionTree()
+            try{
+            	treeFromFile.loadModelFromFile(pathOfTreeModel)
+            	println("OK: Load tree from '%s' successfully".format(pathOfTreeModel))
+            }catch {
+                case e: Throwable => println("ERROR: Couldn't load tree from '%s'".format(pathOfTreeModel))
+            }
+            
+            /* TEST PREDICTING AND EVALUATION */
+            println("Evaluation:")
+            val predictRDD = treeFromFile.predict(testingData)
+            val actualValueRDD = testingData.map(line => line.split(',')(2))	// 14 is the index of ArrDelay in csv file, based 0
+            Evaluation.evaluate(predictRDD, actualValueRDD)
+            
+            
+            /* TEST RECOVER MODE */
+		    //val recoverTree = new RegressionTree()
+		    //recoverTree.treeBuilder = new DataMarkerTreeBuilder(new FeatureSet(Array[String]()))
+		    //recoverTree.continueFromIncompleteModel(bodyfat_data, "/tmp/model.temp3")	// temporary model file
+		    //println("Model after re-run from the last state:\n" + recoverTree.treeModel)
+            
+        }
+        else{
+            tree.treeBuilder.setMinSplit(1000)
+            tree.treeBuilder.setThreshold(1)
+            
+            /* TEST BUILDING */
+            stime = System.nanoTime()
             println(tree.buildTree("ArrDelay"))
-	    
-	    // build tree with target feature is the last feature
-	    //println(tree.buildTree()) 
-
-	    
-	    /* TEST WRITING TREE TO MODEL */
-	    
-	    //tree.writeModelToFile("/tmp/test.tree")
-	    
-	    
-	    
-	    /* TEST PREDICTING AND EVALUATION */
-	    
-	    // predict a single value
-	    //println("Predict:" + tree.predict("53,56,29.83,81,103,6.9,8.9,4.14,4.52,4.31,5.69".split(",")))
-	    //val predictRDD = tree.predict(testingData)
-	    //val actualValueRDD = testingData.map(line => line.split(',')(2))
-	    //Evaluation.evaluate(predictRDD, actualValueRDD)    
-	    
-	    
-	    
-	    /* TEST RECOVER MODE */
-	    
-	    //val recoverTree = new RegressionTree()
-	    //recoverTree.treeBuilder = new DataMarkerTreeBuilder(new FeatureSet(Array[String]()))
-	    //recoverTree.continueFromIncompleteModel(bodyfat_data, "/tmp/model.temp3")	// temporary model file
-	    //println("Model after re-run from the last state:\n" + recoverTree.treeModel)
-	    
-	    
-	    /* TEST LOADING TREE FROM MODEL FILE */
-	    
-	    //val tree2 = new RegressionTree();
-	    //tree2.loadModelFromFile("/tmp/test.tree")
-	    //tree2.evaluate(bodyfat_data)
+            println("\nBuild tree in %f second(s)".format((System.nanoTime() - stime)/1e9))
+            
+            /* TEST WRITING TREE TO MODEL */
+            tree.writeModelToFile(pathOfTreeModel)
+            
+            /* TEST LOADING TREE FROM MODEL FILE */
+            val treeFromFile = new RegressionTree()
+            try{
+            	treeFromFile.loadModelFromFile(pathOfTreeModel)
+            	println("OK: Load tree from '%s' successfully".format(pathOfTreeModel))
+            }catch {
+                case e: Throwable => println("ERROR: Couldn't load tree from '%s'".format(pathOfTreeModel))
+            }
+            
+            /* TEST PREDICTING AND EVALUATION */
+            println("Evaluation:")
+            val predictRDD = treeFromFile.predict(testingData)
+            val actualValueRDD = testingData.map(line => line.split(',')(14))	// 14 is the index of ArrDelay in csv file, based 0
+            Evaluation.evaluate(predictRDD, actualValueRDD)
+            
+            
+            /* TEST RECOVER MODE */
+		    //val recoverTree = new RegressionTree()
+		    //recoverTree.treeBuilder = new DataMarkerTreeBuilder(new FeatureSet(Array[String]()))
+		    //recoverTree.continueFromIncompleteModel(bodyfat_data, "/tmp/model.temp3")	// temporary model file
+		    //println("Model after re-run from the last state:\n" + recoverTree.treeModel)
+        }
 	    
 	}
 }
