@@ -60,6 +60,7 @@ object Test {
 
         if (IS_LOCAL){
             tree.treeBuilder.setMinSplit(10)
+            //tree.treeBuilder.setMaxDepth(2)
 
             stime = System.nanoTime()
             println(tree.buildTree("DEXfat", Set("age", "waistcirc", "hipcirc", "elbowbreadth", "kneebreadth")))
@@ -98,6 +99,7 @@ object Test {
         else{
             tree.treeBuilder.setMinSplit(1000)
             tree.treeBuilder.setThreshold(0.3) // coefficient of variation
+            tree.treeBuilder.setMaxDepth(10)
             
             /* TEST BUILDING */
             stime = System.nanoTime()

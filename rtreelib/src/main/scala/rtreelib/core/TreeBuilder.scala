@@ -36,13 +36,13 @@ abstract class TreeBuilder(var featureSet: FeatureSet, var usefulFeatureSet : Fe
     /**
      * Max depth of the tree, default value if 30
      */
-    var maxDepth : Int = 30
+    protected var maxDepth : Int = 30
 
     /**
      *  index of target feature, 
      *  default value is the index of the last feature in dataset
      */ 
-    var yIndex = usefulFeatureSet.numberOfFeature - 1
+    protected var yIndex = usefulFeatureSet.numberOfFeature - 1
 
     /**
      *  the indices/indexes of X features, which will be used to predict the target feature
@@ -51,7 +51,7 @@ abstract class TreeBuilder(var featureSet: FeatureSet, var usefulFeatureSet : Fe
      *  so we don't want to calculate it multiple time
      *  The default value is the index of all features, except the last one
      */ 
-    var xIndexes = usefulFeatureSet.data.map(x => x.index).filter(x => (x != yIndex)).toSet[Int]
+    protected var xIndexes = usefulFeatureSet.data.map(x => x.index).filter(x => (x != yIndex)).toSet[Int]
 
     /**
      * A value , which is used to marked a split point is invalid

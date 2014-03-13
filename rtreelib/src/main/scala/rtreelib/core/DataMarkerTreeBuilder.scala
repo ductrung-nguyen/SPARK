@@ -256,13 +256,13 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
                 
                 var featureValueAggregate = data.map(x => ((x.label, x.index, x.xValue), x)).reduceByKey((x, y) => x + y)
                 
-                val checkedStopExpanding = checkStopCriterion(featureValueAggregate)
+                var checkedStopExpanding = checkStopCriterion(featureValueAggregate)
                 println("Checked stop expanding:\n%s".format(checkedStopExpanding.mkString("\n")))
                 
                 
                 // if the tree height enough, mark all node is stop node
-                if (iter >= this.maxDepth)
-                    checkedStopExpanding.foreach(x => (x._1, true, x._3))
+                if (iter > this.maxDepth)
+                    checkedStopExpanding = checkedStopExpanding.map(x => (x._1, true, x._3))
                     
                 // select stopped group
                 val stopExpandingGroups = checkedStopExpanding.filter(v => v._2).
