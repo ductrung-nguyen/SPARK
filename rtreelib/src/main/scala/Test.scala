@@ -19,14 +19,14 @@ object Test {
 	        if (IS_LOCAL)
 	        	"data/training-bodyfat.csv"
 	        else
-	            "hdfs://spark-master-001:8020/user/ubuntu/input/AIRLINES/2006.csv"
+	            "hdfs://spark-master-001:8020/user/ubuntu/input/AIRLINES/training/*.csv"
 	    )
 	    
 	    val inputTestingFile = (
 	        if (IS_LOCAL)
 	        	"data/testing-bodyfat.csv"
 	        else
-	            "hdfs://spark-master-001:8020/user/ubuntu/input/AIRLINES/2007.csv"
+	            "hdfs://spark-master-001:8020/user/ubuntu/input/AIRLINES/testing/*.csv"
 	    )
 	    
 	    val conf = (
@@ -56,7 +56,6 @@ object Test {
 	    
 	    val tree = new RegressionTree()
 	    tree.setDataset(trainingData)
-	    //tree.treeBuilder = new DataMarkerTreeBuilder(tree.featureSet) // change the default tree builder
 
         if (IS_LOCAL){
             tree.treeBuilder.setMinSplit(10)
