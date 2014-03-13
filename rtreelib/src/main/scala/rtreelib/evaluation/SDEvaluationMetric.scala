@@ -15,31 +15,37 @@ class SDEvaluationMetric extends BaseEvaluation {
      */
 	override def Evaluate(predictedResult: RDD[String], actualResult: RDD[String]) = {
 	    var newRDD = predictedResult zip actualResult
-        newRDD = newRDD.filter(v => (v._1 != "???" 
+	    
+	    newRDD.collect.foreach(println)
+	    
+        var validRDD = newRDD.filter(v => (!v._1.equals("???") 
             && (Utility.parseDouble(v._2) match {
                 case Some(d :Double) => true 
                 case None => false 
         }))) // filter invalid record, v._1 is predicted value
         
-        var invalidRDD = newRDD.filter(v => (v._1 == "???" 
+        var invalidRDD = newRDD.filter(v => (v._1.equals("???") 
             || !(Utility.parseDouble(v._2) match {
                 case Some(d :Double) => true 
                 case None => false 
         }))) // filter invalid record, v._1 is predicted value
 
-        val numTest = newRDD.count
+        //val numTest = validRDD.count
 
-        val diff = newRDD.map(x => (x._1.toDouble, x._2.toDouble)).map(x => (x._2 - x._1, (x._2 - x._1) * (x._2 - x._1)))
+        val diff = validRDD.map(x => (x._1.toDouble, x._2.toDouble, 1)).map(x => (x._2 - x._1, (x._2 - x._1) * (x._2 - x._1) , x._3))
 
-        val sums = diff.reduce((x, y) => (x._1 + y._1, x._2 + y._2))
+        val sums = diff.reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3))
 
+        val numTest = sums._3
         val meanDiff = sums._1 / numTest
         val meanDiffPower2 = sums._2 / numTest
         val deviation = math.sqrt(meanDiffPower2 - meanDiff * meanDiff)
         val SE = deviation / numTest
+        val numInvalidRecords = invalidRDD.count
 
         println("Mean of different:%f\nDeviation of different:%f\nSE of different:%f".format(meanDiff, deviation, SE))
-	    println("Number of invalid records:" + invalidRDD.count)
+	    println("Total records: %d".format(numTest) )
+	    println("Number of invalid records: %d".format(numInvalidRecords))
 
 	}
 }

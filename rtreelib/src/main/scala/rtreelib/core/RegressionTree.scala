@@ -90,7 +90,7 @@ class RegressionTree() extends Serializable {
         
     }
     
-    private def filterUnusedFeatures(trainingData : RDD[String], xIndexes:Set[Int], yIndex : Int) : RDD[String] = {
+    private def filterUnusedFeatures(trainingData : RDD[String], xIndexes:Set[Int], yIndex : Int, removeInvalidRecord : Boolean = true) : RDD[String] = {
         var i = 0
         var j = 0
         var temp = trainingData.map(line => {
@@ -107,10 +107,11 @@ class RegressionTree() extends Serializable {
                         else {
                             newLine = "%s,%s".format(newLine, element)
                         }
-
-                        this.usefulFeatureSet.data(j).Type match {
-                            case FeatureType.Categorical => element
-                            case FeatureType.Numerical => element.toDouble
+                        if (removeInvalidRecord){
+	                        this.usefulFeatureSet.data(j).Type match {
+	                            case FeatureType.Categorical => element
+	                            case FeatureType.Numerical => element.toDouble
+	                        }
                         }
 
                         j = j + 1
@@ -218,10 +219,10 @@ class RegressionTree() extends Serializable {
      * @return a RDD contain predicted values
      */
     def predict(testingData: RDD[String], delimiter : String = ",") : RDD[String] = {
-        //var (xIndexes, yIndex) = mapFromUsefulIndexToOriginalIndex(featureSet, usefulFeatureSet)
-        //var newTestingData = filterUnusedFeatures(testingData, xIndexes, yIndex)
-        //newTestingData.map(line => this.predict(line.split(delimiter)))
-        testingData.map(line => this.predict(line.split(delimiter)))
+        var (xIndexes, yIndex) = mapFromUsefulIndexToOriginalIndex(featureSet, usefulFeatureSet)
+        var newTestingData = filterUnusedFeatures(testingData, xIndexes, yIndex, false)
+        newTestingData.map(line => this.predict(line.split(delimiter)))
+        //testingData.map(line => this.predict(line.split(delimiter)))
     }
 
 
