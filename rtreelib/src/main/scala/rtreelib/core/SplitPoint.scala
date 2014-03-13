@@ -13,7 +13,7 @@ class SplitPoint(val index: Int, var point: Any, var weight: Double) extends Ser
         "%d,%s,%f".format(
             index,
             (if (pointToString.length > 40)
-                "%s...)".format(pointToString.substring(0, 60))
+                "%s...)".format(pointToString.substring(0, 40))
             else
                 pointToString),
             weight)

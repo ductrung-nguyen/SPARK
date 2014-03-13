@@ -7,6 +7,24 @@ import rtreelib._
 import rtreelib.core.RegressionTree
 import rtreelib.evaluation.Evaluation
 import rtreelib.core._
+import scala.collection.immutable._
+
+import com.esotericsoftware.kryo.Kryo
+import org.apache.spark.serializer.KryoRegistrator
+
+class MyRegistrator extends KryoRegistrator {
+  override def registerClasses(kryo: Kryo) {
+    kryo.register(classOf[Set[Int]])
+    kryo.register(classOf[SplitPoint])
+    kryo.register(classOf[Feature])
+    kryo.register(classOf[FeatureSet])
+    kryo.register(classOf[Array[String]])
+    kryo.register(classOf[TreeBuilder])
+    kryo.register(classOf[DataMarkerTreeBuilder])
+    kryo.register(classOf[RegressionTree])
+    kryo.register(classOf[FeatureValueLabelAggregate])
+  }
+}
 
 object Test {
 	def main(args : Array[String]) = {
@@ -14,19 +32,22 @@ object Test {
 	    
 	    val IS_LOCAL = true
 	    
+	    System.setProperty("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+	    System.setProperty("spark.kryo.registrator", "MyRegistrator")
+	    
 	    
 	    val inputTrainingFile = (
 	        if (IS_LOCAL)
 	        	"data/training-bodyfat.csv"
 	        else
-	            "hdfs://spark-master-001:8020/user/ubuntu/input/AIRLINES/training/*.csv"
+	            "hdfs://spark-master-001:8020/user/ubuntu/input/AIRLINES/training/*"
 	    )
 	    
 	    val inputTestingFile = (
 	        if (IS_LOCAL)
 	        	"data/testing-bodyfat.csv"
 	        else
-	            "hdfs://spark-master-001:8020/user/ubuntu/input/AIRLINES/testing/*.csv"
+	            "hdfs://spark-master-001:8020/user/ubuntu/input/AIRLINES/testing/*"
 	    )
 	    
 	    val conf = (

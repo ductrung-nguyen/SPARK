@@ -71,8 +71,10 @@ class RegressionTree() extends Serializable {
             {
                 xNames.map(x => {
                     var index = x match {
-                        case Feature(name, _, _) => {
-                            featureSet.getIndex(name)
+                        case Feature(name, ftype, _) => {
+                            val idx = featureSet.getIndex(name)
+                            featureSet.update(Feature(name, ftype, idx), idx)
+                            idx
                         }
                         case s: String => {
                             featureSet.getIndex(s)

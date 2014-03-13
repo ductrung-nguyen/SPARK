@@ -27,7 +27,7 @@ object Utility {
     def setToString(s: Set[String]): String = {
         val s1 = s.toString
         val len = s1.length
-        if (len >= 35)
+        if (len > 40)
             "{%s...}".format(s1.substring(4, 40))
         else
         	"{%s}".format(s1.substring(4, len-1))
