@@ -6,8 +6,7 @@ import org.apache.spark.rdd._
 import rtreelib._
 import rtreelib.core.RegressionTree
 import rtreelib.evaluation.Evaluation
-import rtreelib.core.DataMarkerTreeBuilder
-import rtreelib.core.FeatureSet
+import rtreelib.core._
 
 object Test {
 	def main(args : Array[String]) = {
@@ -60,10 +59,8 @@ object Test {
 	    //tree.treeBuilder = new DataMarkerTreeBuilder(tree.featureSet) // change the default tree builder
 
         if (IS_LOCAL){
-            //tree.setAttributeTypes("c,c,c,c,c,c,c,c,c,c,c")
             tree.treeBuilder.setMinSplit(10)
-            tree.treeBuilder.setMaximumParallelJobs(10)
-            
+
             stime = System.nanoTime()
             println(tree.buildTree("DEXfat", Set("age", "waistcirc", "hipcirc", "elbowbreadth", "kneebreadth")))
             println("\nOK: Build tree in %f second(s)".format((System.nanoTime() - stime)/1e9))
@@ -77,7 +74,10 @@ object Test {
             	treeFromFile.loadModelFromFile(pathOfTreeModel)
             	println("OK: Load tree from '%s' successfully".format(pathOfTreeModel))
             }catch {
-                case e: Throwable => println("ERROR: Couldn't load tree from '%s'".format(pathOfTreeModel))
+                case e: Throwable => {
+                    println("ERROR: Couldn't load tree from '%s'".format(pathOfTreeModel))
+                	e.printStackTrace()
+                }
             }
             
             /* TEST PREDICTING AND EVALUATION */
@@ -101,7 +101,7 @@ object Test {
             /* TEST BUILDING */
             stime = System.nanoTime()
             println(tree.buildTree("ArrDelay", 
-                    Set("Month", "DayofMonth", "DayOfWeek", "DepTime", "ArrTime", 
+                    Set(as.String("Month"), as.String("DayofMonth"), as.String("DayOfWeek"), "DepTime", "ArrTime", 
                             "UniqueCarrier", "Origin", "Dest", "Distance")))
             println("\nBuild tree in %f second(s)".format((System.nanoTime() - stime)/1e9))
             
