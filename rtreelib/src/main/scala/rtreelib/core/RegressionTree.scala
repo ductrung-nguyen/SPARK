@@ -218,7 +218,9 @@ class RegressionTree() extends Serializable {
      * @return a RDD contain predicted values
      */
     def predict(testingData: RDD[String], delimiter : String = ",") : RDD[String] = {
-        testingData.map(line => this.predict(line.split(delimiter)))
+        var (xIndexes, yIndex) = mapFromUsefulIndexToOriginalIndex(featureSet, usefulFeatureSet)
+        var newTestingData = filterUnusedFeatures(testingData, xIndexes, yIndex)
+        newTestingData.map(line => this.predict(line.split(delimiter)))
     }
 
 
@@ -246,6 +248,15 @@ class RegressionTree() extends Serializable {
         val is = new DataInputStream(new FileInputStream(path))
         val rt = js.readObject(is).asInstanceOf[TreeModel]
         treeModel = rt
+        this.featureSet = treeModel.featureSet
+        this.usefulFeatureSet = treeModel.usefulFeatureSet
+        is.close()
+    }
+    
+    private def mapFromUsefulIndexToOriginalIndex(featureSet : FeatureSet , usefulFeatureSet : FeatureSet) : (Set[Int], Int) = {
+        var xIndexes = treeModel.xIndexes.map(index => treeModel.featureSet.getIndex(treeModel.usefulFeatureSet.data(index).Name))
+        var yIndex = treeModel.featureSet.getIndex(usefulFeatureSet.data(treeModel.yIndex).Name)
+        (xIndexes, yIndex)
     }
     
     /**
@@ -254,8 +265,9 @@ class RegressionTree() extends Serializable {
     def continueFromIncompleteModel(trainingData: RDD[String], path_to_model : String) : TreeModel = {
         loadModelFromFile(path_to_model)
         treeBuilder.treeModel = treeModel
-        var xIndexes = treeModel.xIndexes.map(index => treeModel.featureSet.getIndex(treeModel.usefulFeatureSet.data(index).Name))
-        var yIndex = treeModel.featureSet.getIndex(usefulFeatureSet.data(treeModel.yIndex).Name)
+        this.featureSet = treeModel.featureSet
+        this.usefulFeatureSet = treeModel.usefulFeatureSet
+        var (xIndexes, yIndex) = mapFromUsefulIndexToOriginalIndex(featureSet, usefulFeatureSet)
         var newtrainingData = filterUnusedFeatures(trainingData, xIndexes, yIndex)
         treeBuilder.continueFromIncompleteModel(newtrainingData)
         treeModel

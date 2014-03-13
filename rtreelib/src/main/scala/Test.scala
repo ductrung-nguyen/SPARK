@@ -17,14 +17,14 @@ object Test {
 	    
 	    val inputTrainingFile = (
 	        if (IS_LOCAL)
-	        	"data/bodyfat.csv"
+	        	"data/training-bodyfat.csv"
 	        else
 	            "hdfs://spark-master-001:8020/user/ubuntu/input/AIRLINES/2006.csv"
 	    )
 	    
 	    val inputTestingFile = (
 	        if (IS_LOCAL)
-	        	"data/bodyfat.csv"
+	        	"data/testing-bodyfat.csv"
 	        else
 	            "hdfs://spark-master-001:8020/user/ubuntu/input/AIRLINES/2007.csv"
 	    )
@@ -82,8 +82,9 @@ object Test {
             
             /* TEST PREDICTING AND EVALUATION */
             println("Evaluation:")
-            val predictRDD = treeFromFile.predict(testingData)
-            val actualValueRDD = testingData.map(line => line.split(',')(2))	// 14 is the index of ArrDelay in csv file, based 0
+            // testing data must have the same format with the training data, and don't include header !!!
+            val predictRDD = treeFromFile.predict(testingData)	
+            val actualValueRDD = testingData.map(line => line.split(',')(2))	// 2 is the index of DEXfat in csv file, based 0
             Evaluation.evaluate(predictRDD, actualValueRDD)
             
             
