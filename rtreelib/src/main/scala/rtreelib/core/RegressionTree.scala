@@ -218,9 +218,10 @@ class RegressionTree() extends Serializable {
      * @return a RDD contain predicted values
      */
     def predict(testingData: RDD[String], delimiter : String = ",") : RDD[String] = {
-        var (xIndexes, yIndex) = mapFromUsefulIndexToOriginalIndex(featureSet, usefulFeatureSet)
-        var newTestingData = filterUnusedFeatures(testingData, xIndexes, yIndex)
-        newTestingData.map(line => this.predict(line.split(delimiter)))
+        //var (xIndexes, yIndex) = mapFromUsefulIndexToOriginalIndex(featureSet, usefulFeatureSet)
+        //var newTestingData = filterUnusedFeatures(testingData, xIndexes, yIndex)
+        //newTestingData.map(line => this.predict(line.split(delimiter)))
+        testingData.map(line => this.predict(line.split(delimiter)))
     }
 
 

@@ -1,6 +1,7 @@
 package rtreelib.evaluation
 
 import org.apache.spark.rdd.RDD
+import rtreelib.core._
 
 /**
  * This class use standard deviation and square error to determine the accuracy of a prediction
@@ -14,7 +15,17 @@ class SDEvaluationMetric extends BaseEvaluation {
      */
 	override def Evaluate(predictedResult: RDD[String], actualResult: RDD[String]) = {
 	    var newRDD = predictedResult zip actualResult
-        newRDD = newRDD.filter(v => v._1 != "???") // filter invalid record, v._1 is predicted value
+        newRDD = newRDD.filter(v => (v._1 != "???" 
+            && (Utility.parseDouble(v._2) match {
+                case Some(d :Double) => true 
+                case None => false 
+        }))) // filter invalid record, v._1 is predicted value
+        
+        var invalidRDD = newRDD.filter(v => (v._1 == "???" 
+            || !(Utility.parseDouble(v._2) match {
+                case Some(d :Double) => true 
+                case None => false 
+        }))) // filter invalid record, v._1 is predicted value
 
         val numTest = newRDD.count
 
@@ -28,6 +39,7 @@ class SDEvaluationMetric extends BaseEvaluation {
         val SE = deviation / numTest
 
         println("Mean of different:%f\nDeviation of different:%f\nSE of different:%f".format(meanDiff, deviation, SE))
+	    println("Number of invalid records:" + invalidRDD.count)
 
 	}
 }
