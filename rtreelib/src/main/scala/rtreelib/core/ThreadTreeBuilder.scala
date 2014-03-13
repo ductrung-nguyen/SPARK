@@ -6,9 +6,6 @@ import org.apache.spark.rdd._
 import scala.collection.immutable.Queue
 import scala.concurrent._
 
-object FeatureType extends Enumeration {
-  val Categorical, Numerical = Value
-}
 
 /**
  * This class will put each job into a separated thread.
@@ -17,8 +14,8 @@ object FeatureType extends Enumeration {
  *
  * @param featuresSet	the information of the features in dataset
  */
-class ThreadTreeBuilder(featuresSet: FeatureSet)
-    extends TreeBuilder(featuresSet) {
+class ThreadTreeBuilder(featuresSet: FeatureSet, usefulFeatureSet : FeatureSet)
+    extends TreeBuilder(featuresSet, usefulFeatureSet) {
 
     /**
      *  queue of waiting jobs
@@ -176,9 +173,9 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
                     element => {
                         
                         i = (i + 1) % featureSet.numberOfFeature
-                        featureSet.data(i) match {
-                                        case c: CategoricalFeature => element
-                                        case n: NumericalFeature => element.toDouble
+                        featureSet.data(i).Type match {
+                                        case FeatureType.Categorical => element
+                                        case FeatureType.Numerical => element.toDouble
                                     }
                         element
                     
@@ -187,7 +184,7 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
                     (true, d)
             }
             catch {
-                case _ => (false, d)
+                case _ : Throwable => (false, d)
             }
         }
     
@@ -377,7 +374,7 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
         
     }
     
-    override def createNewInstance(featureSet : FeatureSet) = new ThreadTreeBuilder(featureSet)
+    override def createNewInstance(featureSet : FeatureSet, usefulFeatureSet : FeatureSet) = new ThreadTreeBuilder(featureSet, usefulFeatureSet)
   
   private def convertArrayValuesToObjects(arrayValues: Array[String]): Array[rtreelib.core.FeatureValueAggregate] = {
       var yValue = arrayValues(yIndex).toDouble
@@ -393,9 +390,9 @@ class ThreadTreeBuilder(featuresSet: FeatureSet)
                       f.frequency = -1
                       f
                   }else
-                  featureSet.data(i) match {
-                      case c: CategoricalFeature => encapsulateValueIntoObject(i, element, yValue, FeatureType.Categorical)
-                      case n: NumericalFeature => encapsulateValueIntoObject(i, element, yValue, FeatureType.Numerical)
+                  featureSet.data(i).Type match {
+                      case FeatureType.Categorical => encapsulateValueIntoObject(i, element, yValue, FeatureType.Categorical)
+                      case FeatureType.Numerical => encapsulateValueIntoObject(i, element, yValue, FeatureType.Numerical)
                   }
               }
       }

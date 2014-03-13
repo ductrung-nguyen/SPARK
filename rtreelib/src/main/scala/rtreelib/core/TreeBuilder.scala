@@ -7,8 +7,11 @@ import scala.concurrent._
 
 /**
  * Abstract class of tree builder
+ * 
+ * @param featureSet		all features in the training data
+ * @param usefulFeatureSet	the features which we used to build the tree (included the target feature) 
  */
-abstract class TreeBuilder(var featureSet: FeatureSet) extends Serializable {
+abstract class TreeBuilder(var featureSet: FeatureSet, var usefulFeatureSet : FeatureSet) extends Serializable {
 
     /**
      *  tree model
@@ -39,7 +42,7 @@ abstract class TreeBuilder(var featureSet: FeatureSet) extends Serializable {
      *  index of target feature, 
      *  default value is the index of the last feature in dataset
      */ 
-    var yIndex = featureSet.numberOfFeature - 1
+    var yIndex = usefulFeatureSet.numberOfFeature - 1
 
     /**
      *  the indices/indexes of X features, which will be used to predict the target feature
@@ -48,7 +51,7 @@ abstract class TreeBuilder(var featureSet: FeatureSet) extends Serializable {
      *  so we don't want to calculate it multiple time
      *  The default value is the index of all features, except the last one
      */ 
-    var xIndexes = featureSet.data.map(x => x.index).filter(x => (x != yIndex)).toSet[Int]
+    var xIndexes = usefulFeatureSet.data.map(x => x.index).filter(x => (x != yIndex)).toSet[Int]
 
     /**
      * A value , which is used to marked a split point is invalid
@@ -91,48 +94,6 @@ abstract class TreeBuilder(var featureSet: FeatureSet) extends Serializable {
     def setMaxDepth(value: Int) = { this.maxDepth = value }
 
     /**
-     * Process a line of data set
-     * For each value of each feature, encapsulate it into a FeatureAgregateInfo(fetureIndex, xValue, yValue, frequency)
-     * 
-     * @param line			array of value of each feature in a "record"
-     * @param numbeFeatures	the TOTAL number of feature in data set (include features which may be not processed)
-     * @param fTypes		type of each feature in each line (in ordered)
-     * @return an array of FeatureAggregateInfo, each element is a value of each feature on this line
-     */
-    protected def processLine(line: Array[String], numberFeatures: Int, featureSet: FeatureSet): Array[FeatureValueAggregate] = {
-        val length = numberFeatures
-        var i = -1;
-        Utility.parseDouble(line(yIndex)) match {
-            case Some(yValue) => { // check type of Y : if isn't continuous type, return nothing
-                try {
-                    val lineWithIndex = line zip Array.range(0, line.length)
-                    lineWithIndex.map(value_index => {
-                        val index = value_index._2
-                        val value = value_index._1
-                        if (xIndexes.contains(index)) {
-                            featureSet.data(index) match {
-                                case nFeature: NumericalFeature => { // If this is a numerical feature => parse value from string to double
-                                    val v = Utility.parseDouble(value);
-                                    v match {
-                                        case Some(d) => new FeatureValueAggregate(index, d, yValue, yValue*yValue, 1)
-                                        case None => throw new Exception("Value of feature " + index + " is not double. Require DOUBLE") //new FeatureValueAggregate(-9, f, 0, 0)
-                                    }
-                                }
-                                // if this is a categorical feature => return a FeatureAggregateInfo
-                                case cFeature: CategoricalFeature => new FeatureValueAggregate(index, value, yValue, yValue*yValue, 1)
-                            } // end match fType(i)
-                        } // end if
-                        else new FeatureValueAggregate(-9, value, 0, 0, -1) // with frequency = -1 and value 0, we will remove unused features
-                    } )	// end map
-                } catch {
-                    case e: Exception => { println("Record has some invalid values"); Array[FeatureValueAggregate]() }
-                }
-            } // end case Some(yvalue)
-            case None => { println("Y value is invalid:(%s)".format(line(yIndex))); Array[FeatureValueAggregate]() }
-        } // end match Y value
-    }
-
-    /**
      * Building tree, bases on:
      *
      * @param trainingData	the data which is used to build tree
@@ -170,6 +131,7 @@ abstract class TreeBuilder(var featureSet: FeatureSet) extends Serializable {
     	/* Save necessary information for recovery in failure cases */
         treeModel.tree = new Empty("None")
         treeModel.featureSet = featureSet
+        treeModel.usefulFeatureSet = usefulFeatureSet
         treeModel.xIndexes = xIndexes
         treeModel.yIndex = yIndex
     }
@@ -188,6 +150,6 @@ abstract class TreeBuilder(var featureSet: FeatureSet) extends Serializable {
      */
     def continueFromIncompleteModel(trainingData: RDD[String])
     
-    def createNewInstance(featureSet: FeatureSet) : TreeBuilder
+    def createNewInstance(featureSet: FeatureSet, usefulFeatureSet : FeatureSet) : TreeBuilder
 
 }

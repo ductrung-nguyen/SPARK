@@ -21,12 +21,14 @@ class RegressionTree() extends Serializable {
     /**
      * Contains raw information about features, which will be used to construct a feature set
      */
-    private var metadata: Array[String] = Array[String]()
+    //private var metadata: Array[String] = Array[String]()
+    private var headerOfDataset = Array[String]()
     
     /**
      * Contains information of feature
      */
-    var featureSet = new FeatureSet(metadata)
+    var featureSet = new FeatureSet()
+    var usefulFeatureSet = new FeatureSet()
 
     /**
      * The main component to build the tree
@@ -34,7 +36,7 @@ class RegressionTree() extends Serializable {
      * a thread to expand a node in tree
      */ 
     var treeBuilder: TreeBuilder =  
-        new DataMarkerTreeBuilder(featureSet)
+        new DataMarkerTreeBuilder(featureSet, usefulFeatureSet)
     	//new ThreadTreeBuilder(featureSet);
 
     /**
@@ -53,19 +55,75 @@ class RegressionTree() extends Serializable {
      */
     var trainingData: RDD[String] = null;
 
-    private def getXIndexesAndYIndexByNames(xNames : Set[String], yName : String) : (Set[Int], Int) = {
+    private def getXIndexesAndYIndexByNames(xNames : Set[Any], yName : String) : (Set[Int], Int) = {
+        
         var yindex = featureSet.getIndex(yName)
+        if (yName == "" && yindex < 0)
+            yindex = this.yIndexDefault
+            
         if (yindex < 0)
             throw new Exception("ERROR: Can not find attribute `" + yName + "` in (" + featureSet.data.map(f => f.Name).mkString(",") + ")")
         // index of features, which will be used to predict the target feature
         var xindexes =
             if (xNames.isEmpty) // if user didn't specify xFeature, we will process on all feature, exclude Y feature (to check stop criterion)
                 featureSet.data.filter(_.index != yindex).map(x => x.index).toSet[Int]
-            else
-                xNames.map(x => featureSet.getIndex(x)) //+ yindex
+            else //xNames.map(x => featureSet.getIndex(x)) //+ yindex
+            {
+                xNames.map(x => {
+                    var index = x match {
+                        case Feature(name, _, _) => {
+                            featureSet.getIndex(name)
+                        }
+                        case s: String => {
+                            featureSet.getIndex(s)
+                        }
+                        case _ => { throw new Exception("Invalid feature. Expect as.String(feature_name) or as.Number(feature_name) or \"feature_name\"") }
+                    }
+                    if (index < 0)
+                        throw new Exception("Could not find feature " + x)
+                    else
+                        index
+                })
+            }
                 
         (xindexes, yindex)
         
+    }
+    
+    private def filterUnusedFeatures(trainingData : RDD[String], xIndexes:Set[Int], yIndex : Int) : RDD[String] = {
+        var i = 0
+        var j = 0
+        var temp = trainingData.map(line => {
+            var array = line.split(this.treeBuilder.delimiter)
+
+            i = 0
+            j = 0
+            var newLine = ""
+            try {
+                array.foreach(element => {
+                    if (yIndex == i || xIndexes.contains(i)) {
+                        if (newLine.equals(""))
+                            newLine = element
+                        else {
+                            newLine = "%s,%s".format(newLine, element)
+                        }
+
+                        this.usefulFeatureSet.data(j).Type match {
+                            case FeatureType.Categorical => element
+                            case FeatureType.Numerical => element.toDouble
+                        }
+
+                        j = j + 1
+                    }
+                    i = i + 1
+                })
+                newLine
+            } catch {
+                case _: Throwable => ""
+            }
+        })
+        
+        temp.filter(line => !line.equals(""))
     }
     
     /**
@@ -95,16 +153,47 @@ class RegressionTree() extends Serializable {
      * @see TreeModel
      */
     def buildTree(yFeature: String = "",
-        xFeatures: Set[String] = Set[String]()) : TreeModel = {
+        xFeatures: Set[Any] = Set[Any]()) : TreeModel = {
         if (this.trainingData == null) {
             throw new Exception("ERROR: Dataset can not be null.Set dataset first")
         }
         if (yIndexDefault < 0) {
             throw new Exception("ERROR:Dataset is invalid or invalid feature names")
         }
+        
+        
 
-        val (xIndexes, yIndex) = this.getXIndexesAndYIndexByNames(xFeatures, yFeature)
-        this.buildTree(this.trainingData, xIndexes, yIndex)
+        var (xIndexes, yIndex) = this.getXIndexesAndYIndexByNames(xFeatures, yFeature)
+        
+        /* SET UP LIST OF USEFUL FEATURES AND ITS INDEXES */
+        var usefulFeatureList = List[Feature]()
+        var i = -1
+        var usefulIndexes = List[Int]()
+        var newYIndex = 0
+        featureSet.data.foreach(feature => {
+            if (xIndexes.contains(feature.index) || feature.index == yIndex){
+                i = i + 1
+                if (feature.index == yIndex)
+                    newYIndex = i
+                usefulIndexes = usefulIndexes.:+(i) 
+                usefulFeatureList = usefulFeatureList.:+(Feature(feature.Name, feature.Type, i))
+            }
+        })
+        
+        this.usefulFeatureSet = new FeatureSet(usefulFeatureList)
+        this.treeBuilder.usefulFeatureSet = new FeatureSet(usefulFeatureList)
+        
+        /* FILTER OUT THE UNUSED FEATURES */
+        this.trainingData = filterUnusedFeatures(this.trainingData, xIndexes, yIndex)
+        
+        
+        
+        var newXIndexes = usefulIndexes.filter(x => x != newYIndex)
+        
+        this.treeBuilder.usefulFeatureSet = new FeatureSet(usefulFeatureList)
+        
+        // build tree
+        this.buildTree(this.trainingData, newXIndexes.toSet, newYIndex)
     }
 
     /**
@@ -129,16 +218,6 @@ class RegressionTree() extends Serializable {
      * @return a RDD contain predicted values
      */
     def predict(testingData: RDD[String], delimiter : String = ",") : RDD[String] = {
-        /*
-        val firstLine = testingData.first()
-        try{
-            this.predict(firstLine.split(this.treeBuilder.delimiter))
-        }
-        catch {
-            case e:Exception => throw new Exception("Make sure testing data doesn't contain header")
-            //case e : Exception => throw e
-        }
-        */
         testingData.map(line => this.predict(line.split(delimiter)))
     }
 
@@ -175,96 +254,66 @@ class RegressionTree() extends Serializable {
     def continueFromIncompleteModel(trainingData: RDD[String], path_to_model : String) : TreeModel = {
         loadModelFromFile(path_to_model)
         treeBuilder.treeModel = treeModel
-        treeBuilder.continueFromIncompleteModel(trainingData)
+        var xIndexes = treeModel.xIndexes.map(index => treeModel.featureSet.getIndex(treeModel.usefulFeatureSet.data(index).Name))
+        var yIndex = treeModel.featureSet.getIndex(usefulFeatureSet.data(treeModel.yIndex).Name)
+        var newtrainingData = filterUnusedFeatures(trainingData, xIndexes, yIndex)
+        treeBuilder.continueFromIncompleteModel(newtrainingData)
         treeModel
     }
-    
-    
+
     /*  REGION: SET DATASET AND METADATA */
-    
+
     /**
      * Set the training dataset to used for building tree
-     * 
+     *
      * @param trainingData	the training dataset
      * @throw Exception if the dataset contains less than 2 lines
      */
-    def setDataset(trainingData: RDD[String]) {
-        this.trainingData = trainingData;
-        var headers = this.trainingData.take(2)
+    def setDataset(trainingData: RDD[String], hasHeader: Boolean = true) {
+        
+        var twoFirstLines = trainingData.take(2)
         
         // If we can not get 2 first line of dataset, it's invalid dataset
-        if (headers.length < 2) {
+        if (twoFirstLines.length < 2) {
             throw new Exception("ERROR:Invalid dataset")
         } else {
-            this.metadata = Array[String]()
+            this.trainingData = trainingData;
             
-            // Get the first line of dataset
-            var temp_header = headers(0).split(treeBuilder.delimiter)
-            
-            // if we can convert one of values in the first line to double, 
-            // maybe the dataset doesn't contain header, because the header name usually be string type
-            // In this case, create a fake header, named it "Column0", "Column1"...
-            if (temp_header.exists(v => {
-                Utility.parseDouble(v.trim()) match {
-                    case Some(d) => true
-                    case None => false
-                }
-            })) {
+            var header = twoFirstLines(0)
+            var temp_header = header.split(treeBuilder.delimiter)
+
+            if (hasHeader) {
+                this.headerOfDataset = temp_header
+            } else {
                 var i = -1;
-                this.metadata = this.metadata :+ (temp_header.map(v => { i = i +1; "Column" + i } ).mkString(","))
-            } 
-            else {	// if this dataset contain header, use it
-                this.metadata = this.metadata :+ (temp_header.mkString(","))
+                this.headerOfDataset = temp_header.map(v => { i = i + 1; "Column" + i })
             }
             
+            // determine types of features automatically
             // Get the second line of dataset and try to parse each of them to double
             // If we can parse, it's a numerical feature, otherwise, it's a categorical feature
-            var temp_types = headers(1).split(treeBuilder.delimiter);
+            var secondLine = twoFirstLines(1).split(treeBuilder.delimiter);
             
-            this.metadata = this.metadata :+ (temp_types.map(v => {
+            var i = 0
+            var listOfFeatures = List[Feature]()
+            
+            // if we can parse value of a feature into double, this feature may be a numerical feature
+            secondLine.foreach(v => {
                 Utility.parseDouble(v.trim()) match {
-                    case Some(d) => "c"	// continous feature == numerical feature
-                    case None => "d"	// discrete feature == categorical feature
+                    case Some(d) => { listOfFeatures = listOfFeatures.:+(Feature(headerOfDataset(i), FeatureType.Numerical, i)) }
+                    case None => { listOfFeatures = listOfFeatures.:+(Feature(headerOfDataset(i), FeatureType.Categorical, i)) }
                 }
-            }).mkString(","))
+                i = i + 1
+            })
             
             // update the dataset
+            featureSet = new FeatureSet(listOfFeatures)
             updateFeatureSet()
             
-        }
+        }   
+           
     }
-    
-    /**
-     * Set the metadata for this dataset. Metadata is 2 lines:
-     * <ul>
-     * <li> First line: Name of the features </li>
-     * <li> Second line: Type of the features </li>
-     * </ul>
-     * Each value is separated together by a delimiter, which you set before (default value is comma ',')
-     * 
-     * @param mdata metadata
-     */
-    def setMetadata(mdata : Array[String]) = {
-        this.metadata = mdata;
-        updateFeatureSet()
-    }
-    
-    /**
-     * Set the type of features
-     * 
-     * @param types	a line contains type of features, 
-     * 				separated by by a delimiter, which you set before (default value is comma ',')
-     * 				Example: c,d,c,c,c
-     * @throw Exception if the training set is never be set before
-     */
-    def setFeatureTypes(types : String) = {
-        if (this.trainingData == null) 
-            throw new Exception("Trainingset is null. Set dataset first")
-        else {
-	        this.metadata.update(1, types.split(treeBuilder.delimiter).map(v => v.trim()).mkString(","))
-	        updateFeatureSet()
-        }
-    }
+
 
     /**
      * Set feature names
@@ -274,11 +323,18 @@ class RegressionTree() extends Serializable {
      *     			Example: Temperature,Age,"Type"
      * @throw Exception if the training set is never be set before
      */
-    def setFeatureNames(names: String) = {
+    def setFeatureNames(names: Array[String]) = {
         if (this.trainingData == null) 
             throw new Exception("Trainingset is null. Set dataset first")
         else {
-	        this.metadata.update(0, names.split(treeBuilder.delimiter).map(v => Utility.normalizeString(v)).mkString(","))
+            if (names.length != featureSet.data.length){
+                throw new Exception("Incorrect names")
+            }
+            
+	        var i = 0
+	        names.foreach(name =>{
+	            featureSet.data(i).Name = name
+	        } )
 	        updateFeatureSet()
         }
     }
@@ -287,10 +343,10 @@ class RegressionTree() extends Serializable {
      * Update the feature set based on the information of metadata
      */
     private def updateFeatureSet() = {
-        	featureSet = new FeatureSet(this.metadata)
+
             yIndexDefault = featureSet.numberOfFeature - 1
             //treeBuilder = new ThreadTreeBuilder(featureSet);
-            treeBuilder = treeBuilder.createNewInstance(featureSet)
+            treeBuilder = treeBuilder.createNewInstance(featureSet, usefulFeatureSet)
     }
     /* END REGION DATASET AND METADATA */
 }

@@ -13,7 +13,7 @@ trait Node extends Serializable {
     /**
      * The associated feature of this node
      */
-    var feature: FeatureInfo
+    var feature: Feature
     
     /**
      * The value of this node
@@ -105,7 +105,7 @@ class Empty(xValue: String = "Empty") extends Node {
     /**
      * The feature which is associated to this node
      */
-    var feature: FeatureInfo = _ //FeatureInfo("Empty", "d", 0)
+    var feature: Feature = _ //FeatureInfo("Empty", "d", 0)
     
     def toStringWithLevel(level: Int) = xValue
 }
@@ -118,7 +118,7 @@ class Empty(xValue: String = "Empty") extends Node {
  * @param xLeft			the left child
  * @param xRight		the right child
  */
-class NonEmpty(xFeature: FeatureInfo, xSplitpoint: Any, var xLeft: Node, var xRight: Node) extends Node{
+class NonEmpty(xFeature: Feature, xSplitpoint: Any, var xLeft: Node, var xRight: Node) extends Node{
     
     /**
      * Value of this leaf node. 
@@ -161,7 +161,7 @@ class NonEmpty(xFeature: FeatureInfo, xSplitpoint: Any, var xLeft: Node, var xRi
     /**
      * The feature which is associated to this node
      */
-    var feature: FeatureInfo = xFeature
+    var feature: Feature = xFeature
     
     /**
      * Get the conditions to go to the left and right child

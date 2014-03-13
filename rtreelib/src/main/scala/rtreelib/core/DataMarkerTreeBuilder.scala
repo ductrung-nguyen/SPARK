@@ -41,7 +41,8 @@ class FeatureValueLabelAggregate(var index: Int, var xValue: Any, var yValue: Do
  *
  * @param featureSet feature information of input data
  */
-class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featureSet) {
+class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : FeatureSet) 
+	extends TreeBuilder(_featureSet, _usefulFeatureSet) {
 
     /**
      * Temporary model file
@@ -60,6 +61,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
      * @return an array of FeatureAggregateInfo, each element is a value of each feature on this line
      */
     private def convertArrayValuesToObjects(arrayValues: Array[String]): Array[rtreelib.core.FeatureValueLabelAggregate] = {
+        println(arrayValues.mkString(","))
         var yValue = arrayValues(yIndex).toDouble
         var i = -1
         //Utility.parseDouble(arrayValues(yIndex)) match {
@@ -67,15 +69,15 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
         arrayValues.map {
             element =>
                 {
-                    i = (i + 1) % featureSet.numberOfFeature
+                    i = (i + 1) % usefulFeatureSet.numberOfFeature
                     if (!this.xIndexes.contains(i)) {
                         var f = encapsulateValueIntoObject(-i - 1, "0", 0, FeatureType.Numerical)
                         f.frequency = -1
                         f
                     } else
-                        featureSet.data(i) match {
-                            case c: CategoricalFeature => encapsulateValueIntoObject(i, element, yValue, FeatureType.Categorical)
-                            case n: NumericalFeature => encapsulateValueIntoObject(i, element, yValue, FeatureType.Numerical)
+                        usefulFeatureSet.data(i).Type match {
+                            case FeatureType.Categorical => encapsulateValueIntoObject(i, element, yValue, FeatureType.Categorical)
+                            case FeatureType.Numerical => encapsulateValueIntoObject(i, element, yValue, FeatureType.Numerical)
                         }
                 }
         }
@@ -138,7 +140,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                     if (isStopNode) {
                         new Empty(splitPoint.point.toString)
                     } else {
-                        val chosenFeatureInfoCandidate = featureSet.data.find(f => f.index == splitPoint.index)
+                        val chosenFeatureInfoCandidate = usefulFeatureSet.data.find(f => f.index == splitPoint.index)
                         chosenFeatureInfoCandidate match {
                             case Some(chosenFeatureInfo) => {
                                 new NonEmpty(chosenFeatureInfo,
@@ -186,25 +188,6 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
             })
     }
 
-    def validateArrayString(d: Array[String]): (Boolean, Array[String]) = {
-        try {
-            var i = -1
-            d.map(
-                element => {
-
-                    i = (i + 1) % featureSet.numberOfFeature
-                    featureSet.data(i) match {
-                        case c: CategoricalFeature => element
-                        case n: NumericalFeature => element.toDouble
-                    }
-                    element
-
-                })
-            (true, d)
-        } catch {
-            case _ => (false, d)
-        }
-    }
 
     /**
      * Building tree, bases on:
@@ -230,19 +213,10 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
         // parse raw data
         val mydata = trainingData.map(line => line.split(delimiter))
 
-        /* REGION CLEANING */
-        var checkedData = mydata.map(array => {
-            validateArrayString(array)
-        })
-
-        var cleanedData = checkedData.filter(x => x._1).map(x => x._2)
-
-        /* END OF REGION CLEANING */
-
         /* REGION TRANSFORMING */
 
         // encapsulate each value of each feature in each line into a object
-        var transformedData = cleanedData.map(
+        var transformedData = mydata.map(
             arrayValues => {
                 convertArrayValuesToObjects(arrayValues)
             })
@@ -319,12 +293,12 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
                     (sortedFeatureValueAggregates.map(x => {
                         val index = x._1._2
                         val region = x._1._1
-                        this.featureSet.data(index) match {
-                            case n: NumericalFeature => {
+                        this.usefulFeatureSet.data(index).Type match {
+                            case FeatureType.Numerical => {
                                 (region, findBestSplitPointForNumericalFeature(region, index, x._2))
                             }
 
-                            case c: CategoricalFeature => {
+                            case FeatureType.Categorical => {
                                 (region, findBestSplitPointForCategoricalFeature(region, index, x._2))
                             }
                         }
@@ -522,6 +496,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
             println("Recover from the last state")
             /* INITIALIZE */
             this.featureSet = treeModel.featureSet
+            this.usefulFeatureSet = treeModel.usefulFeatureSet
             this.xIndexes = treeModel.xIndexes
             this.yIndex = treeModel.yIndex
 
@@ -589,5 +564,6 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet) extends TreeBuilder(_featur
 
     }
 
-    override def createNewInstance(featureSet: FeatureSet) = new DataMarkerTreeBuilder(featureSet)
+    override def createNewInstance(featureSet: FeatureSet, usefulFeatureSet: FeatureSet) 
+    	= new DataMarkerTreeBuilder(featureSet, usefulFeatureSet)
 }

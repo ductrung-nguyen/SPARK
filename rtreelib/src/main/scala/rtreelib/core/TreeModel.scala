@@ -26,7 +26,12 @@ class TreeModel extends Serializable {
 	/**
 	 *  all features information
 	 */ 
-	var featureSet : FeatureSet = new FeatureSet(Array[String]())
+	var featureSet : FeatureSet = new FeatureSet(List[Feature]())
+
+	/**
+	 * The features which were used to build the tree, they were re-indexed from featureSet
+	 */
+	var usefulFeatureSet : FeatureSet = new FeatureSet(List[Feature]())
 	
 	/**
 	 *  the root node of the tree
@@ -116,8 +121,8 @@ class TreeModel extends Serializable {
     override def toString() = {
       (
     		  "* FeatureSet:\n" + featureSet.toString + "\n"
-    		  + "* xIndexes:" + xIndexes + "\n"
-    		  + "* yIndex (target index):" + yIndex + "\n"
+    		  + "* xIndexes:" + xIndexes.map(index => featureSet.getIndex(usefulFeatureSet.data(index).Name))  + "\n"
+    		  + "* yIndex (target index):" + featureSet.getIndex(usefulFeatureSet.data(yIndex).Name) + "\n"
     		  + "* Is complete:" + isComplete + "\n"
     		  + "* Tree:\n"
     		  + tree
