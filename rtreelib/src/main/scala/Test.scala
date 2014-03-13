@@ -32,8 +32,8 @@ object Test {
 	    
 	    val IS_LOCAL = true
 	    
-	    System.setProperty("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-	    System.setProperty("spark.kryo.registrator", "MyRegistrator")
+	    //System.setProperty("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+	    //System.setProperty("spark.kryo.registrator", "MyRegistrator")
 	    
 	    
 	    val inputTrainingFile = (
