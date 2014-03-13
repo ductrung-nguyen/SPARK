@@ -61,7 +61,6 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
      * @return an array of FeatureAggregateInfo, each element is a value of each feature on this line
      */
     private def convertArrayValuesToObjects(arrayValues: Array[String]): Array[rtreelib.core.FeatureValueLabelAggregate] = {
-        println(arrayValues.mkString(","))
         var yValue = arrayValues(yIndex).toDouble
         var i = -1
         //Utility.parseDouble(arrayValues(yIndex)) match {
