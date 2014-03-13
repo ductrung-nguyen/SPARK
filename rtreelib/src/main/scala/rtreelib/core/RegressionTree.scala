@@ -230,27 +230,32 @@ class RegressionTree() extends Serializable {
      * @param path where we want to write to
      */
     def writeModelToFile(path: String) = {
-
-        val js = new JavaSerializer(null, null)
-        val os = new DataOutputStream(new FileOutputStream(path))
-
-        js.writeObject(os, treeModel)
-        os.close
+        val ois = new ObjectOutputStream(new FileOutputStream(path))
+        ois.writeObject(treeModel)
+        ois.close()
     }
 
     /**
      * Load tree model from file
-     * 
+     *
      * @param path the location of file which contains tree model
      */
     def loadModelFromFile(path: String) = {
         val js = new JavaSerializer(null, null)
-        val is = new DataInputStream(new FileInputStream(path))
-        val rt = js.readObject(is).asInstanceOf[TreeModel]
+
+        val ois = new ObjectInputStream(new FileInputStream(path)) {
+            override def resolveClass(desc: java.io.ObjectStreamClass): Class[_] = {
+                try { Class.forName(desc.getName, false, getClass.getClassLoader) }
+                catch { case ex: ClassNotFoundException => super.resolveClass(desc) }
+            }
+        }
+
+        var rt = ois.readObject().asInstanceOf[TreeModel]
         treeModel = rt
         this.featureSet = treeModel.featureSet
         this.usefulFeatureSet = treeModel.usefulFeatureSet
-        is.close()
+
+        ois.close()
     }
     
     private def mapFromUsefulIndexToOriginalIndex(featureSet : FeatureSet , usefulFeatureSet : FeatureSet) : (Set[Int], Int) = {
