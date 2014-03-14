@@ -1,5 +1,7 @@
 package rtreelib.core
 
+import rtreelib.core.Feature._
+
 /**
  * An interface of node in tree
  */
@@ -8,7 +10,7 @@ trait Node extends Serializable {
     /**
      * The split point which this node contains
      */
-    def splitpoint: Any
+    def splitpoint: SplitPoint
     
     /**
      * The associated feature of this node
@@ -16,9 +18,14 @@ trait Node extends Serializable {
     var feature: Feature
     
     /**
-     * The value of this node
+     * The predicted value of this node
      */
-    def value : Any
+    var value : Any
+    
+    /**
+     * The metric to consider the error of prediction of this node
+     */
+    var errorMetric : Double
     
     /**
      * The left child
@@ -73,7 +80,9 @@ class Empty(xValue: String = "Empty") extends Node {
     /**
      * Value of this leaf node
      */
-    def value = xValue
+    var value : Any = xValue
+    
+    var errorMetric : Double = 0
     
     /**
      * The split point of this node
@@ -118,13 +127,15 @@ class Empty(xValue: String = "Empty") extends Node {
  * @param xLeft			the left child
  * @param xRight		the right child
  */
-class NonEmpty(xFeature: Feature, xSplitpoint: Any, var xLeft: Node, var xRight: Node) extends Node{
+class NonEmpty(xFeature: Feature, xSplitpoint: SplitPoint, var xLeft: Node, var xRight: Node) extends Node{
     
     /**
      * Value of this leaf node. 
      * Because this is non-leaf node, so the value is the name of feature which it's associated
      */
-    def value = xFeature.Name
+    var value : Any = 0.0
+    
+    var errorMetric : Double = 0
     
     /**
      * Is this node empty ?
@@ -134,7 +145,7 @@ class NonEmpty(xFeature: Feature, xSplitpoint: Any, var xLeft: Node, var xRight:
     /**
      * The split point of feature which associated to this node
      */
-    def splitpoint = xSplitpoint match { case s: Set[String] => s; case d: Double => d }
+    def splitpoint = xSplitpoint
     
     /**
      * Get the left child
@@ -166,18 +177,19 @@ class NonEmpty(xFeature: Feature, xSplitpoint: Any, var xLeft: Node, var xRight:
     /**
      * Get the conditions to go to the left and right child
      */
-    val (conditionLeft, conditionRight) = xSplitpoint match {
-        case s: Set[String] => (s.toString, "Not in %s".format(s.toString) )
-        case d : Double => ("%s < %f".format(xFeature.Name, d), "%s >= %f".format(xFeature.Name, d))
-    }
+    /*
+    val (conditionLeft, conditionRight) = feature.Type match {
+        case FeatureType.Categorical => (this.splitpoint.point , "Not in %s".format(this.splitpoint.point.toString))
+        case FeatureType.Numerical => ("%s < %f".format(feature.Name, splitpoint.point), "%s >= %f".format(feature.Name, splitpoint.point))
+    }*/
 
     def toStringWithLevel(level: Int) =
         "%s(%s)\n%s-(yes)%s%s\n%s-(no)-%s%s".format(
             feature.Name,
-            splitpoint match {
-                case s: Set[String] => Utility.setToString(s)
-                case d: Double => " < %f".format(d)
-            },
+            (feature.Type match {
+                case FeatureType.Categorical => Utility.setToString(splitpoint.point.asInstanceOf[Set[String]])
+                case FeatureType.Numerical => " < %f".format(splitpoint.point.asInstanceOf[Double])
+            }) + " || (" + value + "," + errorMetric + ")",
             ("".padTo(level, "|")).mkString("    "),
             ("".padTo(level, "-")).mkString(""),
             left.toStringWithLevel(level + 1),

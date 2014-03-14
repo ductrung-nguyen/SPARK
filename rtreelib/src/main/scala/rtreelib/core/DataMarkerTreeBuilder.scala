@@ -95,7 +95,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
      * @param data data set
      * @return <code>true</code>/<code>false</code> and the average of value of target feature
      */
-    def checkStopCriterion(data: RDD[((BigInt, Int, Any), FeatureValueLabelAggregate)]): Array[(BigInt, Boolean, Double)] = {
+    def checkStopCriterion(data: RDD[((BigInt, Int, Any), FeatureValueLabelAggregate)]): Array[(BigInt, Boolean, Double, Double)] = {
         // select only 1 feature of each region
         val firstFeature = data.filter(_._1._2 == this.xIndexes.head).map(x => (x._1._1, x._2)) // (label, feature)
 
@@ -111,7 +111,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
             // (label, standardDeviation, numberOfRecords, meanY)
         })
 
-        // Array[(Label, isStop, meanY)]
+        // Array[(Label, isStop, meanY, standardDeviation)]	// we use standard deviation is a error metric
         standardDeviations.map(
             label_sd_fre_mean => {
                 (label_sd_fre_mean._1,
@@ -119,18 +119,19 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
                         (label_sd_fre_mean._3 <= this.minsplit) // or the number of records is less than minimum
                         || (((label_sd_fre_mean._2 < this.threshold) && (label_sd_fre_mean._4 == 0)) || (label_sd_fre_mean._2 / label_sd_fre_mean._4 < this.threshold)) // or standard devariance of values of Y feature is small enough
                         ),
-                        label_sd_fre_mean._4 // the second component of tuple
+                        label_sd_fre_mean._4, // meanY 
+                        label_sd_fre_mean._2	// standard deviation
                         )
             })
 
     }
 
-    private def updateModel(info: Array[(BigInt, SplitPoint)], isStopNode: Boolean = false) = {
+    private def updateModel(info: Array[(BigInt, SplitPoint, Double , Double)], isStopNode: Boolean = false) = {
         info.foreach(stoppedRegion =>
             {
 
-                var label = stoppedRegion._1
-                var splitPoint = stoppedRegion._2
+                var (label,splitPoint, meanY, errorMetric) = stoppedRegion
+                
                 println("update model with label=%d splitPoint:%s".format(
                     label,
                     splitPoint))
@@ -143,7 +144,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
                         chosenFeatureInfoCandidate match {
                             case Some(chosenFeatureInfo) => {
                                 new NonEmpty(chosenFeatureInfo,
-                                    splitPoint.point,
+                                    splitPoint,
                                     new Empty("empty.left"),
                                     new Empty("empty.right"));
                             }
@@ -155,6 +156,9 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
                     println("Value of job id=" + label + " is invalid")
                 } else {
 
+                    newnode.value = meanY
+                    newnode.errorMetric = errorMetric
+                    
                     // If tree has zero node, create a root node
                     if (treeModel.tree.isEmpty) {
                         treeModel.tree = newnode;
@@ -257,16 +261,18 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
                 var featureValueAggregate = data.map(x => ((x.label, x.index, x.xValue), x)).reduceByKey((x, y) => x + y)
                 
                 var checkedStopExpanding = checkStopCriterion(featureValueAggregate)
+                // we get Array[(label, isStop, meanY, standardDeviation)]
                 println("Checked stop expanding:\n%s".format(checkedStopExpanding.mkString("\n")))
                 
                 
                 // if the tree height enough, mark all node is stop node
                 if (iter > this.maxDepth)
-                    checkedStopExpanding = checkedStopExpanding.map(x => (x._1, true, x._3))
+                    checkedStopExpanding = checkedStopExpanding.map(x => (x._1, true, x._3, x._4))
+                    
                     
                 // select stopped group
                 val stopExpandingGroups = checkedStopExpanding.filter(v => v._2).
-                    map(x => (x._1, new SplitPoint(-1, x._3, 0)))
+                    map(x => (x._1, new SplitPoint(-1, x._3, 0), x._3, x._4))	// (label, splitpoint, meanY, errorMetric)
 
                 // become: Array[(BigInt, SplitPoint)] == Array[(label, SplitPoint)]
 
@@ -274,7 +280,13 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
                 updateModel(stopExpandingGroups, true)
 
                 // select indexes/labels of expanding groups
-                val expandingLabels = checkedStopExpanding.filter(v => !v._2).map(x => x._1).toSet
+                val continueExpandingGroups = checkedStopExpanding.filter(v => !v._2)
+                val expandingLabels = continueExpandingGroups.map(x => x._1).toSet
+                var mapLabel_To_CheckStopResult_Of_ExpandingNodes = Map[BigInt, (Double, Double)]()
+                continueExpandingGroups.foreach{ case (label, isStop, meanY, errorMetric) => {
+                    mapLabel_To_CheckStopResult_Of_ExpandingNodes = 
+                        mapLabel_To_CheckStopResult_Of_ExpandingNodes.+(label -> (meanY, errorMetric))
+                }}
                 
                 featureValueAggregate = featureValueAggregate.filter(f => expandingLabels.contains(f._1._1))
                 
@@ -309,12 +321,20 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
 
                 
                 // process split points
-                val validSplitPoint = splittingPointFeatureOfEachRegion.filter(_._2.index != -9)
+                val validSplitPoint = splittingPointFeatureOfEachRegion.filter(_._2.index != -9)	// (label, splitpoint)
 
                 // select split point of region with has only one feature --> it is a leaf node
-                val stoppedSplitPoints = validSplitPoint.filter(_._2.index == -1)
+                val stoppedSplitPoints = validSplitPoint.filter(_._2.index == -1).
+                	map(x => {
+                	    val checkStopResult = mapLabel_To_CheckStopResult_Of_ExpandingNodes.getOrElse(x._1, (0.0,0.0))
+                	    (x._1, x._2, checkStopResult._1, checkStopResult._2)
+                	})
 
-                val nonstoppedSplitPoints = validSplitPoint.filter(_._2.index != -1)
+                val nonstoppedSplitPoints = validSplitPoint.filter(_._2.index != -1).
+                	map(x => {
+                	    val checkStopResult = mapLabel_To_CheckStopResult_Of_ExpandingNodes.getOrElse(x._1, (0.0,0.0))
+                	    (x._1, x._2, checkStopResult._1, checkStopResult._2)
+                	})
 
                 updateModel(stoppedSplitPoints, true)
                 updateModel(nonstoppedSplitPoints, false)

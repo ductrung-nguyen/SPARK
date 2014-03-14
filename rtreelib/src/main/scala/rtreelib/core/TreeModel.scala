@@ -60,17 +60,18 @@ class TreeModel extends Serializable {
         def predictIter(currentNode: Node): String = {
             if (currentNode.isEmpty) currentNode.value.toString
             else
-                currentNode.splitpoint match {
-                case s: Set[String] => {
-                    if (s.contains(record(currentNode.feature.index))) predictIter(currentNode.left)
+                currentNode.feature.Type match {
+                case FeatureType.Categorical => {
+                    if (currentNode.splitpoint.point.asInstanceOf[Set[String]].contains(record(currentNode.feature.index))) 
+                        predictIter(currentNode.left)
                     else predictIter(currentNode.right)
                 }
-                case d: Double => {
-                    if (record(currentNode.feature.index).toDouble < d) predictIter(currentNode.left)
+                case FeatureType.Numerical => {
+                    if (record(currentNode.feature.index).toDouble < currentNode.splitpoint.point.asInstanceOf[Double]) 
+                        predictIter(currentNode.left)
                     else predictIter(currentNode.right)
                 }
             }
-
         }
         
         if (tree.isEmpty) throw new Exception("ERROR: The tree is empty.Please build tree first")

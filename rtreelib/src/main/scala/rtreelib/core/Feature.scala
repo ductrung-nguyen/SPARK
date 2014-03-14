@@ -34,6 +34,10 @@ object Feature extends Serializable {
     def unapply(feature: Feature) = Some(feature.Name, feature.Type, feature.index)
 }
 
+/**
+ * We use this object to specify the type of a feature.
+ * The index of feature will be updated later
+ */
 object as extends Serializable {
     def String(name : String) = Feature(name, FeatureType.Categorical, -1)
     def Number(name : String) = Feature(name, FeatureType.Numerical, -1)

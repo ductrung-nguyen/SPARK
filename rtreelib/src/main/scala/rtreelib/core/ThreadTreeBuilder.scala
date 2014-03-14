@@ -75,7 +75,7 @@ class ThreadTreeBuilder(featuresSet: FeatureSet, usefulFeatureSet : FeatureSet)
                 chosenFeatureInfoCandidate match {
                     case Some(chosenFeatureInfo) => {
                         new NonEmpty(chosenFeatureInfo,
-                            finishJob.splitPoint.point,
+                            finishJob.splitPoint,
                             new Empty("empty.left"),
                             new Empty("empty.right"));
                     }
