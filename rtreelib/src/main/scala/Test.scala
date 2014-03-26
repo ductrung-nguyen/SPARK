@@ -27,7 +27,7 @@ class MyRegistrator extends KryoRegistrator {
 }
 
 object Test {
-	def main(args : Array[String]) = {
+	def main(args : Array[String]) : Unit = {
 	    
 	    
 	    val IS_LOCAL = true
