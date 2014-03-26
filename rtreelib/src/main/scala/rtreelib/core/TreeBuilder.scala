@@ -38,7 +38,7 @@ abstract class TreeBuilder(var featureSet: FeatureSet, var usefulFeatureSet : Fe
      */
     protected var maxDepth : Int = 62
     
-    protected var maximumComplexity = 0.001
+    protected var maximumComplexity = 0.01
 
     /**
      *  index of target feature, 
