@@ -9,5 +9,5 @@ abstract class BaseEvaluation {
      * @param predictedResult the predicted values
      * @param actualResult the actual result
      */
-	def Evaluate(predictedResult: RDD[String], actualResult: RDD[String])
+	def Evaluate(predictedResult: RDD[String], actualResult: RDD[String]) : Any
 }

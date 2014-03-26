@@ -2,6 +2,7 @@ package rtreelib.core
 import org.apache.spark.rdd.RDD
 import org.apache.spark.SparkContext._
 import rtreelib.core._
+import rtreelib.evaluation.Evaluation
 
 object Pruning {
     
@@ -124,18 +125,9 @@ object Pruning {
 
     }
     
-    /**
-     * @param treeModel
-     * @param complexityParamter
-     * @param dataset
-     * @return
-     */
-    def Prune(treeModel : TreeModel, complexityParamter : Double, dataset: RDD[String]) : TreeModel = {
-	    
-        this.maxcp = complexityParamter
-        
-        var root = treeModel.tree
-	    root = firstPruneTree(root)	// get T1
+    
+    def getSubTreeSequence(tree : Node) : List[(Set[BigInt], Double)] = {
+        var root = firstPruneTree(tree)	// get T1
 	    
 	    var sequence_alpha_tree = List[(Set[BigInt], Double)]()
 	    
@@ -153,6 +145,20 @@ object Pruning {
 	        
 	        finish = (nodesNeedToBePruned.isEmpty)
 	    } while (!finish)
+	        
+	    sequence_alpha_tree    
+    }
+    /**
+     * @param treeModel
+     * @param complexityParamter
+     * @param dataset
+     * @return
+     */
+    def Prune(treeModel : TreeModel, complexityParamter : Double, dataset: RDD[String]) : TreeModel = {
+	    
+        this.maxcp = complexityParamter
+	    
+	    var sequence_alpha_tree = getSubTreeSequence(treeModel.tree)
 	        
 	        
 	        
@@ -200,6 +206,27 @@ object Pruning {
         //var squareErrorOfSubTrees = errorMetricRDD.collect.maxBy(x => x._2._1)	// (index, (square_error, numInstances))
         
         var N = 10
+        var newdata = dataset.mapPartitions(partition => {
+            var i = -1
+            partition.map(x => {
+            	i = (i + 1) % N
+            	(i, x)
+            })
+        })
+        
+        for (fold <- (1 to N)){
+            var datasetOfThisFold = newdata.filter(x => x._1 != fold).map(x => x._2)
+            var testingData = newdata.filter(x => x._1 == fold).map(x => x._2)
+            
+            val tree = new RegressionTree()
+            tree.setDataset(datasetOfThisFold)
+            val treeModelOfThisFold = tree.buildTree(treeModel.yFeature, treeModel.xFeatures)
+            val sequence_alpha_tree_this_fold = getSubTreeSequence(treeModelOfThisFold.tree)
+            val predictRDD = tree.predict(testingData)
+            val actualValueRDD = testingData.map(line => line.split(',')(yIndex))	
+            val evaluationResult = Evaluation.evaluate(predictRDD, actualValueRDD)
+        }
+        
         
         var errorMetricRDDWithFoldIndex = errorMetricRDD.mapPartitions(partition => {
             var i = -1

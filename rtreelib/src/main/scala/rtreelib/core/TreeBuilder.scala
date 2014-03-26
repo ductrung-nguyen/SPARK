@@ -70,7 +70,10 @@ abstract class TreeBuilder(var featureSet: FeatureSet, var usefulFeatureSet : Fe
      * 
      * @param xMinSplit	new minimum records for splitting
      */
-    def setMinSplit(xMinSlit: Int) = { this.minsplit = xMinSlit }
+    def setMinSplit(xMinSplit: Int) = { 
+        this.minsplit = xMinSplit 
+        this.treeModel.minsplit = xMinSplit
+    }
 
     /**
      * Set threshold for stopping criterion. This threshold is coefficient of variation
@@ -81,7 +84,10 @@ abstract class TreeBuilder(var featureSet: FeatureSet, var usefulFeatureSet : Fe
      * 
      * @param xThreshold	new threshold
      */
-    def setThreshold(xThreshlod: Double) = { threshold = xThreshlod }
+    def setThreshold(xThreshlod: Double) = { 
+        threshold = xThreshlod 
+        this.threshold = xThreshlod
+    }
 
     /**
      * Set the maximum of parallel jobs
@@ -93,7 +99,9 @@ abstract class TreeBuilder(var featureSet: FeatureSet, var usefulFeatureSet : Fe
     /**
      * Set the maximum of depth of tree
      */
-    def setMaxDepth(value: Int) = { this.maxDepth = value }
+    def setMaxDepth(value: Int) = { 
+        this.maxDepth = value 
+    }
 
     /**
      * Building tree, bases on:

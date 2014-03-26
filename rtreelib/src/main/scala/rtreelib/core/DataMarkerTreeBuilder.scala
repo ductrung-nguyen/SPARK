@@ -138,7 +138,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
                         val EY2 : Double = statisticalInfor.sumOfYPower2/statisticalInfor.numberOfInstances.toInt
                         val EY : Double = statisticalInfor.sumY/statisticalInfor.numberOfInstances.toInt
                         val MSE = (EY2 - EY*EY)*(EY2 - EY*EY)/statisticalInfor.numberOfInstances.toInt
-                        if ((MSE/MSEOfRoot) <= this.maximumComplexity){
+                        if ((math.abs(MSE - MSEOfRoot)/MSEOfRoot) <= this.maximumComplexity){
                             (label, true, statisticalInfor)
                         }else
                             x

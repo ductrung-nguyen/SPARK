@@ -165,7 +165,10 @@ class RegressionTree() extends Serializable {
         }
         
         
-
+        // These information will be used in Pruning phase
+        treeBuilder.treeModel.xFeatures = xFeatures
+        treeBuilder.treeModel.yFeature = yFeature
+        
         var (xIndexes, yIndex) = this.getXIndexesAndYIndexByNames(xFeatures, yFeature)
         
         /* SET UP LIST OF USEFUL FEATURES AND ITS INDEXES */
@@ -288,6 +291,7 @@ class RegressionTree() extends Serializable {
         this.treeModel = tm
         this.featureSet = tm.featureSet
         this.usefulFeatureSet = tm.usefulFeatureSet
+        updateFeatureSet()
     }
     
     private def mapFromUsefulIndexToOriginalIndex(featureSet : FeatureSet , usefulFeatureSet : FeatureSet) : (Set[Int], Int) = {

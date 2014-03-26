@@ -13,7 +13,7 @@ class SDEvaluationMetric extends BaseEvaluation {
      * @param predictedResult the predicted values
      * @param actualResult the actual result
      */
-	override def Evaluate(predictedResult: RDD[String], actualResult: RDD[String]) = {
+	override def Evaluate(predictedResult: RDD[String], actualResult: RDD[String]) : StatisticalInformation = {
 	    
 	    var newRDD = predictedResult zip actualResult
 	  
@@ -47,6 +47,8 @@ class SDEvaluationMetric extends BaseEvaluation {
         println("Mean of different:%f\nDeviation of different:%f\nSE of different:%f".format(meanDiff, deviation, SE))
 	    println("Total records: %d".format(numTest) )
 	    println("Number of invalid records: %d".format(numInvalidRecords))
+	    
+	    new StatisticalInformation(sums._1, sums._2, numTest)
 
 	}
 }

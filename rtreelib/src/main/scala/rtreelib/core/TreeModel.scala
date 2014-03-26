@@ -38,6 +38,12 @@ class TreeModel extends Serializable {
 	 */ 
 	var tree : Node = new LeafNode("root.empty")
 	
+	var minsplit : Int = 10
+	var threshold : Double = 0.01
+	var maximumComplexity : Double = 0.01
+	var yFeature: String = ""
+	var xFeatures : Set[Any] = Set[Any]()
+	
 	/***
 	 * Is the tree empty ?
 	 */
