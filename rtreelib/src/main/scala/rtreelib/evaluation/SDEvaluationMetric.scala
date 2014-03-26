@@ -14,6 +14,7 @@ class SDEvaluationMetric extends BaseEvaluation {
      * @param actualResult the actual result
      */
 	override def Evaluate(predictedResult: RDD[String], actualResult: RDD[String]) = {
+	    
 	    var newRDD = predictedResult zip actualResult
 	  
 	    
@@ -22,6 +23,7 @@ class SDEvaluationMetric extends BaseEvaluation {
                 case Some(d :Double) => true 
                 case None => false 
         }))) // filter invalid record, v._1 is predicted value
+        
         
         var invalidRDD = newRDD.filter(v => (v._1.equals("???") 
             || !(Utility.parseDouble(v._2) match {

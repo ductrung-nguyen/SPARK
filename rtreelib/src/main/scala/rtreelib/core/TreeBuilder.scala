@@ -36,7 +36,9 @@ abstract class TreeBuilder(var featureSet: FeatureSet, var usefulFeatureSet : Fe
     /**
      * Max depth of the tree, default value if 30
      */
-    protected var maxDepth : Int = 30
+    protected var maxDepth : Int = 62
+    
+    protected var maximumComplexity = 0.001
 
     /**
      *  index of target feature, 
@@ -129,7 +131,7 @@ abstract class TreeBuilder(var featureSet: FeatureSet, var usefulFeatureSet : Fe
         this.yIndex = yIndex
         
     	/* Save necessary information for recovery in failure cases */
-        treeModel.tree = new Empty("None")
+        treeModel.tree = new LeafNode("None")
         treeModel.featureSet = featureSet
         treeModel.usefulFeatureSet = usefulFeatureSet
         treeModel.xIndexes = xIndexes

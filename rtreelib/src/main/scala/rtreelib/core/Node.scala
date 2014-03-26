@@ -22,10 +22,17 @@ trait Node extends Serializable {
      */
     var value : Any
     
-    /**
-     * The metric to consider the error of prediction of this node
-     */
-    var errorMetric : Double
+//    /**
+//     * The number of records/lines/instances which were used to build this node
+//     */
+//    var numberOfInstances : Int
+//    
+//    /**
+//     * The metric to consider the error of prediction of this node
+//     */
+//    var errorMetric : Double
+    
+    var statisticalInformation : StatisticalInformation
     
     /**
      * The left child
@@ -54,6 +61,8 @@ trait Node extends Serializable {
      */
     def setRight(node: Node) : Unit
     
+    def toLeafNode() : Node
+    
     /**
      * A function support to convert an object of this class to string
      * @param level The level of this node. Root node has level 1
@@ -66,7 +75,10 @@ trait Node extends Serializable {
 /**
  * A leaf node
  */
-class Empty(xValue: String = "Empty") extends Node {
+/**
+ * 
+ */
+class LeafNode(xValue: String = "Empty") extends Node {
     /**
      * Constructor of node. The default value of this node is 'Empty'
      */
@@ -82,7 +94,20 @@ class Empty(xValue: String = "Empty") extends Node {
      */
     var value : Any = xValue
     
-    var errorMetric : Double = 0
+//    /**
+//     * Number of instances which were used to build this node
+//     */
+//    var numberOfInstances : Int = 0
+//    
+//    
+//    /**
+//     * Error rate if we use this node to make a prediction
+//     */
+//    var errorMetric : Double = 0
+    
+    var statisticalInformation : StatisticalInformation = new StatisticalInformation()
+    
+    
     
     /**
      * The split point of this node
@@ -99,6 +124,7 @@ class Empty(xValue: String = "Empty") extends Node {
      */
     def right: Nothing = throw new NoSuchElementException("empty.right")
     
+
     /**
      * Set the left child
      * @param node The desired left child
@@ -111,12 +137,14 @@ class Empty(xValue: String = "Empty") extends Node {
      */
     def setRight(node: Node)= {}
     
+    def toLeafNode() : Node = this
+    
     /**
      * The feature which is associated to this node
      */
     var feature: Feature = _ //FeatureInfo("Empty", "d", 0)
     
-    def toStringWithLevel(level: Int) = xValue
+    def toStringWithLevel(level: Int) = xValue + "  info:" + statisticalInformation
 }
 
 /**
@@ -127,15 +155,30 @@ class Empty(xValue: String = "Empty") extends Node {
  * @param xLeft			the left child
  * @param xRight		the right child
  */
-class NonEmpty(xFeature: Feature, xSplitpoint: SplitPoint, var xLeft: Node, var xRight: Node) extends Node{
+class NonLeafNode(
+        xFeature: Feature, 
+        xSplitpoint: SplitPoint, 
+        var xLeft: Node = new LeafNode("empty.left"), 
+        var xRight: Node = new LeafNode("empty.right")
+) extends Node{
     
     /**
-     * Value of this leaf node. 
-     * Because this is non-leaf node, so the value is the name of feature which it's associated
+     * Predicted value if we use this node to make prediction
      */
-    var value : Any = 0.0
+    var value : Any = xSplitpoint.point
     
-    var errorMetric : Double = 0
+//    /**
+//     * The error rate if we use this node to make a prediction
+//     */
+//    var errorMetric : Double = 0
+//    
+//     /**
+//     * Number of instances which were used to build this node
+//     */
+//    var numberOfInstances : Int = 0
+    
+    
+    var statisticalInformation : StatisticalInformation = new StatisticalInformation()
     
     /**
      * Is this node empty ?
@@ -174,6 +217,12 @@ class NonEmpty(xFeature: Feature, xSplitpoint: SplitPoint, var xLeft: Node, var 
      */
     var feature: Feature = xFeature
     
+    def toLeafNode() : Node = {
+        var newleaf = new LeafNode(this.value.toString)
+        newleaf.statisticalInformation = this.statisticalInformation
+        newleaf
+    }
+    
     /**
      * Get the conditions to go to the left and right child
      */
@@ -184,12 +233,13 @@ class NonEmpty(xFeature: Feature, xSplitpoint: SplitPoint, var xLeft: Node, var 
     }*/
 
     def toStringWithLevel(level: Int) =
-        "%s(%s)\n%s-(yes)%s%s\n%s-(no)-%s%s".format(
+        "%s(%s)  %s\n%s-(yes)%s%s\n%s-(no)-%s%s".format(
             feature.Name,
             (feature.Type match {
                 case FeatureType.Categorical => Utility.setToString(splitpoint.point.asInstanceOf[Set[String]])
                 case FeatureType.Numerical => " < %f".format(splitpoint.point.asInstanceOf[Double])
-            }) + " || (" + value + "," + errorMetric + ")",
+            }),
+            "predict:%s  info:%s".format(value, statisticalInformation) ,
             ("".padTo(level, "|")).mkString("    "),
             ("".padTo(level, "-")).mkString(""),
             left.toStringWithLevel(level + 1),

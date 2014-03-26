@@ -118,8 +118,8 @@ object Test {
         }
         else{
             tree.treeBuilder.setMinSplit(1000)
-            tree.treeBuilder.setThreshold(0.3) // coefficient of variation
-            tree.treeBuilder.setMaxDepth(10)
+            //tree.treeBuilder.setThreshold(0.3) // coefficient of variation
+            //tree.treeBuilder.setMaxDepth(10)
             
             /* TEST BUILDING */
             stime = System.nanoTime()

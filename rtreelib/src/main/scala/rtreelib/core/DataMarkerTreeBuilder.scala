@@ -95,7 +95,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
      * @param data data set
      * @return <code>true</code>/<code>false</code> and the average of value of target feature
      */
-    def checkStopCriterion(data: RDD[((BigInt, Int, Any), FeatureValueLabelAggregate)]): Array[(BigInt, Boolean, Double, Double)] = {
+    def checkStopCriterion(data: RDD[((BigInt, Int, Any), FeatureValueLabelAggregate)]): Array[(BigInt, Boolean, StatisticalInformation)] = {
         // select only 1 feature of each region
         val firstFeature = data.filter(_._1._2 == this.xIndexes.head).map(x => (x._1._1, x._2)) // (label, feature)
 
@@ -107,30 +107,53 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
             val feature = f._2
             val meanY = feature.yValue / feature.frequency
             val meanOfYPower2 = feature.yValuePower2 / feature.frequency
-            (f._1, math.sqrt(meanOfYPower2 - meanY * meanY), feature.frequency, meanY)
-            // (label, standardDeviation, numberOfRecords, meanY)
+            (f._1, math.sqrt(meanOfYPower2 - meanY * meanY), feature.frequency, feature.yValue, feature.yValuePower2)
+            // (label, standardDeviation, numberOfRecords, yValue, yValuePower2)
         })
 
         // Array[(Label, isStop, meanY, standardDeviation)]	// we use standard deviation is a error metric
-        standardDeviations.map(
-            label_sd_fre_mean => {
-                (label_sd_fre_mean._1,
+        var result = standardDeviations.map(
+            label_sd_fre_yValue_yValuePower2 => {
+                var (label, standardDeviation, numInstances,sumYValue, sumYValuePower2) = label_sd_fre_yValue_yValuePower2
+                var statisticalInformation = new StatisticalInformation(sumYValue, sumYValuePower2, numInstances)
+                var meanY = sumYValue/numInstances
+                (
+                    label,	// label
                     (
-                        (label_sd_fre_mean._3 <= this.minsplit) // or the number of records is less than minimum
-                        || (((label_sd_fre_mean._2 < this.threshold) && (label_sd_fre_mean._4 == 0)) || (label_sd_fre_mean._2 / label_sd_fre_mean._4 < this.threshold)) // or standard devariance of values of Y feature is small enough
-                        ),
-                        label_sd_fre_mean._4, // meanY 
-                        label_sd_fre_mean._2	// standard deviation
-                        )
+                        (numInstances <= this.minsplit) // or the number of records is less than minimum
+                        || (((standardDeviation < this.threshold) && (meanY == 0))
+                            || (standardDeviation / meanY < this.threshold)) // or standard devariance of values of Y feature is small enough
+                     ),
+                     statisticalInformation
+                )
             })
+            
+            if (!this.treeModel.tree.isEmpty){
+                    val EY2OfRoot : Double =  this.treeModel.tree.statisticalInformation.sumOfYPower2 / this.treeModel.tree.statisticalInformation.numberOfInstances.toInt
+                    val EYOfRoot : Double = this.treeModel.tree.statisticalInformation.sumY/this.treeModel.tree.statisticalInformation.numberOfInstances.toInt
+                    val MSEOfRoot = (EY2OfRoot - EYOfRoot*EYOfRoot)*(EY2OfRoot - EYOfRoot*EYOfRoot)/this.treeModel.tree.statisticalInformation.numberOfInstances.toInt
+
+                    result.map(x => {
+                        val (label, isStop, statisticalInfor) = x
+                        val EY2 : Double = statisticalInfor.sumOfYPower2/statisticalInfor.numberOfInstances.toInt
+                        val EY : Double = statisticalInfor.sumY/statisticalInfor.numberOfInstances.toInt
+                        val MSE = (EY2 - EY*EY)*(EY2 - EY*EY)/statisticalInfor.numberOfInstances.toInt
+                        if ((MSE/MSEOfRoot) <= this.maximumComplexity){
+                            (label, true, statisticalInfor)
+                        }else
+                            x
+                        
+                    })
+                }
+            else result
 
     }
 
-    private def updateModel(info: Array[(BigInt, SplitPoint, Double , Double)], isStopNode: Boolean = false) = {
+    private def updateModel(info: Array[(BigInt, SplitPoint, StatisticalInformation)], isStopNode: Boolean = false) = {
         info.foreach(stoppedRegion =>
             {
 
-                var (label,splitPoint, meanY, errorMetric) = stoppedRegion
+                var (label,splitPoint, statisticalInformation) = stoppedRegion
                 
                 println("update model with label=%d splitPoint:%s".format(
                     label,
@@ -138,26 +161,31 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
 
                 var newnode = (
                     if (isStopNode) {
-                        new Empty(splitPoint.point.toString)
+                        new LeafNode(splitPoint.point.toString)
                     } else {
                         val chosenFeatureInfoCandidate = usefulFeatureSet.data.find(f => f.index == splitPoint.index)
                         chosenFeatureInfoCandidate match {
                             case Some(chosenFeatureInfo) => {
-                                new NonEmpty(chosenFeatureInfo,
+                                new NonLeafNode(chosenFeatureInfo,
                                     splitPoint,
-                                    new Empty("empty.left"),
-                                    new Empty("empty.right"));
+                                    new LeafNode("empty.left"),
+                                    new LeafNode("empty.right"));
                             }
-                            case None => { new Empty(this.ERROR_SPLITPOINT_VALUE) }
+                            case None => { new LeafNode(this.ERROR_SPLITPOINT_VALUE) }
                         }
                     }) // end of assign value for new node
 
                 if (newnode.value == this.ERROR_SPLITPOINT_VALUE) {
                     println("Value of job id=" + label + " is invalid")
                 } else {
-
+                	val meanY : Double = 
+                	    if (statisticalInformation.numberOfInstances == 0) 
+                	        0
+                	    else
+                	        statisticalInformation.sumY/statisticalInformation.numberOfInstances.toInt
+                	        
                     newnode.value = meanY
-                    newnode.errorMetric = errorMetric
+                    newnode.statisticalInformation = statisticalInformation
                     
                     // If tree has zero node, create a root node
                     if (treeModel.tree.isEmpty) {
@@ -261,18 +289,18 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
                 var featureValueAggregate = data.map(x => ((x.label, x.index, x.xValue), x)).reduceByKey((x, y) => x + y)
                 
                 var checkedStopExpanding = checkStopCriterion(featureValueAggregate)
-                // we get Array[(label, isStop, meanY, standardDeviation)]
+                // we get Array[(label, isStop, statisticalInformation)]
                 println("Checked stop expanding:\n%s".format(checkedStopExpanding.mkString("\n")))
                 
                 
                 // if the tree height enough, mark all node is stop node
                 if (iter > this.maxDepth)
-                    checkedStopExpanding = checkedStopExpanding.map(x => (x._1, true, x._3, x._4))
+                    checkedStopExpanding = checkedStopExpanding.map(x => (x._1, true, x._3))
                     
                     
                 // select stopped group
                 val stopExpandingGroups = checkedStopExpanding.filter(v => v._2).
-                    map(x => (x._1, new SplitPoint(-1, x._3, 0), x._3, x._4))	// (label, splitpoint, meanY, errorMetric)
+                    map(x => (x._1, new SplitPoint(-1, x._3.sumY/x._3.numberOfInstances, 0), x._3))	// (label, splitpoint, statisticalInformation)
 
                 // become: Array[(BigInt, SplitPoint)] == Array[(label, SplitPoint)]
 
@@ -282,10 +310,10 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
                 // select indexes/labels of expanding groups
                 val continueExpandingGroups = checkedStopExpanding.filter(v => !v._2)
                 val expandingLabels = continueExpandingGroups.map(x => x._1).toSet
-                var mapLabel_To_CheckStopResult_Of_ExpandingNodes = Map[BigInt, (Double, Double)]()
-                continueExpandingGroups.foreach{ case (label, isStop, meanY, errorMetric) => {
+                var mapLabel_To_CheckStopResult_Of_ExpandingNodes = Map[BigInt, StatisticalInformation]()
+                continueExpandingGroups.foreach{ case (label, isStop, statisticalInfo) => {
                     mapLabel_To_CheckStopResult_Of_ExpandingNodes = 
-                        mapLabel_To_CheckStopResult_Of_ExpandingNodes.+(label -> (meanY, errorMetric))
+                        mapLabel_To_CheckStopResult_Of_ExpandingNodes.+(label -> statisticalInfo)
                 }}
                 
                 featureValueAggregate = featureValueAggregate.filter(f => expandingLabels.contains(f._1._1))
@@ -326,14 +354,14 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
                 // select split point of region with has only one feature --> it is a leaf node
                 val stoppedSplitPoints = validSplitPoint.filter(_._2.index == -1).
                 	map(x => {
-                	    val checkStopResult = mapLabel_To_CheckStopResult_Of_ExpandingNodes.getOrElse(x._1, (0.0,0.0))
-                	    (x._1, x._2, checkStopResult._1, checkStopResult._2)
+                	    val checkStopResult = mapLabel_To_CheckStopResult_Of_ExpandingNodes.getOrElse(x._1, new StatisticalInformation())
+                	    (x._1, x._2, checkStopResult)
                 	})
 
                 val nonstoppedSplitPoints = validSplitPoint.filter(_._2.index != -1).
                 	map(x => {
-                	    val checkStopResult = mapLabel_To_CheckStopResult_Of_ExpandingNodes.getOrElse(x._1, (0.0,0.0))
-                	    (x._1, x._2, checkStopResult._1, checkStopResult._2)
+                	    val checkStopResult = mapLabel_To_CheckStopResult_Of_ExpandingNodes.getOrElse(x._1, new StatisticalInformation())
+                	    (x._1, x._2, checkStopResult)
                 	})
 
                 updateModel(stoppedSplitPoints, true)
@@ -398,9 +426,9 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
                             case d: Double =>
                                 {
                                     if (array(splitPoint.index).xValue.asInstanceOf[Double] < splitPoint.point.asInstanceOf[Double]) {
-                                        array.foreach(element => element.label = element.label * 2)
+                                        array.foreach(element => element.label = (element.label << 1))
                                     } else {
-                                        array.foreach(element => element.label = element.label * 2 + 1)
+                                        array.foreach(element => element.label = (element.label << 1 ) +  1)
                                     }
                                 }
 
@@ -408,9 +436,9 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
                             case s: Set[String] =>
                                 {
                                     if (splitPoint.point.asInstanceOf[Set[String]].contains(array(splitPoint.index).xValue.asInstanceOf[String])) {
-                                        array.foreach(element => element.label = element.label * 2)
+                                        array.foreach(element => element.label = (element.label << 1))
                                     } else {
-                                        array.foreach(element => element.label = element.label * 2 + 1)
+                                        array.foreach(element => element.label = (element.label << 1 ) + 1)
                                     }
                                 }
                         }

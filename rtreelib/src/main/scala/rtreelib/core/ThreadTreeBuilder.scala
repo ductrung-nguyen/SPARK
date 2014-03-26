@@ -68,18 +68,18 @@ class ThreadTreeBuilder(featuresSet: FeatureSet, usefulFeatureSet : FeatureSet)
         // if this job succeeded
         val newnode = (
             if (finishJob.isStopNode) { // leaf node
-                new Empty(finishJob.splitPoint.point.toString)
+                new LeafNode(finishJob.splitPoint.point.toString)
             } else { // the intermediate node
                 val chosenFeatureInfoCandidate = featureSet.data.find(f => f.index == finishJob.splitPoint.index)
 
                 chosenFeatureInfoCandidate match {
                     case Some(chosenFeatureInfo) => {
-                        new NonEmpty(chosenFeatureInfo,
+                        new NonLeafNode(chosenFeatureInfo,
                             finishJob.splitPoint,
-                            new Empty("empty.left"),
-                            new Empty("empty.right"));
+                            new LeafNode("empty.left"),
+                            new LeafNode("empty.right"));
                     }
-                    case None => { new Empty(this.ERROR_SPLITPOINT_VALUE) }
+                    case None => { new LeafNode(this.ERROR_SPLITPOINT_VALUE) }
                 }
             }) // end of assign value for newnode
 

@@ -36,7 +36,7 @@ class TreeModel extends Serializable {
 	/**
 	 *  the root node of the tree
 	 */ 
-	var tree : Node = new Empty("root.empty")
+	var tree : Node = new LeafNode("root.empty")
 	
 	/***
 	 * Is the tree empty ?
@@ -51,31 +51,34 @@ class TreeModel extends Serializable {
 	/**
      * Predict Y base on input features
      * 
-     * @param record	an array, which its each element is a value of each input feature
+     * @param record			an array, which its each element is a value of each input feature
+     * @param ignoreBranchSet	a set of branch ID, which won't be used to predict (only use it's root node)
      * @return a predicted value
      * @throw Exception if the tree is empty
      */
-    def predict(record: Array[String]): String = {
-	    
-        def predictIter(currentNode: Node): String = {
-            if (currentNode.isEmpty) currentNode.value.toString
-            else
+    def predict(record: Array[String], ignoreBranchSet: Set[BigInt] = Set[BigInt]()): String = {
+
+        def predictIter(currentNode: Node, currentID: BigInt): String = {
+            if (currentNode.isEmpty || ignoreBranchSet.contains(currentID)) {
+                currentNode.value.toString
+            } else {
                 currentNode.feature.Type match {
-                case FeatureType.Categorical => {
-                    if (currentNode.splitpoint.point.asInstanceOf[Set[String]].contains(record(currentNode.feature.index))) 
-                        predictIter(currentNode.left)
-                    else predictIter(currentNode.right)
-                }
-                case FeatureType.Numerical => {
-                    if (record(currentNode.feature.index).toDouble < currentNode.splitpoint.point.asInstanceOf[Double]) 
-                        predictIter(currentNode.left)
-                    else predictIter(currentNode.right)
+                    case FeatureType.Categorical => {
+                        if (currentNode.splitpoint.point.asInstanceOf[Set[String]].contains(record(currentNode.feature.index)))
+                            predictIter(currentNode.left, currentID << 1)
+                        else predictIter(currentNode.right, (currentID << 1) + 1)
+                    }
+                    case FeatureType.Numerical => {
+                        if (record(currentNode.feature.index).toDouble < currentNode.splitpoint.point.asInstanceOf[Double])
+                            predictIter(currentNode.left, currentID << 1)
+                        else predictIter(currentNode.right, (currentID << 1) + 1)
+                    }
                 }
             }
         }
-        
+
         if (tree.isEmpty) throw new Exception("ERROR: The tree is empty.Please build tree first")
-        else predictIter(tree)
+        else predictIter(tree , 1)
     }
 	
 	/**

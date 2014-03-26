@@ -92,7 +92,7 @@ class RegressionTree() extends Serializable {
         
     }
     
-    private def filterUnusedFeatures(trainingData : RDD[String], xIndexes:Set[Int], yIndex : Int, removeInvalidRecord : Boolean = true) : RDD[String] = {
+    def filterUnusedFeatures(trainingData : RDD[String], xIndexes:Set[Int], yIndex : Int, removeInvalidRecord : Boolean = true) : RDD[String] = {
         var i = 0
         var j = 0
         var temp = trainingData.map(line => {
@@ -202,15 +202,33 @@ class RegressionTree() extends Serializable {
     /**
      * Predict value of the target feature base on the values of input features
      * 
-     * @param record	an array, which its each element is a value of each input feature
+     * @param record	an array, which its each element is a value of each input feature (already remove unused features)
      * @return predicted value or '???' if input record is invalid
      */
-    def predict(record: Array[String]): String = {
+    private def predictOnPreciseData(record: Array[String], ignoreBranchIDs : Set[BigInt]): String = {
         try{
-            treeModel.predict(record)
+            treeModel.predict(record, ignoreBranchIDs)
         }
         catch{
             case e: Exception => "???"
+        }
+    }
+    
+    def predictOneInstance(record : Array[String], ignoreBranchIDs : Set[BigInt] = Set[BigInt]()) : String = {
+        if (record.length == 0)
+            "???"
+        else {
+            var (xIndexes, yIndex) = mapFromUsefulIndexToOriginalIndex(featureSet, usefulFeatureSet)
+            var newRecord : Array[String] = Array[String]()
+            var i = 0
+            for (field <- record) {
+                if (i == yIndex || xIndexes.contains(i)) {
+                    newRecord = newRecord.:+(field)
+                }
+                i = i + 1
+            }
+            
+            predictOnPreciseData(newRecord, ignoreBranchIDs)
         }
     }
 
@@ -220,11 +238,14 @@ class RegressionTree() extends Serializable {
      * @param testingData	the RDD of testing data
      * @return a RDD contain predicted values
      */
-    def predict(testingData: RDD[String], delimiter : String = ",") : RDD[String] = {
+    def predict(testingData: RDD[String], 
+            delimiter : String = ",", 
+            ignoreBranchIDs : Set[BigInt] = Set[BigInt]()
+            ) : RDD[String] = {
         var (xIndexes, yIndex) = mapFromUsefulIndexToOriginalIndex(featureSet, usefulFeatureSet)
         var newTestingData = filterUnusedFeatures(testingData, xIndexes, yIndex, false)
-        newTestingData.map(line => this.predict(line.split(delimiter)))
-        //testingData.map(line => this.predict(line.split(delimiter)))
+        newTestingData.map(line => this.predictOnPreciseData(line.split(delimiter), ignoreBranchIDs))
+        //testingData.map(line => this.predict(line.split(delimiter))) 
     }
 
 
@@ -255,11 +276,18 @@ class RegressionTree() extends Serializable {
         }
 
         var rt = ois.readObject().asInstanceOf[TreeModel]
-        treeModel = rt
-        this.featureSet = treeModel.featureSet
-        this.usefulFeatureSet = treeModel.usefulFeatureSet
-
+        //treeModel = rt
+        //this.featureSet = treeModel.featureSet
+        //this.usefulFeatureSet = treeModel.usefulFeatureSet
+        setTreeModel(rt)
+        
         ois.close()
+    }
+    
+    def setTreeModel(tm : TreeModel) = {
+        this.treeModel = tm
+        this.featureSet = tm.featureSet
+        this.usefulFeatureSet = tm.usefulFeatureSet
     }
     
     private def mapFromUsefulIndexToOriginalIndex(featureSet : FeatureSet , usefulFeatureSet : FeatureSet) : (Set[Int], Int) = {
