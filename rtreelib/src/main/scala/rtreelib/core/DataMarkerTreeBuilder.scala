@@ -196,10 +196,11 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
 
                         val level = (Math.log(label.toDouble) / Math.log(2)).toInt
                         var i: Int = level - 1
+                        var TWO : BigInt = 2
                         var parent = treeModel.tree; // start adding from root node
                         while (i > 0) {
 
-                            if ((label / (2 << i - 1)) % 2 == 0) {
+                            if ((label / (TWO << i - 1)) % 2 == 0) {
                                 // go to the left
                                 parent = parent.left
                             } else {
