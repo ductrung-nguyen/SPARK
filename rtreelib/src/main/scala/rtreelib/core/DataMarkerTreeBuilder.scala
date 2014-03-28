@@ -163,7 +163,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
 	        var TWO: BigInt = 2
 	        var parent = treeModel.tree; // start adding from root node
 	        try{
-	        while (i > 0) {
+	        while (i >= 0) {
 	
 	            if ((id / (TWO << i - 1)) % 2 == 0) {
 	                // go to the left
