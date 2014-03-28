@@ -143,7 +143,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
                     val EY2: Double = statisticalInfor.sumOfYPower2 / statisticalInfor.numberOfInstances.toInt
                     val EY: Double = statisticalInfor.sumY / statisticalInfor.numberOfInstances.toInt
                     val MSE = (EY2 - EY * EY) * statisticalInfor.numberOfInstances.toInt
-                    //println("current MSE:" + MSE + " parent MSE:" + MSEOfParent)
+                    println("label " + label + " current MSE:" + MSE + " parent MSE:" + MSEOfParent)
                     if ((math.abs(MSE - MSEOfParent) / MSEOfParent) <= this.maximumComplexity) {
                         (label, true, statisticalInfor)
                     } else {
