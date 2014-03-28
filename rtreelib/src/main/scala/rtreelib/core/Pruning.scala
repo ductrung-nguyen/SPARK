@@ -18,27 +18,31 @@ object Pruning {
     /**
      * Prune the full tree to get tree T1 which has the same error rate but smaller size
      */
-    private def firstPruneTree(root: Node): Node = {
-        def firstPruneTreeIter(node: Node): Node = {
-            if (!node.isEmpty) {
-                node.setLeft(firstPruneTreeIter(node.left))
-                node.setRight(firstPruneTreeIter(node.right))
-                val Rl = risk(node.left)
-                val Rr = risk(node.right)
-                val R = risk(node)
-                if (R == (Rl + Rr)) {
-                    var newnode = new LeafNode(node.splitpoint.point.toString)
-                    newnode.statisticalInformation = node.statisticalInformation
-                    newnode
-                } else {
-                    node
+    private def firstPruneTree(root: Node): Set[BigInt] = {
+        
+        var leafNodes = Set[BigInt]()
+        def isLeaf(node : Node, id : BigInt) = {
+            node.isEmpty || leafNodes.contains(id)
+        }
+        
+        def firstPruneTreeIter(node: Node, currentId : BigInt) : Unit = {
+            
+            if (!node.isEmpty){
+                firstPruneTreeIter(node.left, currentId << 1)
+                firstPruneTreeIter(node.right, (currentId << 1) + 1)
+                if (isLeaf(node.left, currentId << 1) 
+                        && isLeaf(node.right, (currentId << 1) + 1)) {
+                    val Rl = risk(node.left)
+	                val Rr = risk(node.right)
+	                val R = risk(node)
+	                if (R == (Rl + Rr))
+	                    leafNodes = leafNodes + currentId
                 }
-            }else{
-            	node
             }
         }
-
-        firstPruneTreeIter(root)
+            
+        firstPruneTreeIter(root, 1)
+        leafNodes
     }
     
    /**
@@ -103,8 +107,27 @@ object Pruning {
         
         
         (result, currentMin)
-    } 
+    }
 
+    private def pruneBranchs(root: Node, prunedNodeIDs: Set[BigInt]): Node = {
+
+        def pruneBranchsIter(node: Node, id: BigInt): Node = {
+            if (!node.isEmpty) {
+                if (prunedNodeIDs.contains(id)) {
+                    node.toLeafNode
+                } else {
+                    node.setLeft(pruneBranchsIter(node.left, id << 1))
+                    node.setRight(pruneBranchsIter(node.right, (id << 1) + 1))
+                    node
+                }
+            } else {
+                node
+            }
+        }
+        
+        pruneBranchsIter(root, 1)
+        
+    }
     private def pruneBranch(root: Node, prunedNodeID: BigInt): Node = {
         var currentid: BigInt = 0
 
@@ -136,17 +159,18 @@ object Pruning {
     
     
     def getSubTreeSequence(tree : Node) : List[(Set[BigInt], Double)] = {
-        var root = firstPruneTree(tree)	// get T1
+        
+        var leafNodesOfT1 = firstPruneTree(tree)	// get T1
 	    
-	    var sequence_alpha_tree = List[(Set[BigInt], Double)]((Set[BigInt](), 0))
+	    var sequence_alpha_tree = List[(Set[BigInt], Double)]((leafNodesOfT1, 0))
 	    
 	    var finish = false
 	    
-	    var prunedNodeSet = Set[BigInt]()
+	    var prunedNodeSet = leafNodesOfT1
 	    
 	    // SELECT SEQUENCE OF BEST SUB-TREE AND INTERVALS OF ALPHA
 	    do {
-	        var (nodesNeedToBePruned, alpha) = selectNodesToPrune(root, prunedNodeSet)
+	        var (nodesNeedToBePruned, alpha) = selectNodesToPrune(tree, prunedNodeSet)
 	        //println("select node to prune:" + nodesNeedToBePruned)
 	        
 	        sequence_alpha_tree = sequence_alpha_tree.:+((nodesNeedToBePruned, alpha))
@@ -177,8 +201,9 @@ object Pruning {
      * @param dataset
      * @return
      */
-    def Prune(treeModel : TreeModel, complexityParamter : Double, dataset: RDD[String]) : TreeModel = {
+    def Prune(treeModel : TreeModel, complexityParamter : Double, dataset: RDD[String], foldTimes : Int = 5) : TreeModel = {
 	    
+        
         this.maxcp = complexityParamter
 	    
 	    var sequence_alpha_tree = getSubTreeSequence(treeModel.tree) 
@@ -187,7 +212,7 @@ object Pruning {
 	    // CROSS-VALIDATION
 	    
 	    
-	    var N = 10
+	    val N = foldTimes
         var newdata = dataset.mapPartitions(partition => {
             var i = -1
             partition.map(x => {
@@ -199,8 +224,10 @@ object Pruning {
         var yIndex = treeModel.featureSet.getIndex(treeModel.usefulFeatureSet.data(treeModel.yIndex).Name)
         var mapTreeIndexToListErrorMetric : Map[Int, List[Double]] = Map[Int, List[Double]]()
         
+        println("Start CROSS-VALIDATION")
         
         for (fold <- (0 to N -1)){
+            println("\n ==================== Begin round %d ====================\n".format(fold))
             // split dataset into training data and testing data
             var datasetOfThisFold = newdata.filter(x => x._1 != fold).map(x => x._2)
             var testingData = newdata.filter(x => x._1 == fold).map(x => x._2)
@@ -285,17 +312,18 @@ object Pruning {
                     mapTreeIndexToListErrorMetric = mapTreeIndexToListErrorMetric.updated(idx, errors)
                 }
             }
+            println("\n ==================== End round %d ====================\n".format(fold))
             
         }	// END CROSS-VALIDATION
         
         var indexOfTreeHasMinAverageError = 0
         var minAverageError = Double.MaxValue
         
-//        mapTreeIndexToListErrorMetric.foreach {
-//            case (key, value) => {
-//                println("index:" + key + " List of errors:" + value.mkString(","))
-//            }
-//        }
+        mapTreeIndexToListErrorMetric.foreach {
+            case (key, value) => {
+                println("index:" + key + " List of errors:" + value.mkString(","))
+            }
+        }
         
         mapTreeIndexToListErrorMetric.foreach{
             case (key, value) => {
@@ -313,8 +341,13 @@ object Pruning {
         println("index of tree having min average error:" + indexOfTreeHasMinAverageError)
         println("min average: " + minAverageError)
         
-        var leafNodesOfTheBestTree = sequence_alpha_tree(indexOfTreeHasMinAverageError)
-        println("the final leaf nodes:" + leafNodesOfTheBestTree._1)
+        var leafNodesOfTheBestTree = sequence_alpha_tree(indexOfTreeHasMinAverageError)._1
+        println("the final leaf nodes:" + leafNodesOfTheBestTree)
+        
+        
+        pruneBranchs(treeModel.tree, leafNodesOfTheBestTree)
+        
+        //pruneBranch(treeModel., prunedNodeID)
         
         treeModel
 	}
