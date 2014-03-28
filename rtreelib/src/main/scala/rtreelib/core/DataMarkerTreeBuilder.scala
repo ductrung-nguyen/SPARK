@@ -232,6 +232,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
                     } else //  add new node to current model
                     {
 
+                        /*
                         val level = (Math.log(label.toDouble) / Math.log(2)).toInt
                         var i: Int = level - 1
                         var TWO : BigInt = 2
@@ -247,7 +248,8 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
                             }
                             i -= 1
                         } // end while
-
+						*/
+                        var parent = getNodeByID(label >> 1)
                         if (label % 2 == 0) {
                             parent.setLeft(newnode)
                         } else {
