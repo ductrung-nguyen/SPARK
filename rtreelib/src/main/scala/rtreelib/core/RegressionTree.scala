@@ -386,7 +386,9 @@ class RegressionTree() extends Serializable {
             
 	        var i = 0
 	        names.foreach(name =>{
-	            featureSet.data(i).Name = name
+	           featureSet.data(i).Name = name
+	           featureSet.update(featureSet.data(i), i)
+	            i = i + 1
 	        } )
 	        updateFeatureSet()
         }

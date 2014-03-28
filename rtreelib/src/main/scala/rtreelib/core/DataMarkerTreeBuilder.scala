@@ -138,11 +138,12 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
                 if (parent != null) {
                     var EY2OfParent: Double = parent.statisticalInformation.sumOfYPower2 / parent.statisticalInformation.numberOfInstances
                     var EYOfParent: Double = parent.statisticalInformation.sumY / parent.statisticalInformation.numberOfInstances
-                    var MSEOfParent = (EY2OfParent - EYOfParent * EYOfParent) * (EY2OfParent - EYOfParent * EYOfParent) / parent.statisticalInformation.numberOfInstances.toInt
+                    var MSEOfParent = (EY2OfParent - EYOfParent * EYOfParent) * parent.statisticalInformation.numberOfInstances.toInt
 
                     val EY2: Double = statisticalInfor.sumOfYPower2 / statisticalInfor.numberOfInstances.toInt
                     val EY: Double = statisticalInfor.sumY / statisticalInfor.numberOfInstances.toInt
-                    val MSE = (EY2 - EY * EY) * (EY2 - EY * EY) / statisticalInfor.numberOfInstances.toInt
+                    val MSE = (EY2 - EY * EY) * statisticalInfor.numberOfInstances.toInt
+                    //println("current MSE:" + MSE + " parent MSE:" + MSEOfParent)
                     if ((math.abs(MSE - MSEOfParent) / MSEOfParent) <= this.maximumComplexity) {
                         (label, true, statisticalInfor)
                     } else {
@@ -649,6 +650,12 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
 
     }
 
-    override def createNewInstance(featureSet: FeatureSet, usefulFeatureSet: FeatureSet) 
-    	= new DataMarkerTreeBuilder(featureSet, usefulFeatureSet)
+    override def createNewInstance(featureSet: FeatureSet, usefulFeatureSet: FeatureSet) : TreeBuilder = {
+    	var tb : TreeBuilder = new DataMarkerTreeBuilder(featureSet, usefulFeatureSet)
+    	tb.setMinSplit(this.minsplit)
+    	tb.setMaxDepth( this.maxDepth)
+    	tb.setDelimiter(this.delimiter)
+    	tb.setMaximumComplexity(this.maximumComplexity)
+    	tb
+    }
 }

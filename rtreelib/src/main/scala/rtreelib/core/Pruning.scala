@@ -200,7 +200,7 @@ object Pruning {
         var mapTreeIndexToListErrorMetric : Map[Int, List[Double]] = Map[Int, List[Double]]()
         
         
-        for (fold <- (1 to N)){
+        for (fold <- (0 to N -1)){
             // split dataset into training data and testing data
             var datasetOfThisFold = newdata.filter(x => x._1 != fold).map(x => x._2)
             var testingData = newdata.filter(x => x._1 == fold).map(x => x._2)
@@ -208,9 +208,12 @@ object Pruning {
             // build the full tree with the new training data
             val tree = new RegressionTree()
             tree.setDataset(datasetOfThisFold)
+            println("feature names:" + treeModel.featureSet.data.map(x => x.Name).toArray.mkString(","))
+            tree.setFeatureNames(treeModel.featureSet.data.map(x => x.Name).toArray)
             tree.treeBuilder.setMinSplit(treeModel.minsplit)
             tree.treeBuilder.setMaxDepth(treeModel.maxDepth)
             tree.treeBuilder.setThreshold(treeModel.threshold)
+            
             val treeModelOfThisFold = tree.buildTree(treeModel.yFeature, treeModel.xFeatures)
             
             //println("new model:\n" + treeModelOfThisFold)
@@ -230,7 +233,7 @@ object Pruning {
             for (i <- (0 to sequence_alpha_tree.length -2)){
                 val beta = math.sqrt(sequence_alpha_tree(i)._2 * sequence_alpha_tree(i + 1)._2)
                 val index = getTreeIndexByAlpha(beta, sequence_alpha_tree_this_fold)
-                list_subtree_correspoding_to_beta = list_subtree_correspoding_to_beta.:+( i , sequence_alpha_tree(index)._1)
+                list_subtree_correspoding_to_beta = list_subtree_correspoding_to_beta.:+( i , sequence_alpha_tree_this_fold(index)._1)
             }
             
             // get the prediction of all sub-tree in this fold

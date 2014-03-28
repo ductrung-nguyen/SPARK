@@ -105,6 +105,11 @@ abstract class TreeBuilder(var featureSet: FeatureSet, var usefulFeatureSet : Fe
         this.maxDepth = value 
         this.treeModel.maxDepth = value
     }
+    
+    def setMaximumComplexity(cp : Double) = {
+        this.maximumComplexity = cp
+        this.treeModel.maximumComplexity = cp
+    }
 
     /**
      * Building tree, bases on:

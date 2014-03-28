@@ -25,7 +25,10 @@ class FeatureSet(metadata: List[Feature] = List[Feature]()) extends Serializable
     def getIndex(name: String): Int = try { mapNameToIndex(name)}  catch { case _ => -1 }
     
     def update(feature: Feature, index : Int)  = {  
+        val oldFeature = data(index)
+        mapNameToIndex = mapNameToIndex.-(oldFeature.Name)
         data = data.updated(index, feature)
+        mapNameToIndex = mapNameToIndex.updated(feature.Name, index)
     }
     
     
