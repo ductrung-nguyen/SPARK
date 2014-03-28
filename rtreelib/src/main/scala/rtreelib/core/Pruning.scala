@@ -52,15 +52,15 @@ object Pruning {
         var currentID : BigInt = 0
 
         def selectNodeToPrunIter(node: Node, id: BigInt): (Double, Int) = { // (riskOfBranch, numberChildren)
-            println("currentID:" + id + " info:" + node.statisticalInformation)
+            //println("currentID:" + id + " info:" + node.statisticalInformation)
             // if this is an internal node, and the branch of this node hasn't pruned
             if (!node.isEmpty && !already_pruned_node.contains(id)) {
 
                 var (riskBranchLeft, numLeft) = selectNodeToPrunIter(node.left, (id << 1) )
                 var (riskBranchRight, numRight) = selectNodeToPrunIter(node.right, (id << 1) + 1)
                 var gT = (risk(node) - (riskBranchLeft + riskBranchRight)) / (numLeft + numRight - 1)
-                println("Node " + id + " r(t)=" + risk(node) +  "  g(t)=" + gT +
-                " (numLeft:%d,gLeft=%f) (numRight=%d, gRight=%f)".format(numLeft, riskBranchLeft, numRight, riskBranchRight))
+                //println("Node " + id + " r(t)=" + risk(node) +  "  g(t)=" + gT +
+                //" (numLeft:%d,gLeft=%f) (numRight=%d, gRight=%f)".format(numLeft, riskBranchLeft, numRight, riskBranchRight))
 
                 if (gT == currentMin) {
                     result = result + id
@@ -147,10 +147,10 @@ object Pruning {
 	    // SELECT SEQUENCE OF BEST SUB-TREE AND INTERVALS OF ALPHA
 	    do {
 	        var (nodesNeedToBePruned, alpha) = selectNodesToPrune(root, prunedNodeSet)
-	        println("select node to prune:" + nodesNeedToBePruned)
+	        //println("select node to prune:" + nodesNeedToBePruned)
 	        
 	        sequence_alpha_tree = sequence_alpha_tree.:+((nodesNeedToBePruned, alpha))
-	        println("sequence alpha-tree:" + sequence_alpha_tree)
+	        //println("sequence alpha-tree:" + sequence_alpha_tree)
 	        
 	        prunedNodeSet = nodesNeedToBePruned
 	        
@@ -213,7 +213,7 @@ object Pruning {
             tree.treeBuilder.setThreshold(treeModel.threshold)
             val treeModelOfThisFold = tree.buildTree(treeModel.yFeature, treeModel.xFeatures)
             
-            println("new model:\n" + treeModelOfThisFold)
+            //println("new model:\n" + treeModelOfThisFold)
             
             // broadcast the tre for using later (in prediction)
             var tree_broadcast = dataset.context.broadcast(tree)
@@ -288,11 +288,11 @@ object Pruning {
         var indexOfTreeHasMinAverageError = 0
         var minAverageError = Double.MaxValue
         
-        mapTreeIndexToListErrorMetric.foreach {
-            case (key, value) => {
-                println("index:" + key + " List of errors:" + value.mkString(","))
-            }
-        }
+//        mapTreeIndexToListErrorMetric.foreach {
+//            case (key, value) => {
+//                println("index:" + key + " List of errors:" + value.mkString(","))
+//            }
+//        }
         
         mapTreeIndexToListErrorMetric.foreach{
             case (key, value) => {
