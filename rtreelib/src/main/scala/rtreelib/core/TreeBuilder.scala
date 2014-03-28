@@ -62,7 +62,9 @@ abstract class TreeBuilder(var featureSet: FeatureSet, var usefulFeatureSet : Fe
         
     protected var MAXIMUM_PARALLEL_JOBS = 9999
 
-    def setDelimiter(c: Char) = { delimiter = c }
+    def setDelimiter(c: Char) = { 
+        delimiter = c 
+    }
 
     /**
      * Set the minimum records of splitting
@@ -86,7 +88,7 @@ abstract class TreeBuilder(var featureSet: FeatureSet, var usefulFeatureSet : Fe
      */
     def setThreshold(xThreshlod: Double) = { 
         threshold = xThreshlod 
-        this.threshold = xThreshlod
+        treeModel.threshold = xThreshlod
     }
 
     /**
@@ -101,6 +103,7 @@ abstract class TreeBuilder(var featureSet: FeatureSet, var usefulFeatureSet : Fe
      */
     def setMaxDepth(value: Int) = { 
         this.maxDepth = value 
+        this.treeModel.maxDepth = value
     }
 
     /**

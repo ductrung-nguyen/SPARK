@@ -129,26 +129,63 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
             })
             
             if (!this.treeModel.tree.isEmpty){
-                    val EY2OfRoot : Double =  this.treeModel.tree.statisticalInformation.sumOfYPower2 / this.treeModel.tree.statisticalInformation.numberOfInstances.toInt
-                    val EYOfRoot : Double = this.treeModel.tree.statisticalInformation.sumY/this.treeModel.tree.statisticalInformation.numberOfInstances.toInt
-                    val MSEOfRoot = (EY2OfRoot - EYOfRoot*EYOfRoot)*(EY2OfRoot - EYOfRoot*EYOfRoot)/this.treeModel.tree.statisticalInformation.numberOfInstances.toInt
 
-                    result.map(x => {
-                        val (label, isStop, statisticalInfor) = x
-                        val EY2 : Double = statisticalInfor.sumOfYPower2/statisticalInfor.numberOfInstances.toInt
-                        val EY : Double = statisticalInfor.sumY/statisticalInfor.numberOfInstances.toInt
-                        val MSE = (EY2 - EY*EY)*(EY2 - EY*EY)/statisticalInfor.numberOfInstances.toInt
-                        if ((math.abs(MSE - MSEOfRoot)/MSEOfRoot) <= this.maximumComplexity){
-                            (label, true, statisticalInfor)
-                        }else
-                            x
-                        
-                    })
-                }
-            else result
+            result.map(x => {
+
+                val (label, isStop, statisticalInfor) = x
+
+                var parent = getNodeByID(label >> 1)
+                if (parent != null) {
+                    var EY2OfParent: Double = parent.statisticalInformation.sumOfYPower2 / parent.statisticalInformation.numberOfInstances
+                    var EYOfParent: Double = parent.statisticalInformation.sumY / parent.statisticalInformation.numberOfInstances
+                    var MSEOfParent = (EY2OfParent - EYOfParent * EYOfParent) * (EY2OfParent - EYOfParent * EYOfParent) / parent.statisticalInformation.numberOfInstances.toInt
+
+                    val EY2: Double = statisticalInfor.sumOfYPower2 / statisticalInfor.numberOfInstances.toInt
+                    val EY: Double = statisticalInfor.sumY / statisticalInfor.numberOfInstances.toInt
+                    val MSE = (EY2 - EY * EY) * (EY2 - EY * EY) / statisticalInfor.numberOfInstances.toInt
+                    if ((math.abs(MSE - MSEOfParent) / MSEOfParent) <= this.maximumComplexity) {
+                        (label, true, statisticalInfor)
+                    } else {
+                        x
+                    }
+                } else x
+
+            })
+        } else result
 
     }
 
+    private def getNodeByID(id: BigInt): Node = {
+        if (id != 0){
+	        val level = (Math.log(id.toDouble) / Math.log(2)).toInt
+	        var i: Int = level -1
+	        var TWO: BigInt = 2
+	        var parent = treeModel.tree; // start adding from root node
+	        try{
+	        while (i > 0) {
+	
+	            if ((id / (TWO << i - 1)) % 2 == 0) {
+	                // go to the left
+	                parent = parent.left
+	            } else {
+	                // go go the right
+	                parent = parent.right
+	            }
+	            i -= 1
+	        } // end while
+	        }catch {case e : Throwable => { 
+	            e.printStackTrace()
+	            println("currentID:" + id)
+	            println("currentTree:\n" + treeModel.tree)
+	            throw e
+	        }}
+	
+	        parent
+        }
+        else{
+            null
+        }
+    } 
     private def updateModel(info: Array[(BigInt, SplitPoint, StatisticalInformation)], isStopNode: Boolean = false) = {
         info.foreach(stoppedRegion =>
             {

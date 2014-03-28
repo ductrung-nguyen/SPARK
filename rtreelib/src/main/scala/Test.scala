@@ -89,6 +89,9 @@ object Test {
             /* TEST WRITING TREE TO MODEL */
             tree.writeModelToFile(pathOfTreeModel)
             
+            /* TEST PRUNING */
+            Pruning.Prune(tree.treeModel, 0.01, trainingData)
+            
             /* TEST LOADING TREE FROM MODEL FILE */
             val treeFromFile = new RegressionTree()
             try{
@@ -130,6 +133,9 @@ object Test {
             
             /* TEST WRITING TREE TO MODEL */
             tree.writeModelToFile(pathOfTreeModel)
+            
+            /* TEST PRUNING */
+            Pruning.Prune(tree.treeModel, 0.01, trainingData)
             
             /* TEST LOADING TREE FROM MODEL FILE */
             val treeFromFile = new RegressionTree()

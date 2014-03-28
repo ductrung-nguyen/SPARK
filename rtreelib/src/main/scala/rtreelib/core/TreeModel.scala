@@ -41,6 +41,7 @@ class TreeModel extends Serializable {
 	var minsplit : Int = 10
 	var threshold : Double = 0.01
 	var maximumComplexity : Double = 0.01
+	var maxDepth : Int = 63
 	var yFeature: String = ""
 	var xFeatures : Set[Any] = Set[Any]()
 	
@@ -133,6 +134,9 @@ class TreeModel extends Serializable {
     		  "* FeatureSet:\n" + featureSet.toString + "\n"
     		  + "* xIndexes:" + xIndexes.map(index => featureSet.getIndex(usefulFeatureSet.data(index).Name))  + "\n"
     		  + "* yIndex (target index):" + featureSet.getIndex(usefulFeatureSet.data(yIndex).Name) + "\n"
+    		  + "* minSplit:%d\n".format(this.minsplit)
+    		  + "* threshold:%f\n".format(this.threshold)
+    		  + "* maximumComplexity:%f\n".format(this.maximumComplexity)
     		  + "* Is complete:" + isComplete + "\n"
     		  + "* Tree:\n"
     		  + tree
