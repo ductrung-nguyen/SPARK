@@ -121,7 +121,7 @@ object Test {
         }
         else{
             tree.treeBuilder.setMinSplit(100)
-            tree.treeBuilder.setMaximumComplexity(0.003)
+            tree.treeBuilder.setMaximumComplexity(0.005)
             //tree.treeBuilder.setThreshold(0.3) // coefficient of variation
             //tree.treeBuilder.setMaxDepth(10)
             
@@ -136,7 +136,8 @@ object Test {
             tree.writeModelToFile(pathOfTreeModel)
             
             /* TEST PRUNING */
-            println("Final tree:\n%s".format(Pruning.Prune(tree.treeModel, 0.01, trainingData, 10)))
+            println("Final tree:\n%s".format(Pruning.Prune(tree.treeModel, 0.01, trainingData, 8)))
+            tree.writeModelToFile("/tmp/prunedtree")
             
             /* TEST LOADING TREE FROM MODEL FILE */
             val treeFromFile = new RegressionTree()
