@@ -151,9 +151,13 @@ object Test {
             
             /* TEST PREDICTING AND EVALUATION */
             println("Evaluation:")
-            val predictRDD = treeFromFile.predict(testingData)
+            val predictRDDOfTheFullTree = treeFromFile.predict(testingData)
+            val predictRDDOfThePrunedTree = tree.predict(testingData)
             val actualValueRDD = testingData.map(line => line.split(',')(14))	// 14 is the index of ArrDelay in csv file, based 0
-            Evaluation.evaluate(predictRDD, actualValueRDD)
+            println("Evaluation of the full tree:")
+            Evaluation.evaluate(predictRDDOfTheFullTree, actualValueRDD)
+            println("Evaluation of the pruned tree:")
+            Evaluation.evaluate(predictRDDOfThePrunedTree, actualValueRDD)
             
             
             /* TEST RECOVER MODE */
