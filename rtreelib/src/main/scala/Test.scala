@@ -120,7 +120,8 @@ object Test {
             
         }
         else{
-            tree.treeBuilder.setMinSplit(1000)
+            tree.treeBuilder.setMinSplit(100)
+            tree.treeBuilder.setMaximumComplexity(0.003)
             //tree.treeBuilder.setThreshold(0.3) // coefficient of variation
             //tree.treeBuilder.setMaxDepth(10)
             
@@ -135,7 +136,7 @@ object Test {
             tree.writeModelToFile(pathOfTreeModel)
             
             /* TEST PRUNING */
-            println("Final tree:\n%s".format(Pruning.Prune(tree.treeModel, 0.01, trainingData, 3)))
+            println("Final tree:\n%s".format(Pruning.Prune(tree.treeModel, 0.01, trainingData, 10)))
             
             /* TEST LOADING TREE FROM MODEL FILE */
             val treeFromFile = new RegressionTree()
@@ -154,8 +155,11 @@ object Test {
             val predictRDDOfTheFullTree = treeFromFile.predict(testingData)
             val predictRDDOfThePrunedTree = tree.predict(testingData)
             val actualValueRDD = testingData.map(line => line.split(',')(14))	// 14 is the index of ArrDelay in csv file, based 0
+            println("Original tree(full tree):\n%s".format(treeFromFile.treeModel))
             println("Evaluation of the full tree:")
             Evaluation.evaluate(predictRDDOfTheFullTree, actualValueRDD)
+            
+            println("Pruned Tree:\n%s".format(tree.treeModel))
             println("Evaluation of the pruned tree:")
             Evaluation.evaluate(predictRDDOfThePrunedTree, actualValueRDD)
             

@@ -246,6 +246,7 @@ object Pruning {
             tree.treeBuilder.setMinSplit(treeModel.minsplit)
             tree.treeBuilder.setMaxDepth(treeModel.maxDepth)
             tree.treeBuilder.setThreshold(treeModel.threshold)
+            tree.treeBuilder.setMaximumComplexity(treeModel.maximumComplexity)
             
             val treeModelOfThisFold = tree.buildTree(treeModel.yFeature, treeModel.xFeatures)
             
