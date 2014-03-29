@@ -96,7 +96,7 @@ object Pruning {
             var tmp = id
             while (tmp > 0){
                 if (result.contains(tmp >> 1)){
-                    result = result - tmp
+                    result = result - id
                     tmp = 0
                 }
                 tmp = tmp >> 1
@@ -185,15 +185,21 @@ object Pruning {
     }
     
     def getTreeIndexByAlpha(givenAlpha : Double, sequence_tree_alpha : List[(Set[BigInt], Double)]) : Int = {
-        var i = 0
-        var result : Int = 
-        sequence_tree_alpha.indexWhere{
-           case (leafNodes, alpha) =>
-	        {
-	            alpha > givenAlpha
-	        }} - 1
-        
-        result
+        if (givenAlpha == 0.0)
+            0
+        else {
+            var i = 0
+            val sequence_tree_alpha_with_infinity_alpha = sequence_tree_alpha :+ (Set[BigInt](), Double.MaxValue)
+            var result: Int =
+                sequence_tree_alpha_with_infinity_alpha.indexWhere {
+                    case (leafNodes, alpha) =>
+                        {
+                            alpha >= givenAlpha
+                        }
+                } - 1
+
+            result
+        }
     }
     /**
      * @param treeModel
