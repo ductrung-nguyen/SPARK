@@ -251,6 +251,8 @@ object Pruning {
             // get 'best' pruned tree candidates of the current tree 
             val sequence_alpha_tree_this_fold = getSubTreeSequence(treeModelOfThisFold.tree)
             
+            println("sequence_alpha_tree_this_fold\n%s".format(sequence_alpha_tree_this_fold.mkString(",")))
+            
             // init the list of (alpha,sub-tree) pairs
             var list_subtree_correspoding_to_beta = List[(Int,Set[BigInt])]()
             
@@ -260,6 +262,7 @@ object Pruning {
             for (i <- (0 to sequence_alpha_tree.length -2)){
                 val beta = math.sqrt(sequence_alpha_tree(i)._2 * sequence_alpha_tree(i + 1)._2)
                 val index = getTreeIndexByAlpha(beta, sequence_alpha_tree_this_fold)
+                if (index < 0) println("current beta:" + beta)
                 list_subtree_correspoding_to_beta = list_subtree_correspoding_to_beta.:+( i , sequence_alpha_tree_this_fold(index)._1)
             }
             
