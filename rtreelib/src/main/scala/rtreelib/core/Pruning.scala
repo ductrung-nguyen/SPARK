@@ -277,7 +277,7 @@ object Pruning {
             // we don't want to send many tree model through the network
             // so, the solution is: send the 'full' tree model (or the tree has been pre-processed already)
             // and the lists of leaf nodes of each pruned-tree candidates
-            var predicted_value_by_subtrees = dataset.map(line => {
+            var predicted_value_by_subtrees = testingData.map(line => {
 		        var record = line.split(",")
 		        (
 		        		list_subtree_correspoding_to_beta.map(sequence => {
