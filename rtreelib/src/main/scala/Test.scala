@@ -121,14 +121,14 @@ object Test {
         }
         else{
             tree.treeBuilder.setMinSplit(100)
-            tree.treeBuilder.setMaximumComplexity(0.005)
+            tree.treeBuilder.setMaximumComplexity(0.003)
             //tree.treeBuilder.setThreshold(0.3) // coefficient of variation
             //tree.treeBuilder.setMaxDepth(10)
             
             /* TEST BUILDING */
             stime = System.nanoTime()
             println(tree.buildTree("ArrDelay", 
-                    Set(as.String("Month"), as.String("DayofMonth"), as.String("DayOfWeek"), "DepTime", "ArrTime", 
+                    Set(as.String("Month"), as.String("DayofMonth"), as.String("DayOfWeek"), "DepTime",
                             "UniqueCarrier", "Origin", "Dest", "Distance")))
             println("\nBuild tree in %f second(s)".format((System.nanoTime() - stime)/1e9))
             
@@ -136,8 +136,10 @@ object Test {
             tree.writeModelToFile(pathOfTreeModel)
             
             /* TEST PRUNING */
-            println("Final tree:\n%s".format(Pruning.Prune(tree.treeModel, 0.01, trainingData, 8)))
+            stime = System.nanoTime()
+            println("Final tree:\n%s".format(Pruning.Prune(tree.treeModel, 0.01, trainingData, 5)))
             tree.writeModelToFile("/tmp/prunedtree")
+            println("\nPrune tree in %f second(s)".format((System.nanoTime() - stime)/1e9))
             
             /* TEST LOADING TREE FROM MODEL FILE */
             val treeFromFile = new RegressionTree()
