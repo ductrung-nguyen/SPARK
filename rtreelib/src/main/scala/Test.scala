@@ -71,6 +71,7 @@ object Test {
 	    val testingData = context.textFile(inputTestingFile, 1)
 	    
 	    val pathOfTreeModel = "/tmp/tree.model"
+	    val pathOfTheeFullTree = "/tmp/full-tree.model"
 
 
 	    /* TEST BUILDING TREE */
@@ -87,7 +88,7 @@ object Test {
             println("\nOK: Build tree in %f second(s)".format((System.nanoTime() - stime)/1e9))
             
             /* TEST WRITING TREE TO MODEL */
-            tree.writeModelToFile(pathOfTreeModel)
+            tree.writeModelToFile(pathOfTheeFullTree)
             
             /* TEST PRUNING */
             println("Final tree:\n%s".format(Pruning.Prune(tree.treeModel, 0.01, trainingData)))
@@ -95,7 +96,7 @@ object Test {
             /* TEST LOADING TREE FROM MODEL FILE */
             val treeFromFile = new RegressionTree()
             try{
-            	treeFromFile.loadModelFromFile(pathOfTreeModel)
+            	treeFromFile.loadModelFromFile(pathOfTheeFullTree)
             	println("OK: Load tree from '%s' successfully".format(pathOfTreeModel))
             }catch {
                 case e: Throwable => {
@@ -133,7 +134,7 @@ object Test {
             println("\nBuild tree in %f second(s)".format((System.nanoTime() - stime)/1e9))
             
             /* TEST WRITING TREE TO MODEL */
-            tree.writeModelToFile(pathOfTreeModel)
+            tree.writeModelToFile(pathOfTheeFullTree)
             
             /* TEST PRUNING */
             stime = System.nanoTime()
@@ -144,7 +145,7 @@ object Test {
             /* TEST LOADING TREE FROM MODEL FILE */
             val treeFromFile = new RegressionTree()
             try{
-            	treeFromFile.loadModelFromFile(pathOfTreeModel)
+            	treeFromFile.loadModelFromFile(pathOfTheeFullTree)
             	println("OK: Load tree from '%s' successfully".format(pathOfTreeModel))
             }catch {
                 case e: Throwable => {
@@ -158,7 +159,7 @@ object Test {
             val predictRDDOfTheFullTree = treeFromFile.predict(testingData)
             val predictRDDOfThePrunedTree = tree.predict(testingData)
             val actualValueRDD = testingData.map(line => line.split(',')(14))	// 14 is the index of ArrDelay in csv file, based 0
-            println("Original tree(full tree):\n%s".format(treeFromFile.treeModel))
+            //println("Original tree(full tree):\n%s".format(treeFromFile.treeModel))
             println("Evaluation of the full tree:")
             Evaluation.evaluate(predictRDDOfTheFullTree, actualValueRDD)
             

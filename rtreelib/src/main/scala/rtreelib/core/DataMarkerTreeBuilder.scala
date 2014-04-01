@@ -5,7 +5,6 @@ import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.PairRDDFunctions
 import rtreelib.core._
 
-
 /**
  * This class is representative for each value of each feature in the data set
  * @param index Index of the feature in the whole data set, based zero
@@ -45,6 +44,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
 	extends TreeBuilder(_featureSet, _usefulFeatureSet) {
     
     type AggregateInfo = (Any, Double, Double , Int)	// (xValue, yValue, yValuePower2, frequency)
+    private val DEBUG : Boolean = false
 
     /**
      * Temporary model file
@@ -153,7 +153,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
                     val EY2: Double = statisticalInfor.sumOfYPower2 / statisticalInfor.numberOfInstances.toInt
                     val EY: Double = statisticalInfor.sumY / statisticalInfor.numberOfInstances.toInt
                     val MSE = (EY2 - EY * EY) * statisticalInfor.numberOfInstances.toInt
-                    println("label " + label + " current MSE:" + MSE + " parent MSE: " + MSEOfParent + " statisParent:" + parent.statisticalInformation)
+                    if (DEBUG) println("label " + label + " current MSE:" + MSE + " parent MSE: " + MSEOfParent + " statisParent:" + parent.statisticalInformation)
                     if ((math.abs(MSE - MSEOfParent) / MSEOfParent) <= this.maximumComplexity) {
                         (label, true, statisticalInfor)
                     } else {
@@ -186,8 +186,8 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
 	        } // end while
 	        }catch {case e : Throwable => { 
 	            e.printStackTrace()
-	            println("currentID:" + id)
-	            println("currentTree:\n" + treeModel.tree)
+	            if (DEBUG) println("currentID:" + id)
+	            if (DEBUG) println("currentTree:\n" + treeModel.tree)
 	            throw e
 	        }}
 	
@@ -203,7 +203,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
 
                 var (label,splitPoint, statisticalInformation) = stoppedRegion
                 
-                println("update model with label=%d splitPoint:%s".format(
+                if (DEBUG) println("update model with label=%d splitPoint:%s".format(
                     label,
                     splitPoint))
 
@@ -342,7 +342,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
                 
                 var checkedStopExpanding = checkStopCriterion(featureValueAggregate)
                 // we get Array[(label, isStop, statisticalInformation)]
-                println("Checked stop expanding:\n%s".format(checkedStopExpanding.mkString("\n")))
+                if (DEBUG) println("Checked stop expanding:\n%s".format(checkedStopExpanding.mkString("\n")))
                 
                 
                 // if the tree height enough, mark all node is stop node

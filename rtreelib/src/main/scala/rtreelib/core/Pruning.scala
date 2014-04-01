@@ -5,6 +5,7 @@ import rtreelib.core._
 import rtreelib.evaluation.Evaluation
 
 object Pruning {
+    private val DEBUG : Boolean = false
     
     var maxcp = 0.0
     
@@ -241,7 +242,7 @@ object Pruning {
             // build the full tree with the new training data
             val tree = new RegressionTree()
             tree.setDataset(datasetOfThisFold)
-            println("feature names:" + treeModel.featureSet.data.map(x => x.Name).toArray.mkString(","))
+            if (DEBUG) println("feature names:" + treeModel.featureSet.data.map(x => x.Name).toArray.mkString(","))
             tree.setFeatureNames(treeModel.featureSet.data.map(x => x.Name).toArray)
             tree.treeBuilder.setMinSplit(treeModel.minsplit)
             tree.treeBuilder.setMaxDepth(treeModel.maxDepth)
@@ -258,7 +259,7 @@ object Pruning {
             // get 'best' pruned tree candidates of the current tree 
             val sequence_alpha_tree_this_fold = getSubTreeSequence(treeModelOfThisFold.tree)
             
-            println("sequence_alpha_tree_this_fold\n%s".format(sequence_alpha_tree_this_fold.mkString(",")))
+            if (DEBUG) println("sequence_alpha_tree_this_fold\n%s".format(sequence_alpha_tree_this_fold.mkString(",")))
             
             // init the list of (alpha,sub-tree) pairs
             var list_subtree_correspoding_to_beta = List[(Int,Set[BigInt])]()
@@ -269,7 +270,7 @@ object Pruning {
             for (i <- (0 to sequence_alpha_tree.length -2)){
                 val beta = math.sqrt(sequence_alpha_tree(i)._2 * sequence_alpha_tree(i + 1)._2)
                 val index = getTreeIndexByAlpha(beta, sequence_alpha_tree_this_fold)
-                if (index < 0) println("current beta:" + beta)
+                if (index < 0 && DEBUG) println("current beta:" + beta)
                 list_subtree_correspoding_to_beta = list_subtree_correspoding_to_beta.:+( i , sequence_alpha_tree_this_fold(index)._1)
             }
             
@@ -329,7 +330,8 @@ object Pruning {
         var indexOfTreeHasMinAverageError = 0
         var minAverageError = Double.MaxValue
         
-        mapTreeIndexToListErrorMetric.foreach {
+        if (DEBUG)
+            mapTreeIndexToListErrorMetric.foreach {
             case (key, value) => {
                 println("index:" + key + " List of errors:" + value.mkString(","))
             }

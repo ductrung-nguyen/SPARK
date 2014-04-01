@@ -41,10 +41,10 @@ class SDEvaluationMetric extends BaseEvaluation {
         val meanDiff = sums._1 / numTest
         val meanDiffPower2 = sums._2 / numTest
         val deviation = math.sqrt(meanDiffPower2 - meanDiff * meanDiff)
-        val SE = deviation / numTest
+        val standardError = deviation / math.sqrt(numTest)
         val numInvalidRecords = invalidRDD.count
 
-        println("Mean of different:%f\nDeviation of different:%f\nSE of different:%f".format(meanDiff, deviation, SE))
+        println("Mean of error:%f\nDeviation of error:%f\nStandard error of error:%f\nMean square error of error:%f".format(meanDiff, deviation, standardError, meanDiffPower2))
 	    println("Total records: %d".format(numTest) )
 	    println("Number of invalid records: %d".format(numInvalidRecords))
 	    
