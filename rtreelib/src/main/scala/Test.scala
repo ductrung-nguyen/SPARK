@@ -129,7 +129,7 @@ object Test {
             /* TEST BUILDING */
             stime = System.nanoTime()
             println(tree.buildTree("ArrDelay", 
-                    Set(as.String("Month"), as.String("DayofMonth"), as.String("DayOfWeek"), "DepTime",
+                    Set(as.String("Month"), as.String("DayofMonth"), as.String("DayOfWeek"), "CRSDepTime",
                             "UniqueCarrier", "Origin", "Dest", "Distance")))
             println("\nBuild tree in %f second(s)".format((System.nanoTime() - stime)/1e9))
             
@@ -139,7 +139,7 @@ object Test {
             /* TEST PRUNING */
             stime = System.nanoTime()
             println("Final tree:\n%s".format(Pruning.Prune(tree.treeModel, 0.01, trainingData, 5)))
-            tree.writeModelToFile("/tmp/prunedtree")
+            tree.writeModelToFile(pathOfTreeModel)
             println("\nPrune tree in %f second(s)".format((System.nanoTime() - stime)/1e9))
             
             /* TEST LOADING TREE FROM MODEL FILE */
@@ -160,6 +160,8 @@ object Test {
             val predictRDDOfThePrunedTree = tree.predict(testingData)
             val actualValueRDD = testingData.map(line => line.split(',')(14))	// 14 is the index of ArrDelay in csv file, based 0
             //println("Original tree(full tree):\n%s".format(treeFromFile.treeModel))
+            
+            println("Original Tree:\n%s".format(treeFromFile.treeModel))
             println("Evaluation of the full tree:")
             Evaluation.evaluate(predictRDDOfTheFullTree, actualValueRDD)
             
