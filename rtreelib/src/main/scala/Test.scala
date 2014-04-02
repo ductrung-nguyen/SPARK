@@ -32,21 +32,23 @@ object Test {
 	    
 	    val parser : ArgumentParser = new ArgumentParser("sbt run")
 	    parser.addArgument("mode", "operation what we want to do: train/prune/predict/evaluate", "train")
-	    parser.addArgument("input", "input file. It can be the input training data in mode 'train' " +
-	            " or the input of orginal tree model in mode 'prune' " + 
-	            " or the input of testing data in mode 'evaluate' )", "data/training-bodyfat.csv")
+	    parser.addArgument("input", "input data file. It can be the input training data in mode 'train' " +
+	            " or the input of orginal dataset in mode 'prune' " + 
+	            " or the input of testing data in mode 'evaluate' " + 
+	            " or the input observation in mode 'predict' )", "data/training-bodyfat.csv")
 	    parser.addArgument("output", "output file", "/tmp/tree.model")
 	    parser.addOption("-minsplit", "minsplit", "the minimum observations in each expanding node", "10")
 	    parser.addOption("-cp", "complexity", "The maximum complexity (different between mode 'train' and 'prune')", "0.005")
 	    parser.addOption("-depth", "maxdepth", "The maximum depth of the tree model", "63")
 	    parser.addOption("-target", "target", "target feature name", "DEXfat")
-	    parser.addOption("-t-target", "testing-target", "The index of target feature in testing data (use for evaluation)", "2")
+	    parser.addOption("-targetindex", "testing-target", "The index of target feature in testing data (use for evaluation)", "2")
 	    parser.addOption("-predictor", "predictor", "the name of predictors", "age;waistcirc;hipcirc;elbowbreadth;kneebreadth")
 	    parser.addOption("-model", "model", "path of tree model", "")
-	    parser.addOption("-test", "testing-data", "Testing data URL", "data/training-bodyfat.csv")
+	    //parser.addOption("-test", "testing-data", "Testing data URL", "data/training-bodyfat.csv")
 	    parser.addOption("-spark-home", "spark-home", "spark home directory", "/opt/spark")
 	    parser.addOption("-maxmem", "max-memory", "Maximum memory used by each worker", "2222m")
 	    parser.addOption("-master", "master-node", "address of master node in spark-cluster", "local")
+	    parser.addOption("-cv" , "cross-validation", "number of folds", "5")
 	    
 	    parser.parse(args)
 	    
@@ -103,6 +105,7 @@ object Test {
                 val treeFromFile = new RegressionTree()
                 val trainingData = context.textFile(input, 1)
                 val modelPath = parser.get("model")
+                val foldTimes = parser.get("cross-validation").toInt
     
                 if (modelPath == ""){
                     println("Missing path of tree model")
@@ -112,7 +115,8 @@ object Test {
                 try {
                     treeFromFile.loadModelFromFile(modelPath)
                     println("OK: Load tree from '%s' successfully".format(modelPath))
-                    println("Final tree:\n%s".format(Pruning.Prune(treeFromFile.treeModel, 0.01, trainingData)))
+                    println("Ogirinal tree\n%s".format(treeFromFile.treeModel))
+                    println("\n\nFinal tree:\n%s".format(Pruning.Prune(treeFromFile.treeModel, 0.01, trainingData, foldTimes)))
                     treeFromFile.writeModelToFile(output)
                 } catch {
                     case e: Throwable => {
@@ -125,9 +129,9 @@ object Test {
             
 	        case "evaluate" => {
 	            val treeFromFile = new RegressionTree()
-                val trainingData = context.textFile(input, 1)
-                val testingData = context.textFile(parser.get("testing-data"), 1)
+                val testingdata = context.textFile(input, 1)
                 val modelPath = parser.get("model")
+                val targetIndex = parser.get("testing-target").toInt
                 if (modelPath == ""){
                     println("Missing path of tree model")
                     exit
@@ -143,8 +147,8 @@ object Test {
                     }
                 }
 	            println("Evaluation:")
-	            val predictRDD = treeFromFile.predict(testingData)
-	            val actualValueRDD = testingData.map(line => line.split(',')(parser.get("testing-target").toInt))	// 14 is the index of ArrDelay in csv file, based 0
+	            val predictRDD = treeFromFile.predict(testingdata)
+	            val actualValueRDD = testingdata.map(line => line.split(',')(targetIndex))	// 14 is the index of ArrDelay in csv file, based 0
 	            
 	            println("Tree:\n%s".format(treeFromFile.treeModel))
 	            println("Evaluation of the pruned tree:")
@@ -163,7 +167,7 @@ object Test {
                     treeFromFile.writeModelToFile(output)
                 } catch {
                     case e: Throwable => {
-                        println("ERROR: Couldn't load tree from '%s'".format(input))
+                        println("ERROR: Couldn't load tree from '%s'".format(modelPath))
                         e.printStackTrace()
                     }
                 }

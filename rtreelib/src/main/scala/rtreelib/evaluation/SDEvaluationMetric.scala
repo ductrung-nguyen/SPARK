@@ -16,7 +16,6 @@ class SDEvaluationMetric extends BaseEvaluation {
 	override def Evaluate(predictedResult: RDD[String], actualResult: RDD[String]) : StatisticalInformation = {
 	    
 	    var newRDD = predictedResult zip actualResult
-	  
 	    
         var validRDD = newRDD.filter(v => (!v._1.equals("???") 
             && (Utility.parseDouble(v._2) match {
