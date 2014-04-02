@@ -8,9 +8,10 @@ import rtreelib.core.RegressionTree
 import rtreelib.evaluation.Evaluation
 import rtreelib.core._
 import scala.collection.immutable._
-
+import bigfoot.helpers._
 import com.esotericsoftware.kryo.Kryo
 import org.apache.spark.serializer.KryoRegistrator
+import java.io.File
 
 class MyRegistrator extends KryoRegistrator {
   override def registerClasses(kryo: Kryo) {
@@ -29,89 +30,148 @@ class MyRegistrator extends KryoRegistrator {
 object Test {
 	def main(args : Array[String]) : Unit = {
 	    
+	    val parser : ArgumentParser = new ArgumentParser("sbt run")
+	    parser.addArgument("mode", "operation what we want to do: train/prune/predict/evaluate", "train")
+	    parser.addArgument("input", "input file. It can be the input training data in mode 'train' " +
+	            " or the input of orginal tree model in mode 'prune' " + 
+	            " or the input of testing data in mode 'evaluate' )", "data/training-bodyfat.csv")
+	    parser.addArgument("output", "output file", "/tmp/tree.model")
+	    parser.addOption("-minsplit", "minsplit", "the minimum observations in each expanding node", "10")
+	    parser.addOption("-cp", "complexity", "The maximum complexity (different between mode 'train' and 'prune')", "0.005")
+	    parser.addOption("-depth", "maxdepth", "The maximum depth of the tree model", "63")
+	    parser.addOption("-target", "target", "target feature name", "DEXfat")
+	    parser.addOption("-t-target", "testing-target", "The index of target feature in testing data (use for evaluation)", "2")
+	    parser.addOption("-predictor", "predictor", "the name of predictors", "age;waistcirc;hipcirc;elbowbreadth;kneebreadth")
+	    parser.addOption("-model", "model", "path of tree model", "")
+	    parser.addOption("-test", "testing-data", "Testing data URL", "data/training-bodyfat.csv")
+	    parser.addOption("-spark-home", "spark-home", "spark home directory", "/opt/spark")
+	    parser.addOption("-maxmem", "max-memory", "Maximum memory used by each worker", "2222m")
+	    parser.addOption("-master", "master-node", "address of master node in spark-cluster", "local")
 	    
-	    val IS_LOCAL = true
+	    parser.parse(args)
 	    
-	    //System.setProperty("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-	    //System.setProperty("spark.kryo.registrator", "MyRegistrator")
+	    val mode 		= parser.get("mode")
+	    val input 		= parser.get("input")
+	    val output 		= parser.get("output")
+	    val minsplit 	= parser.get("minsplit")
+	    val complexity 	= parser.get("complexity")
+	    val maxdepth 	= parser.get("maxdepth")
+	    val master_node = parser.get("master-node")
+	    val targetFName = parser.get("target")
+	    val predictors 	= parser.get("predictor")
 	    
+	    var setOfPredictors = Set[Any]()
+	    predictors.split(";").foreach(x => {
+	        setOfPredictors = if (x.startsWith("(c)")) {
+	            setOfPredictors + as.String(x.substring(3))
+	        }else if (x.startsWith("(n)")){
+	            setOfPredictors + as.Number(x.substring(3))
+	        }
+	        else {
+	            setOfPredictors + x
+	        }
+	    })
 	    
-	    val inputTrainingFile = (
-	        if (IS_LOCAL)
-	        	"data/training-bodyfat.csv"
-	        else
-	            "hdfs://spark-master-001:8020/user/ubuntu/input/AIRLINES/training/*"
-	    )
-	    
-	    val inputTestingFile = (
-	        if (IS_LOCAL)
-	        	"data/testing-bodyfat.csv"
-	        else
-	            "hdfs://spark-master-001:8020/user/ubuntu/input/AIRLINES/testing/*"
-	    )
-	    
-	    val conf = (
-	        if (IS_LOCAL)
-	        	new SparkConf()
-	        		.setMaster("local").setAppName("rtree example")
-	        else
-	            new SparkConf()
-	        		.setMaster("spark://spark-master-001:7077")
-	        		.setAppName("rtree example")
-	        		.setSparkHome("/opt/spark")
+	    val conf = new SparkConf()
+	        		.setMaster(master_node)
+	        		.setAppName("demo regression tree")
+	        		.setSparkHome(parser.get("spark-home"))
 	        		.setJars(List("target/scala-2.10/rtree-example_2.10-1.0.jar"))
-	        		.set("spark.executor.memory", "2222m")
-	    )
-	    
+	        		.set("spark.executor.memory", parser.get("max-memory"))
 	    val context = new SparkContext(conf)
-
 	    var stime : Long = 0
 	    
-	    val trainingData = context.textFile(inputTrainingFile, 1)
-	    val testingData = context.textFile(inputTestingFile, 1)
-	    
-	    val pathOfTreeModel = "/tmp/tree.model"
-	    val pathOfTheeFullTree = "/tmp/full-tree.model"
+	    mode match {
+	        case "train" => {
+	            val trainingData = context.textFile(input, 1)
+	            val tree = new RegressionTree()
+	            tree.setDataset(trainingData)
+	            tree.treeBuilder.setMinSplit(minsplit.toInt)
+	            tree.treeBuilder.setMaximumComplexity(complexity.toDouble)
+	            tree.treeBuilder.setMaxDepth(maxdepth.toInt)
+	            
+	            stime = System.nanoTime()
+	            println("predictor:" + setOfPredictors)
+	            println(tree.buildTree(targetFName, setOfPredictors))
+                println("\nBuild tree in %f second(s)".format((System.nanoTime() - stime)/1e9))
+                tree.writeModelToFile(output)
 
-
-	    /* TEST BUILDING TREE */
-	    
-	    val tree = new RegressionTree()
-	    tree.setDataset(trainingData)
-
-        if (IS_LOCAL){
-            tree.treeBuilder.setMinSplit(10)
-            //tree.treeBuilder.setMaxDepth(2)
-
-            stime = System.nanoTime()
-            println(tree.buildTree("DEXfat", Set("age", "waistcirc", "hipcirc", "elbowbreadth", "kneebreadth")))
-            println("\nOK: Build tree in %f second(s)".format((System.nanoTime() - stime)/1e9))
-            
-            /* TEST WRITING TREE TO MODEL */
-            tree.writeModelToFile(pathOfTheeFullTree)
-            
-            /* TEST PRUNING */
-            println("Final tree:\n%s".format(Pruning.Prune(tree.treeModel, 0.01, trainingData)))
-            
-            /* TEST LOADING TREE FROM MODEL FILE */
-            val treeFromFile = new RegressionTree()
-            try{
-            	treeFromFile.loadModelFromFile(pathOfTheeFullTree)
-            	println("OK: Load tree from '%s' successfully".format(pathOfTreeModel))
-            }catch {
-                case e: Throwable => {
-                    println("ERROR: Couldn't load tree from '%s'".format(pathOfTreeModel))
-                	e.printStackTrace()
+            }
+	        
+	        
+            case "prune" => {
+                val treeFromFile = new RegressionTree()
+                val trainingData = context.textFile(input, 1)
+                val modelPath = parser.get("model")
+    
+                if (modelPath == ""){
+                    println("Missing path of tree model")
+                    exit
+                }
+                
+                try {
+                    treeFromFile.loadModelFromFile(modelPath)
+                    println("OK: Load tree from '%s' successfully".format(modelPath))
+                    println("Final tree:\n%s".format(Pruning.Prune(treeFromFile.treeModel, 0.01, trainingData)))
+                    treeFromFile.writeModelToFile(output)
+                } catch {
+                    case e: Throwable => {
+                        println("ERROR: Couldn't load tree from '%s'".format(input))
+                        e.printStackTrace()
+                    }
                 }
             }
             
-            /* TEST PREDICTING AND EVALUATION */
-            println("Evaluation:")
-            // testing data must have the same format with the training data, and don't include header !!!
-            val predictRDD = treeFromFile.predict(testingData)	
-            val actualValueRDD = testingData.map(line => line.split(',')(2))	// 2 is the index of DEXfat in csv file, based 0
-            Evaluation.evaluate(predictRDD, actualValueRDD)
             
+	        case "evaluate" => {
+	            val treeFromFile = new RegressionTree()
+                val trainingData = context.textFile(input, 1)
+                val testingData = context.textFile(parser.get("testing-data"), 1)
+                val modelPath = parser.get("model")
+                if (modelPath == ""){
+                    println("Missing path of tree model")
+                    exit
+                }
+	            try {
+                    treeFromFile.loadModelFromFile(modelPath)
+                    println("OK: Load tree from '%s' successfully".format(modelPath))
+                    treeFromFile.writeModelToFile(output)
+                } catch {
+                    case e: Throwable => {
+                        println("ERROR: Couldn't load tree from '%s'".format(input))
+                        e.printStackTrace()
+                    }
+                }
+	            println("Evaluation:")
+	            val predictRDD = treeFromFile.predict(testingData)
+	            val actualValueRDD = testingData.map(line => line.split(',')(parser.get("testing-target").toInt))	// 14 is the index of ArrDelay in csv file, based 0
+	            
+	            println("Tree:\n%s".format(treeFromFile.treeModel))
+	            println("Evaluation of the pruned tree:")
+	            var eResult = Evaluation.evaluate(predictRDD, actualValueRDD)
+	            Utility.printToFile(new File("example.txt"))(p => {
+				  p.println (eResult)
+	            })
+	        }
+	        
+	        case "predict" => {
+	            val treeFromFile = new RegressionTree()
+	            val modelPath = parser.get("model")
+	            try {
+                    treeFromFile.loadModelFromFile(modelPath)
+                    println("OK: Load tree from '%s' successfully".format(modelPath))
+                    treeFromFile.writeModelToFile(output)
+                } catch {
+                    case e: Throwable => {
+                        println("ERROR: Couldn't load tree from '%s'".format(input))
+                        e.printStackTrace()
+                    }
+                }
+                println("predict result:" + treeFromFile.predictOneInstance(input.split(",")))
+	        }
+	        
+	        case _ => { println("invalid mode"); println(parser.usage); exit }
+	    }     
             
             /* TEST RECOVER MODE */
 		    //val recoverTree = new RegressionTree()
@@ -119,63 +179,5 @@ object Test {
 		    //recoverTree.continueFromIncompleteModel(bodyfat_data, "/tmp/model.temp3")	// temporary model file
 		    //println("Model after re-run from the last state:\n" + recoverTree.treeModel)
             
-        }
-        else{
-            tree.treeBuilder.setMinSplit(100)
-            tree.treeBuilder.setMaximumComplexity(0.003)
-            //tree.treeBuilder.setThreshold(0.3) // coefficient of variation
-            //tree.treeBuilder.setMaxDepth(10)
-            
-            /* TEST BUILDING */
-            stime = System.nanoTime()
-            println(tree.buildTree("ArrDelay", 
-                    Set(as.String("Month"), as.String("DayofMonth"), as.String("DayOfWeek"), "CRSDepTime",
-                            "UniqueCarrier", "Origin", "Dest", "Distance")))
-            println("\nBuild tree in %f second(s)".format((System.nanoTime() - stime)/1e9))
-            
-            /* TEST WRITING TREE TO MODEL */
-            tree.writeModelToFile(pathOfTheeFullTree)
-            
-            /* TEST PRUNING */
-            stime = System.nanoTime()
-            println("Final tree:\n%s".format(Pruning.Prune(tree.treeModel, 0.01, trainingData, 5)))
-            tree.writeModelToFile(pathOfTreeModel)
-            println("\nPrune tree in %f second(s)".format((System.nanoTime() - stime)/1e9))
-            
-            /* TEST LOADING TREE FROM MODEL FILE */
-            val treeFromFile = new RegressionTree()
-            try{
-            	treeFromFile.loadModelFromFile(pathOfTheeFullTree)
-            	println("OK: Load tree from '%s' successfully".format(pathOfTreeModel))
-            }catch {
-                case e: Throwable => {
-                    println("ERROR: Couldn't load tree from '%s'".format(pathOfTreeModel))
-                	e.printStackTrace()
-                }
-            }
-            
-            /* TEST PREDICTING AND EVALUATION */
-            println("Evaluation:")
-            val predictRDDOfTheFullTree = treeFromFile.predict(testingData)
-            val predictRDDOfThePrunedTree = tree.predict(testingData)
-            val actualValueRDD = testingData.map(line => line.split(',')(14))	// 14 is the index of ArrDelay in csv file, based 0
-            //println("Original tree(full tree):\n%s".format(treeFromFile.treeModel))
-            
-            println("Original Tree:\n%s".format(treeFromFile.treeModel))
-            println("Evaluation of the full tree:")
-            Evaluation.evaluate(predictRDDOfTheFullTree, actualValueRDD)
-            
-            println("Pruned Tree:\n%s".format(tree.treeModel))
-            println("Evaluation of the pruned tree:")
-            Evaluation.evaluate(predictRDDOfThePrunedTree, actualValueRDD)
-            
-            
-            /* TEST RECOVER MODE */
-		    //val recoverTree = new RegressionTree()
-		    //recoverTree.treeBuilder = new DataMarkerTreeBuilder(new FeatureSet(Array[String]()))
-		    //recoverTree.continueFromIncompleteModel(bodyfat_data, "/tmp/model.temp3")	// temporary model file
-		    //println("Model after re-run from the last state:\n" + recoverTree.treeModel)
-        }
-	    
 	}
 }

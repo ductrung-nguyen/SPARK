@@ -33,4 +33,9 @@ object Utility {
         	"{%s}".format(s1.substring(4, len-1))
     }
 
+    def printToFile(f: java.io.File)(op: java.io.PrintWriter => Unit) {
+        val printWriter = new java.io.PrintWriter(f)
+        try { op(printWriter) } finally { printWriter.close() }
+    }
+
 }
