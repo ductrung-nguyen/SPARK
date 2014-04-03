@@ -120,7 +120,7 @@ object Test {
                     treeFromFile.writeModelToFile(output)
                 } catch {
                     case e: Throwable => {
-                        println("ERROR: Couldn't load tree from '%s'".format(input))
+                        println("ERROR: Couldn't load tree from '%s'".format(modelPath))
                         e.printStackTrace()
                     }
                 }
