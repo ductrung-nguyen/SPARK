@@ -142,7 +142,7 @@ object Test {
                     treeFromFile.writeModelToFile(output)
                 } catch {
                     case e: Throwable => {
-                        println("ERROR: Couldn't load tree from '%s'".format(input))
+                        println("ERROR: Couldn't load tree from '%s'".format(modelPath))
                         e.printStackTrace()
                     }
                 }
@@ -151,7 +151,7 @@ object Test {
 	            val actualValueRDD = testingdata.map(line => line.split(',')(targetIndex))	// 14 is the index of ArrDelay in csv file, based 0
 	            
 	            println("Tree:\n%s".format(treeFromFile.treeModel))
-	            println("Evaluation of the pruned tree:")
+	            println("Evaluation of the tree:")
 	            var eResult = Evaluation.evaluate(predictRDD, actualValueRDD)
 	            Utility.printToFile(new File("example.txt"))(p => {
 				  p.println (eResult)

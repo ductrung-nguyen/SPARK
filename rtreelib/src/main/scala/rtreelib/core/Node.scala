@@ -241,10 +241,10 @@ class NonLeafNode(
             }),
             "predict:%s  info:%s".format(value, statisticalInformation) ,
             ("".padTo(level, "|")).mkString("    "),
-            ("".padTo(level, "-")).mkString(""),
+            ("".padTo(2, "-")).mkString(""),
             left.toStringWithLevel(level + 1),
             ("".padTo(level, "|")).mkString("    "),
-            ("".padTo(level, "-")).mkString(""),
+            ("".padTo(2, "-")).mkString(""),
             right.toStringWithLevel(level + 1)
             )
 }
