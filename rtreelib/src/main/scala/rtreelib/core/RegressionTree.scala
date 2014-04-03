@@ -141,7 +141,7 @@ class RegressionTree() extends Serializable {
         xIndexes: Set[Int],
         yIndex: Int): TreeModel = {
 
-        treeModel = treeBuilder.buildTree(trainingData, xIndexes, yIndex);
+        treeModel = treeBuilder.buildTree(trainingData.cache, xIndexes, yIndex);
         treeModel
     }
     
