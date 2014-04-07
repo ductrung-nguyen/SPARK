@@ -18,7 +18,7 @@ class ArgumentParser (name : String = ""){
 	    var listDescriptions = mapNameToHelp.toList.sortBy(x => x._1)
 	    var h2 : String = ""
 	    listDescriptions.foreach{ case (name, des) => h2 = "%s\n\t%s : %s".format(h2, name.padTo(20,' '), des) }  
-	    "%s%s".format(help, h2)
+	    "USAGE:\n%s%s".format(help, h2)
 	}
 	
 	def addOption(term : String, fullName : String, help : String="", defaultValue : String = "0") {

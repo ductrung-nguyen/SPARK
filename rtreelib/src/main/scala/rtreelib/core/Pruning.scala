@@ -211,13 +211,29 @@ object Pruning {
     def Prune(treeModel : TreeModel, complexityParamter : Double, dataset: RDD[String], foldTimes : Int = 5) : TreeModel = {
 	    
         
+        // First, from the full tree, get all possible pruned sub-trees and the corresponding intervals of alpha (complexity parameter)
+        // but we don't know which alpha is the best value 
+        // (if we can determine the best value for alpha, we can select the corresponding tree)
         this.maxcp = complexityParamter
 	    
 	    var sequence_alpha_tree = getSubTreeSequence(treeModel.tree) 
 	        
 	        
 	    // CROSS-VALIDATION
-	    
+	    // for each interval of alpha, we select the typical value: the geometric midpoint. 
+	    // We get a list of typical value for alpha. We call it: list of betas (1)
+	    // to determine best value for alpha, we can do cross-validation:
+	    // we divide the original training set D into N partitions: D1,D2,...,DN
+	    // In each fold:
+	    //     for instance, fold k, we use dataset D\Dk to build the tree model and use the rest for testing
+	    //     after building the full tree, we use the same technique to get all possible pruned subtree (2) 
+	    //     for each beta in list (1), we select the corresponding pruned tree in (2) and calculate the error square
+	    //     so, in each fold, we get a list of (beta, error) or for simple we can use list of (index_of_beta, error)
+	    // After cross-validation, we have a matrix MxN, M is the number values of beta; N is the number of fold
+	    // value of (i,j) is the square error of tree corresponding to beta_j in fold i.
+	    // for each beta, we calculate the average of error and chose the beta which has minimum error.
+	    // But, it's not the best solution, we can use 1-SE rule to select the better tree:
+	    //  after we have the minimum error, select the smallest tree, which has the error <= minimum_error + SE(error)
 	    
 	    val N = foldTimes
         var newdata = dataset.mapPartitions(partition => {
@@ -307,7 +323,7 @@ object Pruning {
                     .map{ case (index, predictedStringValue, trueStringValue) => (index, predictedStringValue.toDouble, trueStringValue.toDouble, 1)}
                     .map{ case (index, pValue, tValue, counter) => (index, (pValue - tValue, (pValue-tValue)*(pValue-tValue), counter))}
             	)
-            	
+
             val sums = diff.reduceByKey((x,y) => {
                 (x._1 + y._1, x._2 + y._2, x._3 + y._3)
             })
@@ -330,6 +346,7 @@ object Pruning {
         var indexOfTreeHasMinAverageError = 0
         var minAverageError = Double.MaxValue
         
+        // mapTreeIndexToListErrorMetric : Map< key: index-of-beta; value : list of errors>
         if (DEBUG)
             mapTreeIndexToListErrorMetric.foreach {
             case (key, value) => {
@@ -337,23 +354,48 @@ object Pruning {
             }
         }
         
+        val averageErrors = new Array[(Double, Double)](sequence_alpha_tree.length - 1)
+        
         mapTreeIndexToListErrorMetric.foreach{
             case (key, value) => {
                 var sumError : Double = 0.0
+                var sumErrorPower2 : Double = 0.0
                 var numElement = 0
-                value.foreach(error => { numElement = numElement + 1; sumError = sumError + error})
+                value.foreach(error => { 
+                    numElement = numElement + 1; 
+                    sumError = sumError + error
+                    sumErrorPower2 = sumErrorPower2 + error*error
+                    })
                 val averageError = sumError/numElement
                 if (averageError < minAverageError){
                     minAverageError = averageError
                     indexOfTreeHasMinAverageError = key
                 }
+                
+                val EX = sumError/numElement;
+                val EX2 = sumErrorPower2/numElement
+                averageErrors(key) = (EX, math.sqrt((EX2 - EX*EX )/numElement))	// (averageError, SE)
+                
             }
+        }
+        
+        var indexOfFinalTree : Int = 0
+        
+        for (i <- (0 to averageErrors.length - 1)){
+        	val (averageError, standardError) = averageErrors(i) 
+                if (averageError <= averageErrors(indexOfTreeHasMinAverageError)._1 +  averageErrors(indexOfTreeHasMinAverageError)._2) {
+                	indexOfFinalTree = i
+                }
         }
         
         println("index of tree having min average error:" + indexOfTreeHasMinAverageError)
         println("min average: " + minAverageError)
+        println("index of the final tree:" + indexOfFinalTree)
+        println("Error of final tree: (averageError,SE)=" + averageErrors(indexOfFinalTree))
         
-        var leafNodesOfTheBestTree = sequence_alpha_tree(indexOfTreeHasMinAverageError)._1
+        // Select best alpha by 1-SE Rule
+        
+        var leafNodesOfTheBestTree = sequence_alpha_tree(indexOfFinalTree)._1
         println("the final leaf nodes:" + leafNodesOfTheBestTree)
         
         
