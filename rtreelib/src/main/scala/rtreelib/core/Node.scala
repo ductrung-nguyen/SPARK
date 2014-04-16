@@ -144,7 +144,7 @@ class LeafNode(xValue: String = "Empty") extends Node {
      */
     var feature: Feature = _ //FeatureInfo("Empty", "d", 0)
     
-    def toStringWithLevel(level: Int) = "\"" + xValue + "\"  info:" + statisticalInformation
+    def toStringWithLevel(level: Int) = "\"" + value + "\"  info:" + statisticalInformation
 }
 
 /**

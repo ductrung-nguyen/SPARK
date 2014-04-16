@@ -44,7 +44,8 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
 	extends TreeBuilder(_featureSet, _usefulFeatureSet) {
     
     type AggregateInfo = (Any, Double, Double , Int)	// (xValue, yValue, yValuePower2, frequency)
-    private val DEBUG : Boolean = false
+    
+    private val DEBUG : Boolean = true
 
     /**
      * Temporary model file
@@ -127,12 +128,13 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
                 var (label, standardDeviation, numInstances,sumYValue, sumYValuePower2) = label_sd_fre_yValue_yValuePower2
                 var statisticalInformation = new StatisticalInformation(sumYValue, sumYValuePower2, numInstances)
                 var meanY = sumYValue/numInstances
+                
                 (
                     label,	// label
                     (
                         (numInstances <= this.minsplit) // or the number of records is less than minimum
-                        || (((standardDeviation < this.threshold) && (meanY == 0))
-                            || (standardDeviation / meanY < this.threshold)) // or standard devariance of values of Y feature is small enough
+                        || (((standardDeviation <= this.threshold) && (meanY == 0))
+                            || (standardDeviation / meanY <= this.threshold)) // or standard devariance of values of Y feature is small enough
                      ),
                      statisticalInformation)
             })
@@ -154,6 +156,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
                     val EY: Double = statisticalInfor.sumY / statisticalInfor.numberOfInstances.toInt
                     val MSE = (EY2 - EY * EY) * statisticalInfor.numberOfInstances.toInt
                     if (DEBUG) println("label " + label + " current MSE:" + MSE + " parent MSE: " + MSEOfParent + " statisParent:" + parent.statisticalInformation)
+                    
                     if ((math.abs(MSE - MSEOfParent) / MSEOfParent) <= this.maximumComplexity) {
                         (label, true, statisticalInfor)
                     } else {
@@ -196,7 +199,15 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
         else{
             null
         }
-    } 
+    }
+
+    private def getPredictedValue(info: StatisticalInformation): Any = {
+        if (info.numberOfInstances == 0)
+            0.0
+        else
+            (info.sumY / info.numberOfInstances.toInt)
+    }
+    
     private def updateModel(info: Array[(BigInt, SplitPoint, StatisticalInformation)], isStopNode: Boolean = false) = {
         info.foreach(stoppedRegion =>
             {
@@ -226,14 +237,14 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
                 if (newnode.value == this.ERROR_SPLITPOINT_VALUE) {
                     println("Value of job id=" + label + " is invalid")
                 } else {
-                	val meanY : Double = 
-                	    if (statisticalInformation.numberOfInstances == 0) 
-                	        0
-                	    else
-                	        statisticalInformation.sumY/statisticalInformation.numberOfInstances.toInt
-                	        
-                    newnode.value = meanY
+                    
+                    if (!isStopNode){	// update predicted value for non-leaf node     
+	                    newnode.value = getPredictedValue(statisticalInformation)
+                    }
+                    
                     newnode.statisticalInformation = statisticalInformation
+                    
+                    if (DEBUG) println("create node with statistical infor:" + statisticalInformation + "\n new node:" + newnode.value)
                     
                     // If tree has zero node, create a root node
                     if (treeModel.tree.isEmpty) {
@@ -369,6 +380,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
                 // select indexes/labels of expanding groups
                 val continueExpandingGroups = checkedStopExpanding.filter{case (label, isStop, statisticalInfo) => !isStop}
                 val expandingLabels = continueExpandingGroups.map{case (label, isStop, statisticalInfo) => label}.toSet
+                
                 var mapLabel_To_CheckStopResult_Of_ExpandingNodes = Map[BigInt, StatisticalInformation]()
                 continueExpandingGroups.foreach{ case (label, isStop, statisticalInfo) => {
                     mapLabel_To_CheckStopResult_Of_ExpandingNodes = 
@@ -515,9 +527,10 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
     }
     
     private def findBestSplitPointForNumericalFeature(label: BigInt, index: Int, allValues: Seq[AggregateInfo]): rtreelib.core.SplitPoint = {
-
-        if (allValues.length == 1) {
-            new SplitPoint(-1, 0.0, 0.0) // sign of stop node
+    	
+        if (allValues.length == 1) { // have only 1 xvalue (maybe more than one Y values) -> can not split anymore
+            val (xValue, yValue, yValuePower2, frequency) = allValues(0)
+            new SplitPoint(-1, getPredictedValue(new StatisticalInformation(yValue, yValuePower2, frequency)), 0.0) // sign of stop node
         } else {
             var acc: Int = 0 // number of records on the left of the current element
             var currentSumY: Double = 0
@@ -556,8 +569,10 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
     }
 
     private def findBestSplitPointForCategoricalFeature(label: BigInt, index: Int, allValues: Seq[AggregateInfo]): rtreelib.core.SplitPoint = {
-        if (allValues.length == 1) {
-            new SplitPoint(-1, 0.0, 0.0) // sign of stop node
+        
+        if (allValues.length == 1) { // have only 1 xvalue (maybe more than one Y values) -> can not split anymore
+            val (xValue, yValue, yValuePower2, frequency) = allValues(0)
+            new SplitPoint(-1, getPredictedValue(new StatisticalInformation(yValue, yValuePower2, frequency)), 0.0) // sign of stop node
         } else {
 
         	var acc: Int = 0 // number of records on the left of the current element
