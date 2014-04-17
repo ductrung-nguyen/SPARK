@@ -95,7 +95,7 @@ class DataMarkerTreeBuilder(_featureSet: FeatureSet, _usefulFeatureSet : Feature
     /**
      * Check a sub data set has meet stop criterion or not
      *
-     * @param data data set
+     * @param data	RDD[(label, indexOfFeature, xValue)(yValue, yValues, frequency)]
      * @return <code>true</code>/<code>false</code> and the average of value of target feature
      */
     def checkStopCriterion(data: RDD[((BigInt, Int, Any), (Double, Double, Int))]): Array[(BigInt, Boolean, StatisticalInformation)] = {
