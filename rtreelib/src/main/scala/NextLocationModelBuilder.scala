@@ -11,7 +11,7 @@ import com.esotericsoftware.kryo.Kryo
 import org.apache.spark.serializer.KryoRegistrator
 import java.io.File
 
-object NextLocationPrediction {
+object NextLocationModelBuilder {
     def main(args: Array[String]): Unit = {
 
         val LOCAL = true
@@ -27,12 +27,13 @@ object NextLocationPrediction {
             .setAppName("Swisscom"))
 
         if (!LOCAL) {
-            inputTrainingPath = "hdfs://spark-master-001:8020/user/input/MIT/mobile-locations-training.txt";
-            inputTestingPath = "hdfs://spark-master-001:8020/user/input/MIT/mobile-locations-testing.txt";
+            inputTrainingPath = "hdfs://spark-master-001:8020/user/ubuntu/input/MIT/mobile-locations-training.txt";
+            inputTestingPath = "hdfs://spark-master-001:8020/user/ubuntu/input/MIT/mobile-locations-testing.txt";
             conf = (new SparkConf()
                 .setMaster("spark://spark-master-001:7077")
                 .setAppName("Swisscom")
                 .setSparkHome("/opt/spark")
+                .setJars(List("target/scala-2.10/rtree-example_2.10-1.0.jar"))
                 .set("spark.executor.memory", "2000m"))
         }
 
@@ -99,6 +100,9 @@ object NextLocationPrediction {
                 }
             }
         }
+        
+        
+        
 
     }
 }
