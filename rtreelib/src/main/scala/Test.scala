@@ -3,10 +3,11 @@
 import org.apache.spark._
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd._
-import rtreelib._
-import rtreelib.core.RegressionTree
-import rtreelib.evaluation.Evaluation
-import rtreelib.core._
+import treelib._
+import treelib.cart.RegressionTree
+import treelib.evaluation.Evaluation
+import treelib.core._
+import treelib.utils._
 import scala.collection.immutable._
 import bigfoot.helpers._
 import com.esotericsoftware.kryo.Kryo
@@ -21,9 +22,7 @@ class MyRegistrator extends KryoRegistrator {
     kryo.register(classOf[FeatureSet])
     kryo.register(classOf[Array[String]])
     kryo.register(classOf[TreeBuilder])
-    kryo.register(classOf[DataMarkerTreeBuilder])
     kryo.register(classOf[RegressionTree])
-    kryo.register(classOf[FeatureValueLabelAggregate])
   }
 }
 
@@ -88,9 +87,9 @@ object Test {
 	            val trainingData = context.textFile(input, 1)
 	            val tree = new RegressionTree()
 	            tree.setDataset(trainingData)
-	            tree.treeBuilder.setMinSplit(minsplit.toInt)
-	            tree.treeBuilder.setMaximumComplexity(complexity.toDouble)
-	            tree.treeBuilder.setMaxDepth(maxdepth.toInt)
+	            tree.setMinSplit(minsplit.toInt)
+	            tree.setMaximumComplexity(complexity.toDouble)
+	            tree.setMaxDepth(maxdepth.toInt)
 	            
 	            stime = System.nanoTime()
 	            println("predictor:" + setOfPredictors)

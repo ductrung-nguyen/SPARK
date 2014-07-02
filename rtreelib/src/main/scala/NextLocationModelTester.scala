@@ -1,10 +1,10 @@
 import org.apache.spark._
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd._
-import rtreelib._
-import rtreelib.core.RegressionTree
-import rtreelib.evaluation.Evaluation
-import rtreelib.core._
+import treelib._
+import treelib.cart.RegressionTree
+import treelib.evaluation.Evaluation
+import treelib.core._
 import scala.collection.immutable._
 import bigfoot.helpers._
 import com.esotericsoftware.kryo.Kryo
@@ -52,10 +52,13 @@ object NextLocationModelTester {
         globalTree.loadModelFromFile("/tmp/allusers.model")
             
         //println("\n\n================== EVALUATE GLOBAL MODEL ===================\n\n")
+        
+        Utility.printToFile(new File("globalmodel.result"))(p => {
+        
         for (i <- (1 to 106)) {
             try {
                 USERID = i.toString
-                println("Evaluate on user " + USERID)
+                println("Evaluate on user " + USERID + "\n\n")
                 var fiteredDataForSingleUser = filteredData.filter(line =>
                     {
                         var values = line.split(",")
@@ -86,6 +89,8 @@ object NextLocationModelTester {
                     }
                 }
                 
+                validZipPredictedAndActualValuesOfGlobalTree.foreach(println)
+                
                 val validZipPredictedAndActualValuesOfIndividualTree = zipPredictedAndActualValuesOfIndividualTree.filter{
                     case (predictedValue, actualValue) => {
                         if (predictedValue == "???") false
@@ -115,7 +120,7 @@ object NextLocationModelTester {
                 val numberTruePredictionOfIndividualTree = validatedResultOfIndividualTree.reduce(_ + _)
                 val totalPredictionOfIndividualTree = validatedResultOfIndividualTree.count
                 
-                Utility.printToFile(new File("globalmodel.result"))(p => {
+                
 				  p.println (USERID + "," 
 				           + numberTruePredictionOfGlobalTree + "," 
 				           + totalPredictionOfGlobalTree + "," 
@@ -125,7 +130,7 @@ object NextLocationModelTester {
 				           + totalPredictionOfIndividualTree + "," 
 				           + numberTruePredictionOfIndividualTree/totalPredictionOfIndividualTree)
 				           
-	            })
+	            
                 
                 println (USERID + "," 
 				           + numberTruePredictionOfGlobalTree + "," 
@@ -142,5 +147,6 @@ object NextLocationModelTester {
                 }
             }
         }
+        })
 	}
 }
