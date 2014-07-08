@@ -72,13 +72,13 @@ class RegressionTree() extends TreeBuilder {
         arrayValues.map {
             element =>
                 {
-                    i = (i + 1) % usefulFeatureSet.numberOfFeature
+                    i = (i + 1) % fullFeatureSet.numberOfFeature
                     if (!this.xIndexes.contains(i)) {
                         var f = encapsulateValueIntoObject(-i - 1, "0", 0, FeatureType.Numerical)
                         f.frequency = -1
                         f
                     } else
-                        usefulFeatureSet.data(i).Type match {
+                        fullFeatureSet.data(i).Type match {
                             case FeatureType.Categorical => encapsulateValueIntoObject(i, element, yValue, FeatureType.Categorical)
                             case FeatureType.Numerical => encapsulateValueIntoObject(i, element, yValue, FeatureType.Numerical)
                         }
@@ -298,7 +298,7 @@ class RegressionTree() extends TreeBuilder {
                         case ((label, index), arrayOf_xValue_yValue_yPower2_fre) => {
                         //val index = x._1._2
                         //val region = x._1._1
-                        this.usefulFeatureSet.data(index).Type match {
+                        this.fullFeatureSet.data(index).Type match {
                             case FeatureType.Numerical => {
                                 (label, findBestSplitPointForNumericalFeature(label, index, arrayOf_xValue_yValue_yPower2_fre))
                             }

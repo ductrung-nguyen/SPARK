@@ -104,7 +104,7 @@ class ID3TreeModel extends TreeModel {
             if (currentNode.isLeaf || ignoreBranchSet.contains(currentNode.asInstanceOf[ID3Node].id)) {
                 currentNode.value.toString
             } else {
-                val fIndex = this.fullFeatureSet.getIndex(usefulFeatureSet.data(currentNode.feature.index).Name)
+                val fIndex = currentNode.feature.index
                 currentNode.feature.Type match {
                     case FeatureType.Categorical => {
                         val splitpoint = currentNode.splitpoint.point.asInstanceOf[Array[Any]]
@@ -178,8 +178,9 @@ class ID3TreeModel extends TreeModel {
     override def toString() = {
       (
     		  "* FeatureSet:\n" + fullFeatureSet.toString + "\n"
-    		  + "* xIndexes:" + xIndexes.map(index => fullFeatureSet.getIndex(usefulFeatureSet.data(index).Name))  + "\n"
-    		  + "* yIndex (target index):" + fullFeatureSet.getIndex(usefulFeatureSet.data(yIndex).Name) + "\n"
+    		  + "* xIndexes:" + xIndexes//.map(index => fullFeatureSet.getIndex(usefulFeatureSet.data(index).Name))  
+    		  + "\n"
+    		  + "* yIndex (target index):" + yIndex + "\n"//+ fullFeatureSet.getIndex(usefulFeatureSet.data(yIndex).Name) + "\n"
     		  + "* minSplit:%d\n".format(this.minsplit)
     		  + "* threshold:%f\n".format(this.threshold)
     		  + "* maximumComplexity:%f\n".format(this.maximumComplexity)

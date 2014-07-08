@@ -176,13 +176,14 @@ class RandomForest {
 	        tree.useCache = false
 	        val samplingData = trainingData.sample(true, 1.0, System.nanoTime().toInt)
 	        val obb = trainingData.subtract(samplingData)
-	        tree.setDataset(samplingData, false)
+	        tree.setDataset(samplingData)
 	        tree.useRandomSubsetFeature = true
 	        //tree.setMinSplit(this.minSplit)
 	        
 	        if (this.featureNames != null)
 	        	tree.setFeatureNames(this.featureNames)
 	        forest.setTree(i, tree.buildTree(yFeature, xFeatures))
+	        samplingData.unpersist(true)
 	    }
 	    
 	    forest

@@ -9,7 +9,11 @@ package treelib.core
  */
 class SplitPoint(val index: Int, var point: Any, var weight: Double) extends Serializable {
     override def toString = {
-        var pointToString = if (point.isInstanceOf[Array[_]]) point.asInstanceOf[Array[_]].mkString(",") else point.toString
+        var pointToString = (
+                if (point.isInstanceOf[Array[_]]) point.asInstanceOf[Array[_]].mkString(",") 
+                else if (point != null) point.toString
+                else ""
+                )
         "%d,%s,%f".format(
             index,
             (if (pointToString.length > 40)

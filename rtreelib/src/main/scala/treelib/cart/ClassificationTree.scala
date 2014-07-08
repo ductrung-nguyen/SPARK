@@ -64,14 +64,14 @@ class ClassificationTree extends TreeBuilder{
         arrayValues.map {
             element =>
                 {
-                    i = (i + 1) % usefulFeatureSet.numberOfFeature
+                    i = (i + 1) % fullFeatureSet.numberOfFeature
                     if (!this.xIndexes.contains(i)) {
                         //println("---------------------- " + i)
                         var f = encapsulateValueIntoObject(-i - 1, "0", 0, FeatureType.Numerical)
                         f.frequency = -1
                         f
                     } else
-                        usefulFeatureSet.data(i).Type match {
+                        fullFeatureSet.data(i).Type match {
                             case FeatureType.Categorical => encapsulateValueIntoObject(i, element, yValue, FeatureType.Categorical)
                             case FeatureType.Numerical => encapsulateValueIntoObject(i, element, yValue, FeatureType.Numerical)
                         }
@@ -144,7 +144,7 @@ class ClassificationTree extends TreeBuilder{
 
         var iter = 0;
         
-        println("featureset" + usefulFeatureSet.data.mkString("\n"))
+        //println("featureset" + usefulFeatureSet.data.mkString("\n"))
 
 
         do {
@@ -197,7 +197,7 @@ class ClassificationTree extends TreeBuilder{
                 
                 var splitPoint_And_YValueDistribution_OfEachNode = distributionOfEachFeature.map {
                     case ((label, index),seq_xValue_yValue_fre) => {
-                        usefulFeatureSet.data(index).Type match {
+                        fullFeatureSet.data(index).Type match {
                             case FeatureType.Numerical => {
                                 (label, (index, findBestSplitPointNumericalFeature(label, index, seq_xValue_yValue_fre)))
                             }

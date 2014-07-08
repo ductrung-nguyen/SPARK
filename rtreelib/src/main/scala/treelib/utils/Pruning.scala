@@ -749,9 +749,9 @@ abstract class AbstractPruning(treeModel : TreeModel) extends Serializable {
             	i = (i + 1) % N
             	(i, x)
             })
-        })
+        }).cache
         
-        var yIndex = treeModel.fullFeatureSet.getIndex(treeModel.usefulFeatureSet.data(treeModel.yIndex).Name)
+        var yIndex = treeModel.yIndex//treeModel.fullFeatureSet.getIndex(treeModel.usefulFeatureSet.data(treeModel.yIndex).Name)
         var mapTreeIndexToListErrorMetric : Map[Int, List[Double]] = Map[Int, List[Double]]()
         
         println("Start CROSS-VALIDATION")
@@ -825,7 +825,7 @@ abstract class AbstractPruning(treeModel : TreeModel) extends Serializable {
             )
             // RDD[(index, predictedValue, trueValue)]
 
-            if (treeModel.usefulFeatureSet.data(treeModel.yIndex).Type == FeatureType.Numerical) {	// Regression Tree
+            if (treeModel.fullFeatureSet.data(treeModel.yIndex).Type == FeatureType.Numerical) {	// Regression Tree
                 var valid_diff_predicted_value_and_true_value = diff_predicted_value_and_true_value.filter(v => (!v._2.equals("???")
                     && (Utility.parseDouble(v._3) match {
                         case Some(d: Double) => true
@@ -906,6 +906,7 @@ abstract class AbstractPruning(treeModel : TreeModel) extends Serializable {
             }
             println("\n ==================== End round %d ====================\n".format(fold))
             
+            datasetOfThisFold.unpersist(false)
         }	// END CROSS-VALIDATION
         
         var indexOfTreeHasMinAverageError = 0

@@ -8,83 +8,6 @@ import scala.math.BigInt.int2bigInt
 import scala.collection.mutable.HashMap
 import scala.util.Random
 
-/*
-class CTreeModel extends TreeModel {
-    
-    override var tree : CNode = new CNode()
-    
-    override def isEmpty : Boolean = tree.isLeaf
-}
-*/
-/*
-class CLeafNode extends CNode {
-    
-    var isLeaf : Boolean = true
-    
-    var value : Any = ""
-        
-    var feature : Feature = null
-    
-    /**
-     * The split point of this node
-     */
-    def splitpoint: Nothing = throw new NoSuchElementException("empty.splitpoint")
-    def children : Nothing = throw new NoSuchElementException("empty.children")
-    
-    var rangeOfChildren : (Int,Int) =  (-1, -1)	// (minIndex, maxIndex)
-    
-    
-    override def findChildrenByID(id : Int) : CNode = null
-    
-    override def toLeafNode() : CNode = this
-    override def toStringWithLevel(level: Int): String = {
-        ""
-    }
-}
-
-class CNonLeafNode(sp : SplitPoint) extends CNode {
-    var isLeaf = false
-    
-     var value : Any = ""
-        
-    var feature : Feature = null
-    
-    /**
-     * The split point of this node
-     */
-    def splitpoint: SplitPoint = sp
-    
-    def children : Array[CNode] = Array[CNode]()
-    
-    var rangeOfChildren : (Int,Int) =  (-1, -1)	// (minIndex, maxIndex)
-    
-    override def findChildrenByID(id : Int) : CNode = {
-        
-        def findChildrenIter(currentNode : CNode) : CNode = {
-            if (currentNode.isLeaf)
-                null
-            else{
-            	var left : Int = 0
-            	var right : Int = currentNode.children.length
-            	var middle = (left + right)/2
-            	if (currentNode.children(right-1).rangeOfChildren._2 < id)
-            	if (children(middle).rangeOfChildren._1 >= id && children(middle).rangeOfChildren)
-            }
-            
-        }
-        
-    }
-    
-    override def toLeafNode() : CNode = {
-        var rs : CNode = new CLeafNode()
-        rs
-    }
-    
-    override def toStringWithLevel(level: Int): String = {
-        ""
-    }
-}
-*/
 class ID3TreeBuilder
     extends TreeBuilder {
     
@@ -92,14 +15,6 @@ class ID3TreeBuilder
     
     def LOG2 = math.log(2)
 
-    /*
-    def encapsulateValueIntoObject(index: Int, value: String, yValue: String, featureType: FeatureType.Value): FeatureValueLabelAggregate = {
-        featureType match {
-            case FeatureType.Categorical => new FeatureValueLabelAggregate(index, value, yValue, yValue * yValue, 1)
-            case FeatureType.Numerical => new FeatureValueLabelAggregate(index, value.toDouble, yValue, yValue * yValue, 1)
-        }
-    }
-    */
     class FeatureValue (
             var label: BigInt, 
             var featureIndex : Int, 
@@ -115,21 +30,29 @@ class ID3TreeBuilder
     private var updatingLabelMap : HashMap[BigInt, HashMap[(Int, Any), BigInt]] = HashMap[BigInt, HashMap[(Int, Any), BigInt]]() 
     // update (oldLabel-> (splitPointFeatureIndex, splitPointValue) -> newLabel)
     
+    private var mapFullIndexToUsefulIndex : Array[Int] = null
+    
     treeModel = new ID3TreeModel()
     
     def convertArrayValuesToObjects(values: Array[String]): Array[FeatureValue] = {
         var i: Int = -1
         var nodeID : BigInt = 1
-        values.map { value =>
+        var result = Array.fill[FeatureValue](this.numberOfUsefulFeatures)(null)
+        var count = 0
+        // only encapsulate the value of predictor and the target feature (or the value of the useful features)
+        values.foreach { value =>
             {
-                
                 i = i + 1
-                if (i != yIndex && usefulFeatureSet.data(i).Type == FeatureType.Numerical)
-                    new FeatureValue(nodeID, i, value.toDouble, values(this.yIndex), 1)
-                else
-                	new FeatureValue(nodeID, i, value, values(this.yIndex), 1)
+                if (this.xIndexes.contains(i) || (i == yIndex)) {
+                    if (i != yIndex && fullFeatureSet.data(i).Type == FeatureType.Numerical)
+                        result.update(count, new FeatureValue(nodeID, i, value.toDouble, values(this.yIndex), 1))
+                    else
+                        result.update(count,new FeatureValue(nodeID, i, value, values(this.yIndex), 1))
+                    count = count + 1
+                }
             }
         }
+        result
     }
     
     private def generateRandomSet(sequenceOfFIndices: Seq[Int]) : Array[Int] = {
@@ -161,18 +84,22 @@ class ID3TreeBuilder
         xIndexes: Set[Int],
         yIndex: Int): Unit =  {
         println("Start building tree")
-        usefulFeatureSet.update(Feature(usefulFeatureSet.data(yIndex).Name, FeatureType.Categorical, yIndex), yIndex)
-        
+        fullFeatureSet.update(Feature(fullFeatureSet.data(yIndex).Name, FeatureType.Categorical, yIndex), yIndex)
+
+        mapFullIndexToUsefulIndex = Array.fill[Int](fullFeatureSet.numberOfFeature)(-1)
+        var count = 0
+        for (i <- 0 until fullFeatureSet.numberOfFeature) {
+            val feature = fullFeatureSet.data(i)
+            if (this.xIndexes.contains(feature.index) || feature.index == yIndex) {
+            	mapFullIndexToUsefulIndex.update(i, count)
+            	count = count + 1
+            }
+        }
         var rootID = 1
         
         var expandingNodeIndexes = Set[BigInt]()
         
         var map_label_to_splitpoint = Map[BigInt, SplitPoint]()
-
-        def finish() = {
-            expandingNodeIndexes.isEmpty
-            //map_label_to_splitpoint.isEmpty
-        }
 
         // parse raw data
         val mydata = trainingData.map(line => line.split(delimiter))
@@ -231,10 +158,11 @@ class ID3TreeBuilder
                     }.collect.toSet
 
                     featureValueCountGroupByXValue = featureValueCountGroupByXValue.filter(x => randomSelectedFeatureAtEachNode.contains((x._1._1, x._1._2))) // contain (nodeid,fIndex)
+                    temp.unpersist(false)
                 }
                 
-                val categoricalFeatures = featureValueCountGroupByXValue.filter(x => usefulFeatureSet.data(x._1._2).Type == FeatureType.Categorical)
-                val numericalFeatures = featureValueCountGroupByXValue.filter(x => usefulFeatureSet.data(x._1._2).Type == FeatureType.Numerical)
+                val categoricalFeatures = featureValueCountGroupByXValue.filter(x => fullFeatureSet.data(x._1._2).Type == FeatureType.Categorical)
+                val numericalFeatures = featureValueCountGroupByXValue.filter(x => fullFeatureSet.data(x._1._2).Type == FeatureType.Numerical)
                 
                 val gainOfCategoricalFeatures = 
                 (
@@ -292,7 +220,13 @@ class ID3TreeBuilder
                         }
                     })
                 //println("gain of numerical features:" + gainOfNumericalFeatures.collect.mkString(","))
-                gainOfCategoricalFeatures.union(gainOfNumericalFeatures)
+                val result = gainOfCategoricalFeatures.union(gainOfNumericalFeatures)
+                numericalFeatures.unpersist(false)
+                categoricalFeatures.unpersist(false)
+                gainOfCategoricalFeatures.unpersist(false)
+                System.gc()
+                System.runFinalization()
+                result
                 
         }
              
@@ -324,7 +258,7 @@ class ID3TreeBuilder
                         	(nodeID, new SplitPoint(-1, null, 0), statisticalInformationEachNode.getOrElse(nodeID, null))
                         } else {
                             val (splittingFeature, xValue_gain) = seqIndex_XValueGains.filter(x => x._1 != yIndex).maxBy(x => x._2._2) // max by gain
-                            if (usefulFeatureSet.data(splittingFeature).Type == FeatureType.Categorical)
+                            if (fullFeatureSet.data(splittingFeature).Type == FeatureType.Categorical)
                             	(nodeID, new SplitPoint(splittingFeature, xValue_gain._1.toArray.sortBy(x => x.asInstanceOf[String]), xValue_gain._2), statisticalInformationEachNode.getOrElse(nodeID, null))
                             else
                             	(nodeID, new SplitPoint(splittingFeature, xValue_gain._1.toArray.head, xValue_gain._2), statisticalInformationEachNode.getOrElse(nodeID, null))
@@ -349,6 +283,9 @@ class ID3TreeBuilder
             //println("current Tree:" + treeModel)
                     
             stop = (nonStopNode.length == 0)
+            
+            gains.unpersist(false)
+            featureValueCount.unpersist(false)
         }
         
     }
@@ -458,7 +395,7 @@ class ID3TreeBuilder
                 }
                 else{
                     newnode.isLeaf = false
-                    val chosenFeatureInfoCandidate = usefulFeatureSet.data.find(f => f.index == splitPoint.index)
+                    val chosenFeatureInfoCandidate = fullFeatureSet.data.find(f => f.index == splitPoint.index)
                     
                     chosenFeatureInfoCandidate match {
                             case Some(chosenFeatureInfo) => {
@@ -543,9 +480,9 @@ class ID3TreeBuilder
                     array.foreach(element => { element.label = -9 })
                 } else {
                     val splittedFeatureIndex = newLabels.head._1._1
-                    var currentXValueAtSplittedFeature = array(splittedFeatureIndex).xValue
+                    var currentXValueAtSplittedFeature = array(mapFullIndexToUsefulIndex(splittedFeatureIndex)).xValue
 
-                    val newLabel = this.usefulFeatureSet.data(splittedFeatureIndex).Type match {
+                    val newLabel = this.fullFeatureSet.data(splittedFeatureIndex).Type match {
                         case FeatureType.Categorical => {
                             val newLabel = newLabels.getOrElse((splittedFeatureIndex, currentXValueAtSplittedFeature), BigInt(-9))
                             if (newLabel == -9) {
@@ -567,7 +504,7 @@ class ID3TreeBuilder
                     }
 
                     for (i <- 0 until array.length) {
-                        if (i == splittedFeatureIndex && usefulFeatureSet.data(splittedFeatureIndex).Type == FeatureType.Categorical)
+                        if (i == mapFullIndexToUsefulIndex(splittedFeatureIndex) && fullFeatureSet.data(splittedFeatureIndex).Type == FeatureType.Categorical)
                             array(i).featureIndex = -1
                         array(i).label = newLabel
                     }
@@ -580,6 +517,7 @@ class ID3TreeBuilder
         })
 
         //updatingLabelMap = updatingLabelMap.empty
+        data.unpersist(false)
         newdata
     }
     

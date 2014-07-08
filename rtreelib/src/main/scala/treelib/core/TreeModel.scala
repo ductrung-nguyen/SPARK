@@ -28,8 +28,8 @@ abstract class TreeModel extends Serializable {
 	/**
 	 * The features which were used to build the tree, they were re-indexed from featureSet
 	 */
-	var usefulFeatureSet : FeatureSet = new FeatureSet(List[Feature]())
-	
+	//var usefulFeatureSet : FeatureSet = new FeatureSet(List[Feature]())
+	var usefulFeatures : Set[Int] = null
 	
 	/**
 	 *  the root node of the tree

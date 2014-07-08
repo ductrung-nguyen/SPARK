@@ -78,8 +78,8 @@ class CARTTreeModel extends TreeModel {
     override def toString() = {
       (
     		  "* FeatureSet:\n" + fullFeatureSet.toString + "\n"
-    		  + "* xIndexes:" + xIndexes.map(index => fullFeatureSet.getIndex(usefulFeatureSet.data(index).Name))  + "\n"
-    		  + "* yIndex (target index):" + fullFeatureSet.getIndex(usefulFeatureSet.data(yIndex).Name) + "\n"
+    		  + "* xIndexes:" + xIndexes  + "\n"
+    		  + "* yIndex (target index):" + yIndex + "\n"
     		  + "* minSplit:%d\n".format(this.minsplit)
     		  + "* threshold:%f\n".format(this.threshold)
     		  + "* maximumComplexity:%f\n".format(this.maximumComplexity)

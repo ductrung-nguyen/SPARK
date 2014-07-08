@@ -44,10 +44,14 @@ abstract class TreeBuilder extends Serializable {
     var fullFeatureSet = new FeatureSet()
 
     /**
-     * Information of the features which will be used in building phase
+     * The number of features which will be used for building tree (include the target feature)
      */
-    var usefulFeatureSet = new FeatureSet()
-
+    //var usefulFeatureSet = new FeatureSet()
+	//var usefulFeatures : Set[Int] = null	// means all features will be used for building tree
+    
+    protected var numberOfUsefulFeatures : Int = fullFeatureSet.numberOfFeature
+    
+    
     /**
      * Tree model
      */
@@ -63,7 +67,7 @@ abstract class TreeBuilder extends Serializable {
      *  index of target feature,
      *  default value is the index of the last feature in dataset
      */
-    protected var yIndex = usefulFeatureSet.numberOfFeature - 1
+    protected var yIndex = yIndexDefault
 
     /**
      *  the indices/indexes of X features, which will be used to predict the target feature
@@ -72,7 +76,7 @@ abstract class TreeBuilder extends Serializable {
      *  so we don't want to calculate it multiple time
      *  The default value is the index of all features, except the last one
      */
-    protected var xIndexes = usefulFeatureSet.data.map(x => x.index).filter(x => (x != yIndex)).toSet[Int]
+    protected var xIndexes = fullFeatureSet.data.map(x => x.index).filter(x => (x != yIndex)).toSet[Int]
 
     /**
      * A value , which is used to marked a split point is invalid
@@ -222,6 +226,7 @@ abstract class TreeBuilder extends Serializable {
      * @param	removeInvalidRecord	remove line which contains invalid feature values or not
      * @output	the new RDD which will be use "directly" in building phase
      */
+    /*
     def filterUnusedFeatures(trainingData: RDD[String], xIndexes: Set[Int], yIndex: Int, removeInvalidRecord: Boolean = true): RDD[String] = {
         var i = 0
         var j = 0
@@ -258,7 +263,7 @@ abstract class TreeBuilder extends Serializable {
 
         temp.filter(line => !line.equals(""))
     }
-
+	*/
     /**
      * Convert index of the useful features into index in the full feature set
      * @param	featureSet			the full feature set
@@ -266,12 +271,13 @@ abstract class TreeBuilder extends Serializable {
      * @param	a tuple with the first component is the set of indices of predictors
      * the second component is the index of the target feature
      */
+    /*
     private def mapFromUsefulIndexToOriginalIndex(featureSet: FeatureSet, usefulFeatureSet: FeatureSet): (Set[Int], Int) = {
         var xIndexes = treeModel.xIndexes.map(index => treeModel.fullFeatureSet.getIndex(treeModel.usefulFeatureSet.data(index).Name))
         var yIndex = treeModel.fullFeatureSet.getIndex(usefulFeatureSet.data(treeModel.yIndex).Name)
         (xIndexes, yIndex)
     }
-
+	*/
     /**
      * Get node by nodeID
      * @param	id node id
@@ -362,7 +368,7 @@ abstract class TreeBuilder extends Serializable {
             })
 
             //this.usefulFeatureSet = new FeatureSet(usefulFeatureList)
-
+            /*
             // FILTER OUT THE UNUSED FEATURES //
             this.trainingData = filterUnusedFeatures(this.trainingData, xIndexes, yIndex)
 
@@ -385,13 +391,33 @@ abstract class TreeBuilder extends Serializable {
                 this.startBuildTree(this.trainingData.cache, newXIndexes.toSet, newYIndex)
             else
                 this.startBuildTree(this.trainingData, newXIndexes.toSet, newYIndex)
-                	
+            */
+            
+            this.yIndex = yIndex
+            this.xIndexes = xIndexes
+            treeModel.xIndexes = xIndexes
+            treeModel.yIndex = yIndex
+            treeModel.fullFeatureSet = this.fullFeatureSet
+            treeModel.treeBuilder = this
+            this.numberOfUsefulFeatures = this.xIndexes.size + 1
+            
+            println("xIndexes:" + xIndexes + " yIndex:" + yIndex)
+            
+            println("Building tree with predictors:" + this.xIndexes.map(i => fullFeatureSet.data(i).Name))
+            println("Target feature:" + fullFeatureSet.data(yIndex).Name)
+            
+            
+            if (this.useCache)
+                this.startBuildTree(this.trainingData.cache, xIndexes, yIndex)
+            else
+                this.startBuildTree(this.trainingData, xIndexes, yIndex)
             
         } catch {
             case e: Throwable => {
-            	
+            	println("Error:" + e.getStackTraceString)
             }
         }
+        this.trainingData.unpersist(false)
         this.treeModel
     }
 
@@ -425,7 +451,7 @@ abstract class TreeBuilder extends Serializable {
                     if (isStopNode) {
                         new CARTLeafNode(splitPoint.point.toString)
                     } else {
-                        val chosenFeatureInfoCandidate = usefulFeatureSet.data.find(f => f.index == splitPoint.index)
+                        val chosenFeatureInfoCandidate = fullFeatureSet.data.find(f => f.index == splitPoint.index)
                         chosenFeatureInfoCandidate match {
                             case Some(chosenFeatureInfo) => {
                                 new CARTNonLeafNode(chosenFeatureInfo,
@@ -476,17 +502,18 @@ abstract class TreeBuilder extends Serializable {
      * @param trainingData	the training dataset
      * @throw Exception if the dataset contains less than 2 lines
      */
-    def setDataset(trainingData: RDD[String], hasHeader: Boolean = true) {
+    def setDataset(trainingData: RDD[String]) {
 
-        var twoFirstLines = trainingData.take(2)
+        var firstLine = trainingData.take(1)
 
         // If we can not get 2 first line of dataset, it's invalid dataset
-        if (twoFirstLines.length < 2) {
+        if (firstLine.length < 1) {
             throw new Exception("ERROR:Invalid dataset")
         } else {
             this.trainingData = trainingData;
 
-            var header = twoFirstLines(0)
+            /*
+            var header = firstLine(0)
             var temp_header = header.split(delimiter)
 
             if (hasHeader) {
@@ -495,17 +522,19 @@ abstract class TreeBuilder extends Serializable {
                 var i = -1;
                 this.headerOfDataset = temp_header.map(v => { i = i + 1; "Column" + i })
             }
-
+			*/
             // determine types of features automatically
             // Get the second line of dataset and try to parse each of them to double
             // If we can parse, it's a numerical feature, otherwise, it's a categorical feature
-            var secondLine = twoFirstLines(1).split(delimiter);
+            var sampleData = firstLine(0).split(delimiter);
+            var i = -1;
+            this.headerOfDataset = sampleData.map(v => { i = i + 1; "Column" + i })
 
-            var i = 0
+            i = 0
             var listOfFeatures = List[Feature]()
 
             // if we can parse value of a feature into double, this feature may be a numerical feature
-            secondLine.foreach(v => {
+            sampleData.foreach(v => {
                 Utility.parseDouble(v.trim()) match {
                     case Some(d) => { listOfFeatures = listOfFeatures.:+(Feature(headerOfDataset(i), FeatureType.Numerical, i)) }
                     case None => { listOfFeatures = listOfFeatures.:+(Feature(headerOfDataset(i), FeatureType.Categorical, i)) }
@@ -580,6 +609,7 @@ abstract class TreeBuilder extends Serializable {
         if (record.length == 0)
             "???"
         else {
+            /*
             var (xIndexes, yIndex) = mapFromUsefulIndexToOriginalIndex(fullFeatureSet, usefulFeatureSet)
             var newRecord: Array[String] = Array[String]()
             var i = 0
@@ -591,6 +621,9 @@ abstract class TreeBuilder extends Serializable {
             }
 
             predictOnPreciseData(newRecord, ignoreBranchIDs)
+            * 
+            */
+            predictOnPreciseData(record, ignoreBranchIDs)
         }
     }
 
@@ -603,10 +636,12 @@ abstract class TreeBuilder extends Serializable {
     def predict(testingData: RDD[String],
         delimiter: String = ",",
         ignoreBranchIDs: Set[BigInt] = Set[BigInt]()): RDD[String] = {
-        var (xIndexes, yIndex) = mapFromUsefulIndexToOriginalIndex(fullFeatureSet, usefulFeatureSet)
+        /*
+         * var (xIndexes, yIndex) = mapFromUsefulIndexToOriginalIndex(fullFeatureSet, usefulFeatureSet)
         var newTestingData = filterUnusedFeatures(testingData, xIndexes, yIndex, false)
         newTestingData.map(line => this.predictOnPreciseData(line.split(delimiter), ignoreBranchIDs))
-        //testingData.map(line => this.predict(line.split(delimiter))) 
+        */
+        testingData.map(line => this.predictOnPreciseData(line.split(delimiter), ignoreBranchIDs))
     }
 
     /***********************************************/
@@ -650,7 +685,8 @@ abstract class TreeBuilder extends Serializable {
     def setTreeModel(tm: TreeModel) = {
         this.treeModel = tm
         this.fullFeatureSet = tm.fullFeatureSet
-        this.usefulFeatureSet = tm.usefulFeatureSet
+        //this.usefulFeatureSet = tm.usefulFeatureSet
+        //this.usefulFeatures = tm.usefulFeatures
         updateFeatureSet()
     }
 
@@ -661,9 +697,9 @@ abstract class TreeBuilder extends Serializable {
         loadModelFromFile(path_to_model)
         this.treeModel = treeModel
         this.fullFeatureSet = treeModel.fullFeatureSet
-        this.usefulFeatureSet = treeModel.usefulFeatureSet
-        var (xIndexes, yIndex) = mapFromUsefulIndexToOriginalIndex(fullFeatureSet, usefulFeatureSet)
-        var newtrainingData = filterUnusedFeatures(trainingData, xIndexes, yIndex)
+        //this.usefulFeatureSet = treeModel.usefulFeatureSet
+        //var (xIndexes, yIndex) = mapFromUsefulIndexToOriginalIndex(fullFeatureSet, usefulFeatureSet)
+        //var newtrainingData = filterUnusedFeatures(trainingData, xIndexes, yIndex)
 
         if (treeModel == null) {
             throw new Exception("The tree model is empty because of no building. Please build it first")
@@ -675,7 +711,7 @@ abstract class TreeBuilder extends Serializable {
             println("Recover from the last state")
             /* INITIALIZE */
             this.fullFeatureSet = treeModel.fullFeatureSet
-            this.usefulFeatureSet = treeModel.usefulFeatureSet
+            //this.usefulFeatureSet = treeModel.usefulFeatureSet
             this.xIndexes = treeModel.xIndexes
             this.yIndex = treeModel.yIndex
 
